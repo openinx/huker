@@ -1,0 +1,26 @@
+base: {{ config_dir }}/conf/hbase/common/common.yaml
+
+cluster_config:
+  cluster_name: test-cluster
+  hdfs_cluster: test-cluster
+  zookeeper_cluster: test-cluster
+  java_home: /opt/soft/jdk1.8.0_111
+  package_name: hbase-1.3.1-bin.tar.gz
+  package_md5sum: 215e29a66a0e1d5a9f319dd71008dd3b
+
+jobs:
+  regionserver:
+    hosts:
+      192.168.0.1
+      192.168.0.2
+      192.168.0.3
+      192.168.0.4
+    config:
+      hbase-site.xml:
+        hbase.ipc.warn.response.time: 800
+        hbase.bucketcache.percentage.in.combinedcache: 0.7
+
+  master:
+    hosts:
+      - 192.168.0.5
+      - 192.168.0.6

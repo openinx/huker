@@ -1,0 +1,74 @@
+jobs:
+  regionserver:
+    jvm_opts:
+      -Xss256k
+      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:HeapDumpPath={{ log_dir }}
+      -verbose:gc
+      -XX:+PrintGC
+      -XX:+PrintGCDetails
+      -XX:+PrintGCApplicationStoppedTime
+      -XX:+PrintHeapAtGC
+      -XX:+PrintGCDateStamps
+      -XX:+PrintAdaptiveSizePolicy
+      -XX:+PrintTenuringDistribution
+      -XX:+PrintSafepointStatistics
+      -XX:PrintSafepointStatisticsCount=1
+      -XX:PrintFLSStatistics=1
+      -XX:+UseGCLogFileRotation
+      -XX:NumberOfGCLogFiles=100
+      -XX:GCLogFileSize=128m
+      -XX:+SafepointTimeout
+      -XX:MonitorBound=16384
+      -XX:-UseBiasedLocking
+      -XX:+UseG1GC
+      -XX:+UnlockExperimentalVMOptions
+      -XX:MaxGCPauseMillis=90
+      -XX:G1NewSizePercent=2
+      -XX:InitiatingHeapOccupancyPercent=65
+      -XX:+ParallelRefProcEnabled
+      -XX:ConcGCThreads=4
+      -XX:ParallelGCThreads=16
+      -XX:MaxTenuringThreshold=1
+      -XX:G1HeapRegionSize=32m
+      -XX:G1MixedGCCountTarget=64
+      -XX:G1OldCSetRegionThresholdPercent=5
+    jvm_properties:
+      -Djava.net.preferIPv4Stack=true
+      -Dhbase.log.dir={{ log_dir }}
+      -Dhbase.pid=$pid
+      -Dhbase.cluster={{ cluster.name }}
+      -Dhbase.log.level={{ cluster.log_level }}
+      -Dhbase.policy.file=hbase-policy.xml
+      -Dhbase.home.dir={{ package_dir }}
+      -Djava.security.krb5.conf=$run_dir/krb5.conf
+      -Dhbase.id.str={{ remote_user }}
+      -Dkerberos.host.ignore.dns.lookup=true
+      -Dhbase.log.hostname={{ hostname }}
+    config:
+      hbase-site.xml:
+        hbase.rootdir=hdfs://{{ cluster.name }}/hbase/{{ cluster.name }}
+        base.zookeeper.quorum={{ zk.dn_with_port }}
+        hbase.zookeeper.property.clientPort={{ add $zookeeper.zookeeper.0.base_port 1}}
+        hbase.master.port={{ master.base_port }}
+        hbase.master.info.port={{ master.base_port + 1 }}
+        hbase.regionserver.port={{ regionserver.base_port }
+        hbase.regionserver.info.port={{ regionserver.base_port + 1 }}
+        hbase.canary.info.port={{ canary.base_port + 1 }}
+        hbase.use.dynamic.jars=true
+      core-site.xml:
+        fs.defaultFS=hdfs://%{cluster.hdfs_cluster}
+        hadoop.http.staticuser.user=hbase
+        hadoop.tmp.dir=/tmp/hadoop
+        io.file.buffer.size=131072
+        hadoop.security.authentication=simple
+        hadoop.security.authorization=false
+        hadoop.security.use-weak-http-crypto=false
+        ipc.client.ping=false
+    classpath:
+      {{ javaHome }}/lib/tools.jar
+      {{ pkg_root_dir }}/lib/*.jar
+      {{ pkg_root_dir }}}/lib/ruby
+    main_entry:
+      java_class: org.apache.hadoop.hbase.regionserver.HRegionServer
+      extra_args: start

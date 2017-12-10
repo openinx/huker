@@ -1,0 +1,47 @@
+jobs:
+  zookeeper:
+      jvm_opts:
+        - -Xmx4096m
+        - -Xms3072m
+        - -Xmn2048m
+        - -XX:MaxDirectMemorySize=1024m
+        - -XX:MaxPermSize=512m
+        - -XX:+DisableExplicitGC
+        - -XX:+HeapDumpOnOutOfMemoryError
+        - -XX:HeapDumpPath=/Users/openinx/test/zk/stdout
+        - -XX:+PrintGCApplicationStoppedTime
+        - -XX:+UseConcMarkSweepGC
+        - -XX:CMSInitiatingOccupancyFraction=80
+        - -XX:+UseMembar
+        - -verbose:gc
+        - -XX:+PrintGCDetails
+        - -XX:+PrintHeapAtGC
+        - -XX:+PrintGCDateStamps
+        - -Xloggc:/Users/openinx/test/zk/stdout/zk_gc.log
+      jvm_properties:
+        - java.net.preferIPv4Stack=true
+        - jute.maxbuffer=10240000
+        - zookeeper.log.dir=/Users/openinx/test/zk/log
+        - zookeeper.log.level=INFO,CONSOLE
+        - zookeeper.maxCnxns=13000
+      config:
+        zoo.cfg:
+          - data_dir=/Users/openinx/test/zk/data
+          - data_log_dir=/Users/openinx/test/zk/log
+          - client_port=2182
+          - tick_time=2000
+          - max_client_cnxns=60
+          - init_limit=30
+          - sync_limit=20
+          - max_session_timeout=40000
+          - autopurge_snap_retain_count=3
+          - autopurge_purge_interval=1
+          - fsync_warning_threashold_ms=1000
+          - pre_alloc_size=65535
+      classpath:
+        - ./lib/*
+        - ./*
+        - ./conf
+      main_entry:
+        java_class: org.apache.zookeeper.server.quorum.QuorumPeerMain
+        extra_args: conf/zoo_sample.cfg

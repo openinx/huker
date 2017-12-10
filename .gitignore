@@ -1,0 +1,10 @@
+.project
+.DS_Store
+/bin
+/lib
+/.idea/
+/logs
+*.iws
+*.iml
+*.swp
+*.swo
