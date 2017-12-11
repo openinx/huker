@@ -9,8 +9,6 @@ import (
     "github.com/qiniu/log"
 )
 
-const SHELL_SEPARATOR = " "
-
 /********************************** ConfigFile Implementation *****************************/
 type ConfigFile interface {
     toString() string
@@ -101,8 +99,8 @@ type MainEntry struct {
     extraArgs string
 }
 
-func (m MainEntry) toShell() string {
-    return strings.Join([]string{m.javaClass, m.extraArgs}, SHELL_SEPARATOR)
+func (m MainEntry) toShell() []string {
+    return []string{m.javaClass, m.extraArgs}
 }
 
 type Job struct {
@@ -116,7 +114,7 @@ type Job struct {
     mainEntry     MainEntry
 }
 
-func (job Job) toShell() string {
+func (job Job) toShell() []string {
     var buf []string
     for i := range job.jvmOpts {
         jvmOpt := strings.TrimSpace(job.jvmOpts[i])
@@ -141,8 +139,10 @@ func (job Job) toShell() string {
     buf = append(buf, "-cp")
     buf = append(buf, strings.Join(classpath, ":"))
 
-    buf = append(buf, job.mainEntry.toShell())
-    return strings.Join(buf, SHELL_SEPARATOR)
+    for _, s := range job.mainEntry.toShell() {
+        buf = append(buf, s)
+    }
+    return buf
 }
 
 type ServiceConfig struct {
@@ -154,11 +154,18 @@ type ServiceConfig struct {
     jobs          map[string]Job
 }
 
-func readYamlConfig(yamlCfgPath string) ([]string, error) {
+func readYamlConfig(yamlCfgPath string, e *EnvVariables) ([]string, error) {
     data, err := ioutil.ReadFile(yamlCfgPath)
     if err != nil {
         return []string{}, err
     }
+    // Render the template
+    dataStr, err2 := e.RenderTemplate(string(data))
+    if err2 != nil {
+        return []string{}, err2
+    }
+    data = []byte(dataStr)
+
     cfgMap := make(map[interface{}]interface{})
     if err := yaml.Unmarshal(data, &cfgMap); err != nil {
         return []string{}, err
@@ -171,7 +178,7 @@ func readYamlConfig(yamlCfgPath string) ([]string, error) {
         if reflect.TypeOf(baseCfg).Kind() != reflect.String {
             return []string{}, fmt.Errorf("base configuration path is not a string: %v", baseCfg)
         }
-        baseConfigs, err2 := readYamlConfig(baseCfg.(string))
+        baseConfigs, err2 := readYamlConfig(baseCfg.(string), e)
         if err2 != nil {
             return []string{}, err2
         }
@@ -313,11 +320,11 @@ func mergeMultipleYamlConfig(yamlConfigs []string) (map[interface{}]interface{},
     return ret, nil
 }
 
-func LoadServiceConfig(yamlCfgPath string) (*ServiceConfig, error) {
-    if cfgs, err := readYamlConfig(yamlCfgPath); err != nil {
+func LoadServiceConfig(yamlCfgPath string, e *EnvVariables) (*ServiceConfig, error) {
+    if cfgContents, err := readYamlConfig(yamlCfgPath, e); err != nil {
         return nil, err
     }else {
-        return NewServiceConfig(cfgs)
+        return NewServiceConfig(cfgContents)
     }
 }
 
@@ -387,14 +394,16 @@ func NewServiceConfig(yamlConfigs []string) (*ServiceConfig, error) {
     return svCfg, nil
 }
 
-func (s *ServiceConfig) toShell(jobKey string) string {
+func (s *ServiceConfig) toShell(jobKey string) []string {
     if _, ok := s.jobs[jobKey]; !ok {
-        return ""
+        return []string{}
     }
     var buf []string
     buf = append(buf, s.javaHome)
-    buf = append(buf, s.jobs[jobKey].toShell())
-    return strings.Join(buf, SHELL_SEPARATOR)
+    for _, arg := range s.jobs[jobKey].toShell() {
+        buf = append(buf, arg)
+    }
+    return buf
 }
 
 func MergeYamlMap(m1 map[interface{}]interface{}, m2 map[interface{}]interface{}) map[interface{}]interface{} {

@@ -5,6 +5,6 @@
 /.idea/
 /logs
 *.iws
-*.iml
 *.swp
 *.swo
+*.db

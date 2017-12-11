@@ -5,6 +5,7 @@ import (
     "reflect"
     "fmt"
     "sort"
+    "github.com/qiniu/log"
 )
 
 func TestConfigFile(t *testing.T) {
@@ -140,7 +141,7 @@ func TestMergeYamlMap(t *testing.T) {
 
 func assertSliceEquals(a, b []string, key string) error {
     if len(a) != len(b) {
-        return fmt.Errorf("%s: %v != %v", key, a, b)
+        return fmt.Errorf("%s length not equals(%d != %d): %v != %v", key, len(a), len(b), a, b)
     }
     sort.Strings(a)
     sort.Strings(b)
@@ -168,7 +169,7 @@ func assertJobEquals(a, b Job) error {
     if err := assertSliceEquals(a.classpath, b.classpath, "classpath"); err != nil {
         return err
     }
-    if a.mainEntry.toShell() != b.mainEntry.toShell() {
+    if err := assertSliceEquals(a.mainEntry.toShell(), b.mainEntry.toShell(), "mainEntry"); err != nil {
         return fmt.Errorf("%s != %s", a.mainEntry.toShell(), b.mainEntry.toShell())
     }
     return nil
@@ -373,9 +374,33 @@ func TestToShell(t *testing.T) {
         t.Fatal(err)
     }
 
-    shell := s.toShell("zookeeper")
-    expected := "/usr/bin/java -Djava.log.dir=. -cp ./* org.apache.zk.QuorumPeerMain conf/zoo_sample.cfg"
-    if shell != expected {
-        t.Errorf("%s != %s", shell, expected)
+    expected := []string{
+        "/usr/bin/java",
+        "-Djava.log.dir=.",
+        "-cp",
+        "./*",
+        "org.apache.zk.QuorumPeerMain",
+        "conf/zoo_sample.cfg",
     }
+    if err := assertSliceEquals(s.toShell("zookeeper"), expected, "Shell"); err != nil {
+        t.Errorf("%v", err)
+    }
+}
+
+func TestLoadServiceConfig(t *testing.T) {
+    e := &EnvVariables{
+        JavaHome:"/usr/bin/java",
+        ConfRootDir:"../",
+        PkgRootDir:"/Users/openinx/test/zk/pkg/zookeeper-3.4.11",
+        PkgConfDir:"/Users/openinx/test/zk/conf",
+        PkgDataDir:"/Users/openinx/test/zk/data",
+        PkgLogDir:"/Users/openinx/test/zk/log",
+        PkgStdoutDir:"/Users/openinx/test/zk/stdout",
+    }
+
+    s, err := LoadServiceConfig("/Users/openinx/gopath/src/gitlab.com/openinx/haloop/conf/zookeeper/test-cluster.yaml", e)
+    if err != nil {
+        t.Errorf("Loading service config error: %s", err)
+    }
+    log.Info(s.toShell("zookeeper"))
 }

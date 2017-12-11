@@ -1,4 +1,4 @@
-base: /Users/openinx/gopath/src/gitlab.com/openinx/haloop/conf/zookeeper/common/common.yaml
+base: {{.ConfRootDir}}/conf/zookeeper/common/common.yaml
 
 cluster:
   cluster_name: test-cluster
