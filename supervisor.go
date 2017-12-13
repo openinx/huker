@@ -27,7 +27,7 @@ const (
 	PKG_DIR       = "pkg"
 	CONF_DIR      = "conf"
 	STDOUT_DIR    = "stdout"
-	StatusRuning  = "Runing"
+	StatusRunning = "Running"
 	StatusStopped = "Stopped"
 )
 
@@ -36,12 +36,15 @@ func progDirs() []string {
 }
 
 type Supervisor struct {
-	rootDir  string
-	port     int
-	dbFile   string
-	programs []Program
+	rootDir       string
+	port          int
+	dbFile        string
+	programs      []Program
+	quit          chan struct{}
+	refreshTicker *time.Ticker
 }
 
+// TODO lock for modification of status
 type Program struct {
 	Name       string            `json:"name"`
 	Job        string            `json:"job"`
@@ -56,27 +59,30 @@ type Program struct {
 }
 
 func (p *Program) bootstrap(s *Supervisor) error {
-	proRootDir := path.Join(s.rootDir, p.Name)
+	jobRootDir := path.Join(s.rootDir, p.Name)
 
 	// step.0 prev-check
-	if relDir, err := filepath.Rel(s.rootDir, proRootDir); err != nil {
+	if relDir, err := filepath.Rel(s.rootDir, jobRootDir); err != nil {
 		return err
 	} else if strings.Contains(relDir, "..") || strings.Contains(relDir, ".") {
-		return errors.Errorf("Permission denied, mkdir %s", proRootDir)
+		return errors.Errorf("Permission denied, mkdir %s", jobRootDir)
+	}
+	if _, err := os.Stat(jobRootDir); os.IsExist(err) {
+		return errors.Errorf("%s is already exists, cleanup it first please.", jobRootDir)
 	}
 
 	// step.1 create directories recursively
-	if err := os.MkdirAll(proRootDir, 0755); err != nil {
+	if err := os.MkdirAll(jobRootDir, 0755); err != nil {
 		return err
 	}
 	for _, sub := range progDirs() {
-		if err := os.MkdirAll(path.Join(proRootDir, sub), 0755); err != nil {
+		if err := os.MkdirAll(path.Join(jobRootDir, sub), 0755); err != nil {
 			return err
 		}
 	}
 
 	// step.2 download the package
-	pkgFilePath := path.Join(proRootDir, PKG_DIR, p.PkgName)
+	pkgFilePath := path.Join(jobRootDir, PKG_DIR, p.PkgName)
 	resp, err := http.Get(p.PkgAddress)
 	if err != nil {
 		log.Errorf("Downloading package failed. package : %s, err: %s", p.PkgAddress, err.Error())
@@ -99,7 +105,7 @@ func (p *Program) bootstrap(s *Supervisor) error {
 	}
 
 	// step.4 extract package
-	tarCmd := []string{"tar", "xzvf", pkgFilePath, "-C", path.Join(proRootDir, PKG_DIR)}
+	tarCmd := []string{"tar", "xzvf", pkgFilePath, "-C", path.Join(jobRootDir, PKG_DIR)}
 	cmd := exec.Command(tarCmd[0], tarCmd[1:]...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
@@ -111,8 +117,8 @@ func (p *Program) bootstrap(s *Supervisor) error {
 
 	// step.5 dump configuration files
 	for fname, content := range p.Configs {
-		fpath := path.Join(proRootDir, CONF_DIR, fname)
-		out, err := os.Create(fpath)
+		cfgPath := path.Join(jobRootDir, CONF_DIR, fname)
+		out, err := os.Create(cfgPath)
 		if err != nil {
 			log.Errorf("save configuration file error: %v", err)
 			return err
@@ -122,16 +128,8 @@ func (p *Program) bootstrap(s *Supervisor) error {
 	}
 
 	// step.6 start the job
-	cmd = exec.Command(p.Bin, p.Args...)
-	stdout.Reset()
-	stderr.Reset()
-	cmd.Stdout, cmd.Stderr = &stdout, &stderr
-	if err := cmd.Run(); err != nil {
-		log.Errorf("exec cmd failed. [cmd: %s %s], [stdout: %s], [stderr: %s]",
-			p.Bin, strings.Join(p.Args, " "), stdout.String(), stderr.String())
+	if err := p.start(s); err != nil {
 		return err
-	} else {
-		p.PID = cmd.Process.Pid
 	}
 
 	// step.7 update supervisor db file
@@ -142,25 +140,36 @@ func (p *Program) bootstrap(s *Supervisor) error {
 	return nil
 }
 
+// TODO pipe stdout & stderr into pkg_root_dir/stdout directories.
 func (p *Program) start(s *Supervisor) error {
 	if isProcessOK(p.PID) {
-		return errors.Errorf("Process %d is running.", p.PID)
+		return errors.Errorf("Process %d is already running.", p.PID)
 	}
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(p.Bin, p.Args...)
 	stdout.Reset()
 	stderr.Reset()
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
-	if err := cmd.Run(); err != nil {
-		// TODO should not wait it complete.
-		log.Errorf("exec cmd failed. [cmd: %s %s], [stdout: %s], [stderr: %s]",
-			p.Bin, strings.Join(p.Args, " "), stdout.String(), stderr.String())
-		return err
+
+	go func() {
+		if err := cmd.Start(); err != nil {
+			log.Errorf("Start job failed. [cmd: %s %s], [stdout: %s], [stderr: %s], err: %v",
+				p.Bin, strings.Join(p.Args, " "), stdout.String(), stderr.String(), err)
+		}
+		if err := cmd.Wait(); err != nil {
+			log.Errorf("Wait job failed. [cmd: %s %s], [stdout: %s], [stderr: %s], err: %v",
+				p.Bin, strings.Join(p.Args, " "), stdout.String(), stderr.String(), err)
+		}
+	}()
+	time.Sleep(time.Second * 1)
+
+	p.PID = cmd.Process.Pid
+	if isProcessOK(cmd.Process.Pid) {
+		p.Status = StatusRunning
+		return nil
 	} else {
-		p.Status = StatusRuning
-		p.PID = cmd.Process.Pid
+		return errors.Errorf("Start job failed.")
 	}
-	return nil
 }
 
 func (p *Program) stop(s *Supervisor) error {
@@ -173,8 +182,7 @@ func (p *Program) stop(s *Supervisor) error {
 		return err
 	}
 	// check the pid in the final
-	process, err = os.FindProcess(p.PID)
-	if err == nil {
+	if isProcessOK(p.PID) {
 		return errors.Errorf("Failed to stop the process %d, still running.", p.PID)
 	}
 	p.Status = StatusStopped
@@ -182,8 +190,9 @@ func (p *Program) stop(s *Supervisor) error {
 }
 
 func (p *Program) restart(s *Supervisor) error {
-	if err := p.stop(s); err != nil {
-		return err
+	p.stop(s)
+	if p.Status != StatusStopped {
+		return errors.Errorf("Failed to stop the process %d, still running.", p.PID)
 	}
 	return p.start(s)
 }
@@ -208,7 +217,7 @@ func (s *Supervisor) hIndex(w http.ResponseWriter, r *http.Request) {
 			<td>{{ .Name }}</td>
 			<td>{{ .Job }}</td>
 			<td>{{ .PID }}</td>
-			<td>Running</td>
+			<td>{{ .Status }}</td>
 		</tr>
 		{{ end }}
 	</table>
@@ -264,6 +273,13 @@ func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 		w.Write(renderResp(err))
 		return
 	}
+	for _, p := range s.programs {
+		if prog.Name == p.Name && prog.Job == p.Job {
+			w.Write(renderResp(errors.Errorf("Job %s.%s already exists.", prog.Name, prog.Job)))
+			return
+		}
+	}
+
 	if err = prog.bootstrap(s); err != nil {
 		w.Write(renderResp(err))
 		return
@@ -322,47 +338,35 @@ func (s *Supervisor) hStartProgram(w http.ResponseWriter, r *http.Request) {
 
 // Be Careful: Forbidden to let user delete the root.
 func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
-
-	for _, prog := range s.programs {
-		if prog.Name == name {
-			err := errors.Errorf("Failed to cleanup, job %s.%s is still running.", prog.Name, prog.Job)
-			w.Write(renderResp(err))
-			return
+	s.handleProgram(w, r, func(p *Program) error {
+		jobRootDir := path.Join(s.rootDir, p.Name, p.Job)
+		// step.1 check the job root dir
+		if _, err := os.Stat(jobRootDir); os.IsNotExist(err) {
+			return errors.Errorf("Root dir of job %s does not exist.", jobRootDir)
 		}
-	}
-
-	rootDir := path.Join(s.rootDir, name)
-	if _, err := os.Stat(rootDir); os.IsNotExist(err) {
-		w.Write(renderResp(errors.Errorf("%s does not exist.", rootDir)))
-		return
-	}
-
-	relDir, err := filepath.Rel(s.rootDir, rootDir)
-	if err != nil {
-		w.Write(renderResp(err))
-		return
-	}
-	if strings.Contains(relDir, "..") || strings.Contains(relDir, ".") {
-		w.Write(renderResp(errors.Errorf("Cann't cleanup the directory: %s", rootDir)))
-		return
-	}
-	targetPath := path.Join(s.rootDir, fmt.Sprintf(".trash.%s.%d", name, int32(time.Now().Unix())))
-	if err := os.Rename(rootDir, path.Join(s.rootDir, targetPath)); err != nil {
-		w.Write(renderResp(err))
-		return
-	}
-
-	// Remove the program from cache.
-	var programs []Program
-	for _, prog := range s.programs {
-		if prog.Name != name {
-			programs = append(programs, prog)
+		relDir, err := filepath.Rel(s.rootDir, jobRootDir)
+		if err != nil {
+			return err
 		}
-	}
-	// Update the supervisor db file.
-	s.programs = programs
-	w.Write(renderResp(s.dumpSupervisorDB()))
+		if strings.Contains(relDir, "..") || strings.Contains(relDir, ".") {
+			return errors.Errorf("Cann't cleanup the directory: %s", jobRootDir)
+		}
+
+		// step.2 rename the job root dir into .trash
+		targetPath := path.Join(s.rootDir, p.Name, fmt.Sprintf(".trash.%s.%d", p.Job, int32(time.Now().Unix())))
+		if err := os.Rename(jobRootDir, targetPath); err != nil {
+			return err
+		}
+
+		// step.3 remove the program from cache.
+		var programs []Program
+		for _, prog := range s.programs {
+			if prog.Name != p.Name && prog.Job != p.Job {
+				programs = append(programs, prog)
+			}
+		}
+		return nil
+	})
 }
 
 func (s *Supervisor) hRollingUpdateProgram(w http.ResponseWriter, r *http.Request) {
@@ -434,14 +438,41 @@ func (s *Supervisor) dumpSupervisorDB() error {
 
 func NewSupervisor(rootDir string, port int, supervisorDB string) (*Supervisor, error) {
 	s := &Supervisor{
-		rootDir:  rootDir,
-		port:     port,
-		dbFile:   supervisorDB,
-		programs: []Program{},
+		rootDir:       rootDir,
+		port:          port,
+		dbFile:        supervisorDB,
+		programs:      []Program{},
+		quit:          make(chan struct{}),
+		refreshTicker: time.NewTicker(1 * time.Second),
 	}
+
+	// Load supervisor db
 	if err := s.loadSupervisorDB(); err != nil {
 		return nil, err
 	}
+
+	// Start the period refresh task
+	go func() {
+		for {
+			select {
+			case <-s.refreshTicker.C:
+				log.Infof("Start to refresh the status of jobs...")
+				for i := range s.programs {
+					if isProcessOK(s.programs[i].PID) {
+						s.programs[i].Status = StatusRunning
+					} else {
+						s.programs[i].Status = StatusStopped
+					}
+				}
+				if err := s.dumpSupervisorDB(); err != nil {
+					log.Warnf("Failed to refresh program's status, dump supervisor db error: %v", err)
+				}
+			case <-s.quit:
+				s.refreshTicker.Stop()
+				return
+			}
+		}
+	}()
 	return s, nil
 }
 
@@ -454,7 +485,7 @@ func (s *Supervisor) Start() {
 	r.HandleFunc("/api/programs/{name}/{job}/start", s.hStartProgram).Methods("POST")
 	r.HandleFunc("/api/programs/{name}/{job}", s.hRollingUpdateProgram).Methods("PUT")
 	r.HandleFunc("/api/programs/{name}/{job}/restart", s.hRestartProgram).Methods("PUT")
-	r.HandleFunc("/api/programs/{name}", s.hCleanupProgram).Methods("DELETE")
+	r.HandleFunc("/api/programs/{name}/{job}", s.hCleanupProgram).Methods("DELETE")
 	r.HandleFunc("/api/programs/{name}/{job}/stop", s.hStopProgram).Methods("POST")
 	http.Handle("/", r)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil); err != nil {

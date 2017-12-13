@@ -12,10 +12,10 @@ import (
 func TestSupervisorBootstrap(t *testing.T) {
 
 	prog := &Program{
-		Name: "c3tst-xiaomi",
-		Job:  "zookeeper",
-		Bin:  "ls",
-		Args: []string{"-a", "-l"},
+		Name: "tst-zk",
+		Job:  "zookeeper.4",
+		Bin:  "python",
+		Args: []string{"-m", "SimpleHTTPServer"},
 		Configs: map[string]string{
 			"a": "b", "c": "d",
 		},
