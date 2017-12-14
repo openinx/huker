@@ -7,5 +7,5 @@ import (
 
 func main() {
 	log.Infof("Start package manager server, listen port 4000 ...")
-	huker.StartPkgManager(":4000", "./conf/pkg.yaml", "./lib")
+	huker.StartPkgManager(":4000", "./testdata/conf/pkg.yaml", "./testdata/lib")
 }

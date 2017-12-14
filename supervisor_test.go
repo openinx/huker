@@ -1,46 +1,88 @@
 package huker
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"testing"
+	"time"
 )
 
-func TestSupervisorBootstrap(t *testing.T) {
+type MiniHuker struct {
+	s   *Supervisor
+	cli *SupervisorCli
+}
+
+func NewMiniHuker() *MiniHuker {
+	rootDir := fmt.Sprintf("/tmp/huker/%d", int32(time.Now().Unix()))
+	m := &MiniHuker{
+		s: &Supervisor{
+			rootDir: rootDir,
+			port:    9743,
+			dbFile:  rootDir + "/supervisor.db",
+		},
+		cli: &SupervisorCli{
+			serverAddr: "http://127.0.0.1:9743",
+		},
+	}
+	return m
+}
+
+func (m *MiniHuker) start() {
+	m.s.Start()
+}
+
+func TestMiniHuker(t *testing.T) {
+	m := NewMiniHuker()
+	go func() {
+		m.start()
+	}()
+	go func() {
+		StartPkgManager(":4000", "./testdata/conf/pkg.yaml", "./testdata/lib")
+	}()
+
+	time.Sleep(1 * time.Second)
 
 	prog := &Program{
-		Name: "tst-zk",
-		Job:  "zookeeper.4",
+		Name: "tst-py",
+		Job:  "http-server.4",
 		Bin:  "python",
 		Args: []string{"-m", "SimpleHTTPServer"},
 		Configs: map[string]string{
 			"a": "b", "c": "d",
 		},
-		PkgAddress: "http://127.0.0.1:4000/zookeeper-3.4.11.tar.gz",
-		PkgName:    "zookeeper-3.4.11.tar.gz",
-		PkgMD5Sum:  "55aec6196ed9fa4c451cb5ae4a1f42d8",
+		PkgAddress: "http://127.0.0.1:4000/test.tar.gz",
+		PkgName:    "test.tar.gz",
+		PkgMD5Sum:  "f77f526dcfbdbfb2dd942b6628f4c0ab",
 	}
 
-	data, err1 := json.Marshal(prog)
-	if err1 != nil {
-		t.Errorf("%v", err1)
+	if err := m.cli.bootstrap(prog); err != nil {
+		t.Fatalf("bootstrap failed: %v", err)
 	}
 
-	buf := bytes.NewBuffer(data)
-
-	fmt.Println(string(data))
-	resp, err := http.Post("http://127.0.0.1:9001/api/programs", "type/json", buf)
-	if err != nil {
-		t.Errorf("%v", err)
+	if p, err := m.cli.show(prog.Name, prog.Job); err != nil {
+		t.Fatalf("show process failed: %v", err)
+	} else if p.Status != StatusRunning {
+		t.Fatalf("process is not running, cause: %v", err)
 	}
-	data, _ = ioutil.ReadAll(resp.Body)
 
-	respMap := make(map[string]interface{})
-	json.Unmarshal(data, &respMap)
+	if err := m.cli.stop(prog.Name, prog.Job); err != nil {
+		t.Fatalf("stop process failed: %v", err)
+	}
 
-	fmt.Printf("%v\n", respMap["status"])
-	fmt.Printf("%s\n", respMap["message"])
+	if err := m.cli.restart(prog.Name, prog.Job); err != nil {
+		t.Fatalf("restart process failed: %v", err)
+	}
+
+	if p, err := m.cli.show(prog.Name, prog.Job); err != nil {
+		t.Fatalf("show process failed: %v", err)
+	} else if p.Status != StatusRunning {
+		t.Fatalf("process is not running, cause: %v", err)
+	}
+
+	if err := m.cli.stop(prog.Name, prog.Job); err != nil {
+		t.Fatalf("stop process failed: %v", err)
+	}
+
+	if err := m.cli.cleanup(prog.Name, prog.Job); err != nil {
+		t.Fatalf("cleanup program faile: %v", err)
+	}
 }

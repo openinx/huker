@@ -20,15 +20,16 @@ import (
 )
 
 const (
-	CODE_OK       = 0
-	CODE_FAIL     = 1
-	DATA_DIR      = "data"
-	LOG_DIR       = "log"
-	PKG_DIR       = "pkg"
-	CONF_DIR      = "conf"
-	STDOUT_DIR    = "stdout"
-	StatusRunning = "Running"
-	StatusStopped = "Stopped"
+	CODE_OK         = 0
+	CODE_FAIL       = 1
+	MESSAGE_SUCCESS = "success"
+	DATA_DIR        = "data"
+	LOG_DIR         = "log"
+	PKG_DIR         = "pkg"
+	CONF_DIR        = "conf"
+	STDOUT_DIR      = "stdout"
+	StatusRunning   = "Running"
+	StatusStopped   = "Stopped"
 )
 
 func progDirs() []string {
@@ -59,12 +60,12 @@ type Program struct {
 }
 
 func (p *Program) bootstrap(s *Supervisor) error {
-	jobRootDir := path.Join(s.rootDir, p.Name)
+	jobRootDir := path.Join(s.rootDir, p.Name, p.Job)
 
 	// step.0 prev-check
 	if relDir, err := filepath.Rel(s.rootDir, jobRootDir); err != nil {
 		return err
-	} else if strings.Contains(relDir, "..") || strings.Contains(relDir, ".") {
+	} else if strings.Contains(relDir, "..") || s.rootDir == jobRootDir {
 		return errors.Errorf("Permission denied, mkdir %s", jobRootDir)
 	}
 	if _, err := os.Stat(jobRootDir); os.IsExist(err) {
@@ -89,6 +90,11 @@ func (p *Program) bootstrap(s *Supervisor) error {
 		return err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		log.Errorf("Downloading package failed. package : %s, err: %s", p.PkgAddress, resp.Status)
+		data, _ := ioutil.ReadAll(resp.Body)
+		return errors.Errorf("%s", string(data))
+	}
 	out, err := os.Create(pkgFilePath)
 	if err != nil {
 		log.Errorf("Create package file error: %v", err)
@@ -181,6 +187,7 @@ func (p *Program) stop(s *Supervisor) error {
 	if err != nil {
 		return err
 	}
+	time.Sleep(1 * time.Second)
 	// check the pid in the final
 	if isProcessOK(p.PID) {
 		return errors.Errorf("Failed to stop the process %d, still running.", p.PID)
@@ -191,10 +198,12 @@ func (p *Program) stop(s *Supervisor) error {
 
 func (p *Program) restart(s *Supervisor) error {
 	p.stop(s)
-	if p.Status != StatusStopped {
+	if isProcessOK(p.PID) {
+		// TODO check process status
 		return errors.Errorf("Failed to stop the process %d, still running.", p.PID)
 	}
-	return p.start(s)
+	err := p.start(s)
+	return err
 }
 
 func (p *Program) rollingUpdate(s *Supervisor) error {
@@ -245,7 +254,7 @@ func (s *Supervisor) hGetProgramList(w http.ResponseWriter, r *http.Request) {
 
 func renderResp(err error) []byte {
 	code := CODE_OK
-	message := "success"
+	message := MESSAGE_SUCCESS
 	if err != nil {
 		code = CODE_FAIL
 		message = fmt.Sprintf("error: %v", err)
@@ -305,6 +314,13 @@ func (s *Supervisor) handleProgram(w http.ResponseWriter, r *http.Request, handl
 			w.Write(renderResp(err))
 			return
 		}
+		// Keep the latest version of program save in supervisor.
+		// TODO check the similar case.
+		for i := range s.programs {
+			if s.programs[i].Name == prog.Name && s.programs[i].Job == prog.Job {
+				s.programs[i] = *prog
+			}
+		}
 		if err := s.dumpSupervisorDB(); err != nil {
 			w.Write(renderResp(err))
 			return
@@ -348,8 +364,8 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return err
 		}
-		if strings.Contains(relDir, "..") || strings.Contains(relDir, ".") {
-			return errors.Errorf("Cann't cleanup the directory: %s", jobRootDir)
+		if strings.Contains(relDir, "..") || s.rootDir == jobRootDir {
+			return errors.Errorf("Cann't cleanup the directory %s, Permission Denied", jobRootDir)
 		}
 
 		// step.2 rename the job root dir into .trash
@@ -456,7 +472,6 @@ func NewSupervisor(rootDir string, port int, supervisorDB string) (*Supervisor, 
 		for {
 			select {
 			case <-s.refreshTicker.C:
-				log.Infof("Start to refresh the status of jobs...")
 				for i := range s.programs {
 					if isProcessOK(s.programs[i].PID) {
 						s.programs[i].Status = StatusRunning
@@ -482,13 +497,16 @@ func (s *Supervisor) Start() {
 	r.HandleFunc("/api/programs", s.hGetProgramList).Methods("GET")
 	r.HandleFunc("/api/programs", s.hBootstrapProgram).Methods("POST")
 	r.HandleFunc("/api/programs/{name}/{job}", s.hShowProgram).Methods("GET")
-	r.HandleFunc("/api/programs/{name}/{job}/start", s.hStartProgram).Methods("POST")
-	r.HandleFunc("/api/programs/{name}/{job}", s.hRollingUpdateProgram).Methods("PUT")
+	r.HandleFunc("/api/programs/{name}/{job}/start", s.hStartProgram).Methods("PUT")
+	r.HandleFunc("/api/programs/rolling_update", s.hRollingUpdateProgram).Methods("POST")
 	r.HandleFunc("/api/programs/{name}/{job}/restart", s.hRestartProgram).Methods("PUT")
 	r.HandleFunc("/api/programs/{name}/{job}", s.hCleanupProgram).Methods("DELETE")
-	r.HandleFunc("/api/programs/{name}/{job}/stop", s.hStopProgram).Methods("POST")
-	http.Handle("/", r)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil); err != nil {
+	r.HandleFunc("/api/programs/{name}/{job}/stop", s.hStopProgram).Methods("PUT")
+	srv := http.Server{
+		Addr:    fmt.Sprintf(":%d", s.port),
+		Handler: r,
+	}
+	if err := srv.ListenAndServe(); err != nil {
 		log.Errorf("%v", err)
 	}
 }

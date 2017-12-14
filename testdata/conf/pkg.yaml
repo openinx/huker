@@ -1,0 +1,6 @@
+test.tar.gz:
+  version: 2.6.5
+  date: 2017-06-20 10:21
+  md5sum: f77f526dcfbdbfb2dd942b6628f4c0ab
+  size: 125
+  link: http://github.com/test.tar.gz

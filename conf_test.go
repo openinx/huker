@@ -387,7 +387,7 @@ func TestToShell(t *testing.T) {
 func TestLoadServiceConfig(t *testing.T) {
 	e := &EnvVariables{
 		JavaHome:     "/usr/bin/java",
-		ConfRootDir:  "../",
+		ConfRootDir:  ".",
 		PkgRootDir:   "/Users/openinx/test/zk/pkg/zookeeper-3.4.11",
 		PkgConfDir:   "/Users/openinx/test/zk/conf",
 		PkgDataDir:   "/Users/openinx/test/zk/data",
@@ -395,7 +395,7 @@ func TestLoadServiceConfig(t *testing.T) {
 		PkgStdoutDir: "/Users/openinx/test/zk/stdout",
 	}
 
-	s, err := LoadServiceConfig("/Users/openinx/gopath/src/gitlab.com/openinx/haloop/conf/zookeeper/test-cluster.yaml", e)
+	s, err := LoadServiceConfig("/Users/openinx/gopath/src/github.com/openinx/huker/conf/zookeeper/test-cluster.yaml", e)
 	if err != nil {
 		t.Errorf("Loading service config error: %s", err)
 	}

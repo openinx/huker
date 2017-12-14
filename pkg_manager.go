@@ -170,5 +170,7 @@ func StartPkgManager(listenAddress, pkgConf, pkgRootDir string) {
 		}
 	})
 
-	http.ListenAndServe(listenAddress, nil)
+	if err := http.ListenAndServe(listenAddress, nil); err != nil {
+		log.Errorf("Start listen %s failed. error: %v", err)
+	}
 }
