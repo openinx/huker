@@ -2,6 +2,7 @@ package huker
 
 import (
 	"fmt"
+	"github.com/qiniu/log"
 	"testing"
 	"time"
 )
@@ -9,6 +10,7 @@ import (
 type MiniHuker struct {
 	s   *Supervisor
 	cli *SupervisorCli
+	p   *PackageServer
 }
 
 func NewMiniHuker() *MiniHuker {
@@ -23,22 +25,38 @@ func NewMiniHuker() *MiniHuker {
 			serverAddr: "http://127.0.0.1:9743",
 		},
 	}
+
+	// Initialize the package server.
+	p, err := NewPackageServer("0.0.0.0:4000", "./testdata/lib", "./testdata/conf/pkg.yaml")
+	if err != nil {
+		panic(err)
+	}
+	m.p = p
+
 	return m
 }
 
 func (m *MiniHuker) start() {
-	m.s.Start()
+	// Start supervisor server
+	go func() {
+		if err := m.s.Start(); err != nil {
+			log.Error(err)
+		}
+	}()
+
+	// Start package server
+	go func() {
+		if err := m.p.Start(); err != nil {
+			log.Error(err)
+		}
+	}()
 }
 
 func TestMiniHuker(t *testing.T) {
 	m := NewMiniHuker()
-	go func() {
-		m.start()
-	}()
-	go func() {
-		StartPkgManager(":4000", "./testdata/conf/pkg.yaml", "./testdata/lib")
-	}()
 
+	// Wait supervisor server and package server start finished.
+	m.start()
 	time.Sleep(1 * time.Second)
 
 	prog := &Program{

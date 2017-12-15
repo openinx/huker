@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/juju/errors"
 	"github.com/qiniu/log"
 	"html/template"
 	"io"
@@ -66,10 +65,10 @@ func (p *Program) bootstrap(s *Supervisor) error {
 	if relDir, err := filepath.Rel(s.rootDir, jobRootDir); err != nil {
 		return err
 	} else if strings.Contains(relDir, "..") || s.rootDir == jobRootDir {
-		return errors.Errorf("Permission denied, mkdir %s", jobRootDir)
+		return fmt.Errorf("Permission denied, mkdir %s", jobRootDir)
 	}
 	if _, err := os.Stat(jobRootDir); os.IsExist(err) {
-		return errors.Errorf("%s is already exists, cleanup it first please.", jobRootDir)
+		return fmt.Errorf("%s is already exists, cleanup it first please.", jobRootDir)
 	}
 
 	// step.1 create directories recursively
@@ -93,7 +92,7 @@ func (p *Program) bootstrap(s *Supervisor) error {
 	if resp.StatusCode >= 400 {
 		log.Errorf("Downloading package failed. package : %s, err: %s", p.PkgAddress, resp.Status)
 		data, _ := ioutil.ReadAll(resp.Body)
-		return errors.Errorf("%s", string(data))
+		return fmt.Errorf("%s", string(data))
 	}
 	out, err := os.Create(pkgFilePath)
 	if err != nil {
@@ -104,8 +103,12 @@ func (p *Program) bootstrap(s *Supervisor) error {
 	io.Copy(out, resp.Body)
 
 	// step.3 verify md5 checksum
-	// TODO reuse those codes with pkg_manager.go
-	md5sum := calcFileMD5Sum(pkgFilePath)
+	// TODO reuse those codes with pkgsrv.go
+	md5sum, md5Err := calcFileMD5Sum(pkgFilePath)
+	if md5Err != nil {
+		log.Errorf("Calculate the md5 checksum of file %s failed, cause: %v", pkgFilePath, md5Err)
+		return md5Err
+	}
 	if md5sum != p.PkgMD5Sum {
 		return fmt.Errorf("md5sum mismatch, %s != %s, package: %s", md5sum, p.PkgMD5Sum, p.PkgName)
 	}
@@ -149,7 +152,7 @@ func (p *Program) bootstrap(s *Supervisor) error {
 // TODO pipe stdout & stderr into pkg_root_dir/stdout directories.
 func (p *Program) start(s *Supervisor) error {
 	if isProcessOK(p.PID) {
-		return errors.Errorf("Process %d is already running.", p.PID)
+		return fmt.Errorf("Process %d is already running.", p.PID)
 	}
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(p.Bin, p.Args...)
@@ -174,7 +177,7 @@ func (p *Program) start(s *Supervisor) error {
 		p.Status = StatusRunning
 		return nil
 	} else {
-		return errors.Errorf("Start job failed.")
+		return fmt.Errorf("Start job failed.")
 	}
 }
 
@@ -190,7 +193,7 @@ func (p *Program) stop(s *Supervisor) error {
 	time.Sleep(1 * time.Second)
 	// check the pid in the final
 	if isProcessOK(p.PID) {
-		return errors.Errorf("Failed to stop the process %d, still running.", p.PID)
+		return fmt.Errorf("Failed to stop the process %d, still running.", p.PID)
 	}
 	p.Status = StatusStopped
 	return nil
@@ -200,7 +203,7 @@ func (p *Program) restart(s *Supervisor) error {
 	p.stop(s)
 	if isProcessOK(p.PID) {
 		// TODO check process status
-		return errors.Errorf("Failed to stop the process %d, still running.", p.PID)
+		return fmt.Errorf("Failed to stop the process %d, still running.", p.PID)
 	}
 	err := p.start(s)
 	return err
@@ -284,7 +287,7 @@ func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, p := range s.programs {
 		if prog.Name == p.Name && prog.Job == p.Job {
-			w.Write(renderResp(errors.Errorf("Job %s.%s already exists.", prog.Name, prog.Job)))
+			w.Write(renderResp(fmt.Errorf("Job %s.%s already exists.", prog.Name, prog.Job)))
 			return
 		}
 	}
@@ -358,14 +361,14 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 		jobRootDir := path.Join(s.rootDir, p.Name, p.Job)
 		// step.1 check the job root dir
 		if _, err := os.Stat(jobRootDir); os.IsNotExist(err) {
-			return errors.Errorf("Root dir of job %s does not exist.", jobRootDir)
+			return fmt.Errorf("Root dir of job %s does not exist.", jobRootDir)
 		}
 		relDir, err := filepath.Rel(s.rootDir, jobRootDir)
 		if err != nil {
 			return err
 		}
 		if strings.Contains(relDir, "..") || s.rootDir == jobRootDir {
-			return errors.Errorf("Cann't cleanup the directory %s, Permission Denied", jobRootDir)
+			return fmt.Errorf("Cann't cleanup the directory %s, Permission Denied", jobRootDir)
 		}
 
 		// step.2 rename the job root dir into .trash
@@ -491,7 +494,7 @@ func NewSupervisor(rootDir string, port int, supervisorDB string) (*Supervisor, 
 	return s, nil
 }
 
-func (s *Supervisor) Start() {
+func (s *Supervisor) Start() error {
 	r := mux.NewRouter()
 	r.HandleFunc("/", s.hIndex)
 	r.HandleFunc("/api/programs", s.hGetProgramList).Methods("GET")
@@ -506,7 +509,5 @@ func (s *Supervisor) Start() {
 		Addr:    fmt.Sprintf(":%d", s.port),
 		Handler: r,
 	}
-	if err := srv.ListenAndServe(); err != nil {
-		log.Errorf("%v", err)
-	}
+	return srv.ListenAndServe()
 }

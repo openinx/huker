@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/juju/errors"
 	"github.com/qiniu/log"
 	"io"
 	"io/ioutil"
@@ -26,7 +25,7 @@ func NewSupervisorCli(serverAddr string) *SupervisorCli {
 func handleResponse(resp *http.Response) ([]byte, error) {
 	if resp.StatusCode >= 400 {
 		data, _ := ioutil.ReadAll(resp.Body)
-		return []byte{}, errors.Errorf("%s, %s", resp.Status, data)
+		return []byte{}, fmt.Errorf("%s, %s", resp.Status, data)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -41,7 +40,7 @@ func handleResponse(resp *http.Response) ([]byte, error) {
 	if _, ok := m["message"]; !ok || (ok && m["message"].(string) == MESSAGE_SUCCESS) {
 		return data, nil
 	}
-	return data, errors.Errorf("%s", string(data))
+	return data, fmt.Errorf("%s", string(data))
 }
 
 func request(method, url string, body io.Reader) ([]byte, error) {
