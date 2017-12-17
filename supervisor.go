@@ -15,6 +15,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -32,7 +33,7 @@ const (
 )
 
 func progDirs() []string {
-	return []string{DATA_DIR, LOG_DIR, PKG_DIR, CONF_DIR, STDOUT_DIR}
+	return []string{DATA_DIR, LOG_DIR, CONF_DIR, STDOUT_DIR}
 }
 
 type Supervisor struct {
@@ -82,7 +83,7 @@ func (p *Program) bootstrap(s *Supervisor) error {
 	}
 
 	// step.2 download the package
-	pkgFilePath := path.Join(jobRootDir, PKG_DIR, p.PkgName)
+	pkgFilePath := path.Join(jobRootDir, STDOUT_DIR, p.PkgName)
 	resp, err := http.Get(p.PkgAddress)
 	if err != nil {
 		log.Errorf("Downloading package failed. package : %s, err: %s", p.PkgAddress, err.Error())
@@ -114,7 +115,7 @@ func (p *Program) bootstrap(s *Supervisor) error {
 	}
 
 	// step.4 extract package
-	tarCmd := []string{"tar", "xzvf", pkgFilePath, "-C", path.Join(jobRootDir, PKG_DIR)}
+	tarCmd := []string{"tar", "xzvf", pkgFilePath, "-C", path.Join(jobRootDir, STDOUT_DIR)}
 	cmd := exec.Command(tarCmd[0], tarCmd[1:]...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
@@ -123,8 +124,24 @@ func (p *Program) bootstrap(s *Supervisor) error {
 			strings.Join(tarCmd, " "), stdout.String(), stderr.String())
 		return err
 	}
+	// step.5 Move all files under <pkgRootDir>/<pkg-prefix-dir> to <pkgRootDir>
+	if idx := strings.LastIndex(p.PkgName, ".tar.gz"); idx >= 0 {
+		pkgRootDir := path.Join(jobRootDir, STDOUT_DIR)
+		pkgPrefixDir := path.Join(pkgRootDir, p.PkgName[0:idx])
+		if _, err := os.Stat(pkgPrefixDir); os.IsNotExist(err) {
+			return fmt.Errorf("%s does not exist, skip to move all files under it to %s", pkgPrefixDir, pkgRootDir)
+		} else {
+			realPkgRootDir := path.Join(jobRootDir, PKG_DIR)
+			if _, err := os.Stat(realPkgRootDir); os.IsExist(err) {
+				os.RemoveAll(realPkgRootDir)
+			}
+			if err := os.Symlink(pkgPrefixDir, realPkgRootDir); err != nil {
+				return err
+			}
+		}
+	}
 
-	// step.5 dump configuration files
+	// step.6 dump configuration files
 	for fname, content := range p.Configs {
 		cfgPath := path.Join(jobRootDir, CONF_DIR, fname)
 		out, err := os.Create(cfgPath)
@@ -136,12 +153,12 @@ func (p *Program) bootstrap(s *Supervisor) error {
 		io.Copy(out, bytes.NewBufferString(content))
 	}
 
-	// step.6 start the job
+	// step.7 start the job
 	if err := p.start(s); err != nil {
 		return err
 	}
 
-	// step.7 update supervisor db file
+	// step.8 update supervisor db file
 	s.programs = append(s.programs, *p)
 	if err := s.dumpSupervisorDB(); err != nil {
 		return err
@@ -156,10 +173,15 @@ func (p *Program) start(s *Supervisor) error {
 	}
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(p.Bin, p.Args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setsid: true,
+		Pgid:   0,
+	}
 	stdout.Reset()
 	stderr.Reset()
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 
+	// TODO handle the ERROR, otherwise cmd.Process will panic because of NULL pointer.
 	go func() {
 		if err := cmd.Start(); err != nil {
 			log.Errorf("Start job failed. [cmd: %s %s], [stdout: %s], [stderr: %s], err: %v",

@@ -4,13 +4,12 @@ import "testing"
 
 func TestEnvVariables_RenderTemplate(t *testing.T) {
 	cases := [][]string{
-		{"{{.JavaHome}}, {{.ConfRootDir}}", "/usr/bin/java, ../"},
+		{"/usr/bin/java, {{.ConfRootDir}}", "/usr/bin/java, ../"},
 		{"{,{{.PkgLogDir}}", "{,/log"},
 		{"{{.PkgDataDir}}", "/data"},
 	}
 
 	e := &EnvVariables{
-		JavaHome:     "/usr/bin/java",
 		ConfRootDir:  "../",
 		PkgRootDir:   "/",
 		PkgConfDir:   "/conf",

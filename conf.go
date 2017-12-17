@@ -145,6 +145,14 @@ func (job Job) toShell() []string {
 	return buf
 }
 
+func (job Job) toConfigMap() map[string]string {
+	cfgMap := make(map[string]string)
+	for cfgKey, cfgFile := range job.configFiles {
+		cfgMap[cfgKey] = cfgFile.toString()
+	}
+	return cfgMap
+}
+
 type ServiceConfig struct {
 	baseConfig    string
 	clusterName   string

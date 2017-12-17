@@ -386,7 +386,6 @@ func TestToShell(t *testing.T) {
 
 func TestLoadServiceConfig(t *testing.T) {
 	e := &EnvVariables{
-		JavaHome:     "/usr/bin/java",
 		ConfRootDir:  ".",
 		PkgRootDir:   "/Users/openinx/test/zk/pkg/zookeeper-3.4.11",
 		PkgConfDir:   "/Users/openinx/test/zk/conf",

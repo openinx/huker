@@ -26,18 +26,14 @@ jobs:
         - zookeeper.maxCnxns=13000
       config:
         zoo.cfg:
-          - data_dir={{.PkgDataDir}}
-          - data_log_dir={{.PkgLogDir}}
-          - client_port=2182
-          - tick_time=2000
-          - max_client_cnxns=60
-          - init_limit=30
-          - sync_limit=20
-          - max_session_timeout=40000
-          - autopurge_snap_retain_count=3
-          - autopurge_purge_interval=1
-          - fsync_warning_threashold_ms=1000
-          - pre_alloc_size=65535
+          - dataDir={{.PkgDataDir}}
+          - dataLogDir={{.PkgLogDir}}
+          - clientPort=2182
+          - tickTime=2000
+          - maxClientCnxns=60
+          - initLimit=30
+          - syncLimit=20
+          - maxSessionTimeout=40000
       classpath:
         - {{.PkgRootDir}}/lib/*
         - {{.PkgRootDir}}/*

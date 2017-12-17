@@ -1,4 +1,4 @@
-base: {{.ConfRootDir}}/conf/zookeeper/common/common.yaml
+base: {{.ConfRootDir}}/zookeeper/common/common.yaml
 
 cluster:
   cluster_name: test-cluster
@@ -10,9 +10,7 @@ jobs:
   zookeeper:
     base_port: 9010
     hosts:
-      - 192.168.0.1
-      - 192.168.0.2
-      - 192.168.0.3
+      - 127.0.0.1
     config:
       zoo.cfg:
         - tick_time=2000

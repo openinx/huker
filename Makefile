@@ -5,16 +5,10 @@ godep:
 
 build:
 	@find . -name '*.go' | xargs gofmt -w
-	@go build -o bin/huker-pkg cmd/huker-pkg.go
-	@go build -o bin/huker-agent cmd/huker-agent.go
+	@go build -o bin/huker cmd/huker.go
 
 test:
 	@go test ./...
-
-agent:
-	@go build -o bin/huker-agent cmd/huker-agent.go
-	@./bin/huker-agent
-
 
 clean:
 	@rm -rf bin/*

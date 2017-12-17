@@ -44,7 +44,10 @@ func handleResponse(resp *http.Response) ([]byte, error) {
 }
 
 func request(method, url string, body io.Reader) ([]byte, error) {
-	req, _ := http.NewRequest(method, url, body)
+	req, err0 := http.NewRequest(method, url, body)
+	if err0 != nil {
+		return []byte{}, err0
+	}
 	if body != nil {
 		req.Header.Set("Content-Type", ContentTypeJson)
 	}

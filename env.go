@@ -6,7 +6,6 @@ import (
 )
 
 type EnvVariables struct {
-	JavaHome     string
 	ConfRootDir  string
 	PkgRootDir   string
 	PkgConfDir   string

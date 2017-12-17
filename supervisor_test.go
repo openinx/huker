@@ -27,7 +27,7 @@ func NewMiniHuker() *MiniHuker {
 	}
 
 	// Initialize the package server.
-	p, err := NewPackageServer("0.0.0.0:4000", "./testdata/lib", "./testdata/conf/pkg.yaml")
+	p, err := NewPackageServer(4000, "./testdata/lib", "./testdata/conf/pkg.yaml")
 	if err != nil {
 		panic(err)
 	}

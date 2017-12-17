@@ -117,21 +117,21 @@ func (p PackageList) Less(i, j int) bool {
 }
 
 type PackageServer struct {
-	serverAddr string
-	pkgRoot    string
-	pkgConf    string
-	pkgMap     map[string]*PackageInfo
-	httpSrv    *http.Server
+	port    int
+	pkgRoot string
+	pkgConf string
+	pkgMap  map[string]*PackageInfo
+	httpSrv *http.Server
 }
 
-func NewPackageServer(serverAddr, pkgRoot, pkgConf string) (*PackageServer, error) {
+func NewPackageServer(port int, pkgRoot, pkgConf string) (*PackageServer, error) {
 	p := &PackageServer{
-		serverAddr: serverAddr,
-		pkgRoot:    pkgRoot,
-		pkgConf:    pkgConf,
-		pkgMap:     make(map[string]*PackageInfo),
+		port:    port,
+		pkgRoot: pkgRoot,
+		pkgConf: pkgConf,
+		pkgMap:  make(map[string]*PackageInfo),
 		httpSrv: &http.Server{
-			Addr: serverAddr,
+			Addr: fmt.Sprintf(":%d", port),
 		},
 	}
 
