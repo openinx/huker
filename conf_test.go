@@ -2,7 +2,6 @@ package huker
 
 import (
 	"fmt"
-	"github.com/qiniu/log"
 	"reflect"
 	"sort"
 	"testing"
@@ -382,21 +381,4 @@ func TestToShell(t *testing.T) {
 	if err := assertSliceEquals(s.toShell("zookeeper"), expected, "Shell"); err != nil {
 		t.Errorf("%v", err)
 	}
-}
-
-func TestLoadServiceConfig(t *testing.T) {
-	e := &EnvVariables{
-		ConfRootDir:  ".",
-		PkgRootDir:   "/Users/openinx/test/zk/pkg/zookeeper-3.4.11",
-		PkgConfDir:   "/Users/openinx/test/zk/conf",
-		PkgDataDir:   "/Users/openinx/test/zk/data",
-		PkgLogDir:    "/Users/openinx/test/zk/log",
-		PkgStdoutDir: "/Users/openinx/test/zk/stdout",
-	}
-
-	s, err := LoadServiceConfig("/Users/openinx/gopath/src/github.com/openinx/huker/conf/zookeeper/test-cluster.yaml", e)
-	if err != nil {
-		t.Errorf("Loading service config error: %s", err)
-	}
-	log.Info(s.toShell("zookeeper"))
 }
