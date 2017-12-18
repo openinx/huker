@@ -74,30 +74,7 @@ func main() {
 			},
 		},
 		{
-			Name:  "Start",
-			Usage: "Start a job",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "service",
-					Usage: "service name",
-				},
-				cli.StringFlag{
-					Name:  "job",
-					Usage: "job name",
-				},
-				cli.StringFlag{
-					Name:   "task",
-					Hidden: true,
-					Usage:  "task id of given service and job",
-				},
-			},
-			Action: func(c *cli.Context) error {
-				fmt.Println("Start a job: ", strings.Join(c.Args(), " "))
-				return nil
-			},
-		},
-		{
-			Name:  "Start",
+			Name:  "start",
 			Usage: "Start a job",
 			Flags: []cli.Flag{
 				cli.StringFlag{
