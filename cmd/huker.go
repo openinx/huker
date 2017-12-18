@@ -13,8 +13,8 @@ func main() {
 
 	app := cli.NewApp()
 
-	cfgRootDir := "/Users/openinx/gopath/src/github.com/openinx/huker/conf"
-	agentRootDir := "/Users/openinx/test"
+	cfgRootDir := "./conf"
+	agentRootDir := "/tmp/test"
 	pkgServerAddress := "http://127.0.0.1:4000"
 	supervisorPort := 9001
 

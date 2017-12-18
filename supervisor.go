@@ -194,9 +194,9 @@ func (p *Program) start(s *Supervisor) error {
 	}()
 	time.Sleep(time.Second * 1)
 
-	p.PID = cmd.Process.Pid
-	if isProcessOK(cmd.Process.Pid) {
+	if cmd.Process != nil && isProcessOK(cmd.Process.Pid) {
 		p.Status = StatusRunning
+		p.PID = cmd.Process.Pid
 		return nil
 	} else {
 		return fmt.Errorf("Start job failed.")
