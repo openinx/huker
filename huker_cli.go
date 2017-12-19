@@ -43,6 +43,7 @@ func (h *HukerShell) Bootstrap(c *cli.Context) error {
 
 		p := &Program{
 			Name:       args.srvCfg.clusterName,
+			Job:        args.jobName,
 			Bin:        args.srvCfg.javaHome,
 			Args:       job.toShell(),
 			Configs:    job.toConfigMap(),
@@ -53,7 +54,106 @@ func (h *HukerShell) Bootstrap(c *cli.Context) error {
 		if err := supCli.bootstrap(p); err != nil {
 			log.Errorf("Bootstrap job %s at %s failed, err: %v", args.jobName, host, err)
 		} else {
-			log.Infof("Bootstrap job %s at %s successfully.", args.jobName, host)
+			log.Infof("Bootstrap job %s at %s success.", args.jobName, host)
+		}
+	}
+	return nil
+}
+
+func (h *HukerShell) Show(c *cli.Context) error {
+	args, err := h.prevAction(c)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	job := args.srvCfg.jobs[args.jobName]
+	for _, host := range job.hosts {
+		supCli := NewSupervisorCli(fmt.Sprintf("http://%s:%d", host, h.supervisorPort))
+		if p, err := supCli.show(args.cluster, args.jobName); err != nil {
+			log.Errorf("Show job %s at %s failed, err: %v", args.jobName, host, err)
+		} else {
+			log.Infof("Job %s at %s is -> %s", args.jobName, host, p.Status)
+		}
+	}
+	return nil
+}
+
+func (h *HukerShell) Start(c *cli.Context) error {
+	args, err := h.prevAction(c)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	job := args.srvCfg.jobs[args.jobName]
+	for _, host := range job.hosts {
+		supCli := NewSupervisorCli(fmt.Sprintf("http://%s:%d", host, h.supervisorPort))
+		if err := supCli.start(args.cluster, args.jobName); err != nil {
+			log.Errorf("Start job %s at %s failed, err: %v", args.jobName, host, err)
+		} else {
+			log.Infof("Start job %s at %s success.", args.jobName, host)
+		}
+	}
+	return nil
+}
+
+func (h *HukerShell) Cleanup(c *cli.Context) error {
+	args, err := h.prevAction(c)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	job := args.srvCfg.jobs[args.jobName]
+	for _, host := range job.hosts {
+		supCli := NewSupervisorCli(fmt.Sprintf("http://%s:%d", host, h.supervisorPort))
+		if err := supCli.cleanup(args.cluster, args.jobName); err != nil {
+			log.Errorf("Cleanup job %s at %s failed, err: %v", args.jobName, host, err)
+		} else {
+			log.Infof("Cleanup job %s at %s success.", args.jobName, host)
+		}
+	}
+	return nil
+}
+
+func (h *HukerShell) RollingUpdate(c *cli.Context) error {
+	return nil
+}
+
+func (h *HukerShell) Restart(c *cli.Context) error {
+	args, err := h.prevAction(c)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	job := args.srvCfg.jobs[args.jobName]
+	for _, host := range job.hosts {
+		supCli := NewSupervisorCli(fmt.Sprintf("http://%s:%d", host, h.supervisorPort))
+		if err := supCli.restart(args.cluster, args.jobName); err != nil {
+			log.Errorf("Restart job %s at %s failed, err: %v", args.jobName, host, err)
+		} else {
+			log.Infof("Restart job %s at %s success.", args.jobName, host)
+		}
+	}
+	return nil
+}
+
+func (h *HukerShell) Stop(c *cli.Context) error {
+	args, err := h.prevAction(c)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	job := args.srvCfg.jobs[args.jobName]
+	for _, host := range job.hosts {
+		supCli := NewSupervisorCli(fmt.Sprintf("http://%s:%d", host, h.supervisorPort))
+		if err := supCli.stop(args.cluster, args.jobName); err != nil {
+			log.Errorf("Stop job %s at %s failed, err: %v", args.jobName, host, err)
+		} else {
+			log.Infof("Stop job %s at %s success.", args.jobName, host)
 		}
 	}
 	return nil
@@ -84,11 +184,11 @@ func (h *HukerShell) prevAction(c *cli.Context) (*PrevArgs, error) {
 
 	env := &EnvVariables{
 		ConfRootDir:  h.cfgRootDir,
-		PkgRootDir:   path.Join(h.agentRootDir, cluster, PKG_DIR),
-		PkgConfDir:   path.Join(h.agentRootDir, cluster, CONF_DIR),
-		PkgDataDir:   path.Join(h.agentRootDir, cluster, DATA_DIR),
-		PkgLogDir:    path.Join(h.agentRootDir, cluster, LOG_DIR),
-		PkgStdoutDir: path.Join(h.agentRootDir, cluster, STDOUT_DIR),
+		PkgRootDir:   path.Join(h.agentRootDir, cluster, jobName, PKG_DIR),
+		PkgConfDir:   path.Join(h.agentRootDir, cluster, jobName, CONF_DIR),
+		PkgDataDir:   path.Join(h.agentRootDir, cluster, jobName, DATA_DIR),
+		PkgLogDir:    path.Join(h.agentRootDir, cluster, jobName, LOG_DIR),
+		PkgStdoutDir: path.Join(h.agentRootDir, cluster, jobName, STDOUT_DIR),
 	}
 
 	srvCfg, err := LoadServiceConfig(clusterCfg, env)

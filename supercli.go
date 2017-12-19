@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/qiniu/log"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -32,7 +31,6 @@ func handleResponse(resp *http.Response) ([]byte, error) {
 		return data, err
 	}
 	defer resp.Body.Close()
-	log.Errorf("Response: %s", string(data))
 	m := make(map[string]interface{})
 	if err := json.Unmarshal(data, &m); err != nil {
 		return data, err

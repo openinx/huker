@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/openinx/huker"
 	"github.com/qiniu/log"
 	"github.com/urfave/cli"
 	"os"
-	"strings"
 )
 
 func main() {
@@ -55,6 +53,10 @@ func main() {
 			Usage: "Show jobs of a given service",
 			Flags: []cli.Flag{
 				cli.StringFlag{
+					Name:  "cluster",
+					Usage: "cluster name",
+				},
+				cli.StringFlag{
 					Name:  "service",
 					Usage: "service name",
 				},
@@ -68,16 +70,17 @@ func main() {
 					Usage:  "task id of given service and job",
 				},
 			},
-			Action: func(c *cli.Context) error {
-				fmt.Println("Show jobs of a given service: ", strings.Join(c.Args(), " "))
-				return nil
-			},
+			Action: hShell.Show,
 		},
 		{
 			Name:  "start",
 			Usage: "Start a job",
 			Flags: []cli.Flag{
 				cli.StringFlag{
+					Name:  "cluster",
+					Usage: "cluster name",
+				},
+				cli.StringFlag{
 					Name:  "service",
 					Usage: "service name",
 				},
@@ -91,16 +94,17 @@ func main() {
 					Usage:  "task id of given service and job",
 				},
 			},
-			Action: func(c *cli.Context) error {
-				fmt.Println("Start a job: ", strings.Join(c.Args(), " "))
-				return nil
-			},
+			Action: hShell.Start,
 		},
 		{
 			Name:  "cleanup",
 			Usage: "Cleanup a job",
 			Flags: []cli.Flag{
 				cli.StringFlag{
+					Name:  "cluster",
+					Usage: "cluster name",
+				},
+				cli.StringFlag{
 					Name:  "service",
 					Usage: "service name",
 				},
@@ -114,30 +118,17 @@ func main() {
 					Usage:  "task id of given service and job",
 				},
 			},
-			Subcommands: []cli.Command{
-				{
-					Name:  "add",
-					Usage: "add a new template",
-					Action: func(c *cli.Context) error {
-						fmt.Println("new task template: ", c.Args().First())
-						return nil
-					},
-				},
-				{
-					Name:  "remove",
-					Usage: "remove an existing template",
-					Action: func(c *cli.Context) error {
-						fmt.Println("removed task template: ", c.Args().First())
-						return nil
-					},
-				},
-			},
+			Action: hShell.Cleanup,
 		},
 		{
 			Name:  "rolling_update",
 			Usage: "Rolling update a job",
 			Flags: []cli.Flag{
 				cli.StringFlag{
+					Name:  "cluster",
+					Usage: "cluster name",
+				},
+				cli.StringFlag{
 					Name:  "service",
 					Usage: "service name",
 				},
@@ -151,16 +142,17 @@ func main() {
 					Usage:  "task id of given service and job",
 				},
 			},
-			Action: func(c *cli.Context) error {
-				fmt.Println("Rolling update a job: ", strings.Join(c.Args(), " "))
-				return nil
-			},
+			Action: hShell.RollingUpdate,
 		},
 		{
 			Name:  "restart",
 			Usage: "Restart a job",
 			Flags: []cli.Flag{
 				cli.StringFlag{
+					Name:  "cluster",
+					Usage: "cluster name",
+				},
+				cli.StringFlag{
 					Name:  "service",
 					Usage: "service name",
 				},
@@ -174,16 +166,17 @@ func main() {
 					Usage:  "task id of given service and job",
 				},
 			},
-			Action: func(c *cli.Context) error {
-				fmt.Println("restart a job: ", strings.Join(c.Args(), " "))
-				return nil
-			},
+			Action: hShell.Restart,
 		},
 		{
 			Name:  "stop",
 			Usage: "Stop a job",
 			Flags: []cli.Flag{
 				cli.StringFlag{
+					Name:  "cluster",
+					Usage: "cluster name",
+				},
+				cli.StringFlag{
 					Name:  "service",
 					Usage: "service name",
 				},
@@ -197,10 +190,7 @@ func main() {
 					Usage:  "task id of given service and job",
 				},
 			},
-			Action: func(c *cli.Context) error {
-				fmt.Println("stop a job: ", strings.Join(c.Args(), " "))
-				return nil
-			},
+			Action: hShell.Stop,
 		},
 		{
 			Name:  "start-agent",

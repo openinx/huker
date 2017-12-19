@@ -380,6 +380,11 @@ func (s *Supervisor) hStartProgram(w http.ResponseWriter, r *http.Request) {
 // Be Careful: Forbidden to let user delete the root.
 func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 	s.handleProgram(w, r, func(p *Program) error {
+		// step.0 check he job status
+		if p.Status == StatusRunning {
+			return fmt.Errorf("Job %s.%s is still running, stop it first please.", p.Name, p.Job)
+		}
+
 		jobRootDir := path.Join(s.rootDir, p.Name, p.Job)
 		// step.1 check the job root dir
 		if _, err := os.Stat(jobRootDir); os.IsNotExist(err) {
@@ -406,6 +411,7 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 				programs = append(programs, prog)
 			}
 		}
+		s.programs = programs
 		return nil
 	})
 }
