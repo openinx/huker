@@ -174,7 +174,7 @@ func (h *HukerShell) prevAction(c *cli.Context) (*PrevArgs, error) {
 
 	projectPath := path.Join(h.cfgRootDir, project)
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("Invalid service `%s`, create configuration under %s directory please.", project, projectPath)
+		return nil, fmt.Errorf("Invalid project `%s`, create configuration under %s directory please.", project, projectPath)
 	}
 
 	clusterCfg := path.Join(projectPath, cluster+".yaml")
