@@ -57,6 +57,7 @@ type Program struct {
 	PkgMD5Sum  string            `json:"pkg_md5sum"`
 	PID        int               `json:"pid"`
 	Status     string            `json:"status"`
+	RootDir    string            `json:"root_dir"`
 }
 
 func (p *Program) bootstrap(s *Supervisor) error {
@@ -79,6 +80,7 @@ func (p *Program) bootstrap(s *Supervisor) error {
 	for idx, arg := range p.Args {
 		p.Args[idx] = strings.Replace(arg, "$AgentRootDir", s.rootDir, -1)
 	}
+	p.RootDir = jobRootDir
 
 	// step.2 create directories recursively
 	if err := os.MkdirAll(jobRootDir, 0755); err != nil {

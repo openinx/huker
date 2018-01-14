@@ -3,6 +3,7 @@ package huker
 import (
 	"fmt"
 	"github.com/qiniu/log"
+	"path"
 	"testing"
 	"time"
 )
@@ -13,13 +14,12 @@ type MiniHuker struct {
 	p   *PackageServer
 }
 
-func NewMiniHuker() *MiniHuker {
-	rootDir := fmt.Sprintf("/tmp/huker/%d", int32(time.Now().Unix()))
+func NewMiniHuker(agentRootDir string) *MiniHuker {
 	m := &MiniHuker{
 		s: &Supervisor{
-			rootDir: rootDir,
+			rootDir: agentRootDir,
 			port:    9743,
-			dbFile:  rootDir + "/supervisor.db",
+			dbFile:  agentRootDir + "/supervisor.db",
 		},
 		cli: &SupervisorCli{
 			serverAddr: "http://127.0.0.1:9743",
@@ -53,7 +53,9 @@ func (m *MiniHuker) start() {
 }
 
 func TestMiniHuker(t *testing.T) {
-	m := NewMiniHuker()
+
+	agentRootDir := fmt.Sprintf("/tmp/huker/%d", int32(time.Now().Unix()))
+	m := NewMiniHuker(agentRootDir)
 
 	// Wait supervisor server and package server start finished.
 	m.start()
@@ -80,6 +82,8 @@ func TestMiniHuker(t *testing.T) {
 		t.Fatalf("show process failed: %v", err)
 	} else if p.Status != StatusRunning {
 		t.Fatalf("process is not running, cause: %v", err)
+	} else if p.RootDir != path.Join(agentRootDir, p.Name, p.Job) {
+		t.Fatalf("root directory of program mismatch. rootDir: %s", p.RootDir)
 	}
 
 	if err := m.cli.stop(prog.Name, prog.Job); err != nil {
