@@ -15,10 +15,10 @@ type HukerShell struct {
 	supervisorPort   int
 }
 
-func NewHukerShell(cfgRootDir, agentRootDir, pkgServerAddress string, supervisorPort int) (*HukerShell, error) {
+func NewHukerShell(cfgRootDir, pkgServerAddress string, supervisorPort int) (*HukerShell, error) {
 	h := &HukerShell{
 		cfgRootDir:       cfgRootDir,
-		agentRootDir:     agentRootDir,
+		agentRootDir:     "$AgentRootDir", // it will render this variable by value at agent side.
 		pkgServerAddress: pkgServerAddress,
 		supervisorPort:   supervisorPort,
 	}
@@ -168,8 +168,8 @@ type PrevArgs struct {
 }
 
 func (h *HukerShell) prevAction(c *cli.Context) (*PrevArgs, error) {
-	project := c.String("project")
-	cluster := c.String("cluster")
+	project := c.String("project") // TODO project field is required
+	cluster := c.String("cluster") // TODO cluster field is required
 	jobName := c.String("job")
 
 	projectPath := path.Join(h.cfgRootDir, project)

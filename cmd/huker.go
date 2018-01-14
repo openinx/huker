@@ -7,16 +7,24 @@ import (
 	"os"
 )
 
+const (
+	HUKER_CONF_DIR                = "HUKER_CONF_DIR"
+	HUKER_CONF_DIR_DEFAULT        = "./conf"
+	HUKER_PKG_HTTP_SERVER         = "HUKER_PKG_HTTP_SERVER"
+	HUKER_PKG_HTTP_SERVER_DEFAULT = "http://127.0.0.1:4000"
+	HUKER_AGENT_PORT              = "HUKER_AGENT_PORT"
+	HUKER_AGENT_PORT_DEFAULT      = 9001
+)
+
 func main() {
 
 	app := cli.NewApp()
 
-	cfgRootDir := "./conf"
-	agentRootDir := "/tmp/test"
-	pkgServerAddress := "http://127.0.0.1:4000"
-	supervisorPort := 9001
+	cfgRootDir := huker.ReadEnvStrValue(HUKER_CONF_DIR, HUKER_CONF_DIR_DEFAULT)
+	pkgServerAddress := huker.ReadEnvStrValue(HUKER_PKG_HTTP_SERVER, HUKER_PKG_HTTP_SERVER_DEFAULT)
+	supervisorPort := huker.ReadEnvIntValue(HUKER_AGENT_PORT, HUKER_AGENT_PORT_DEFAULT)
 
-	hShell, err := huker.NewHukerShell(cfgRootDir, agentRootDir, pkgServerAddress, supervisorPort)
+	hShell, err := huker.NewHukerShell(cfgRootDir, pkgServerAddress, supervisorPort)
 
 	if err != nil {
 		log.Error(err)

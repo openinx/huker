@@ -72,7 +72,15 @@ func (p *Program) bootstrap(s *Supervisor) error {
 		return fmt.Errorf("%s is already exists, cleanup it first please.", jobRootDir)
 	}
 
-	// step.1 create directories recursively
+	// step.1 render the agent root directory for config files and arguments.
+	for fname, content := range p.Configs {
+		p.Configs[fname] = strings.Replace(content, "$AgentRootDir", s.rootDir, -1)
+	}
+	for idx, arg := range p.Args {
+		p.Args[idx] = strings.Replace(arg, "$AgentRootDir", s.rootDir, -1)
+	}
+
+	// step.2 create directories recursively
 	if err := os.MkdirAll(jobRootDir, 0755); err != nil {
 		return err
 	}
@@ -82,7 +90,7 @@ func (p *Program) bootstrap(s *Supervisor) error {
 		}
 	}
 
-	// step.2 download the package
+	// step.3 download the package
 	pkgFilePath := path.Join(jobRootDir, STDOUT_DIR, p.PkgName)
 	resp, err := http.Get(p.PkgAddress)
 	if err != nil {
@@ -103,7 +111,7 @@ func (p *Program) bootstrap(s *Supervisor) error {
 	defer out.Close()
 	io.Copy(out, resp.Body)
 
-	// step.3 verify md5 checksum
+	// step.4 verify md5 checksum
 	// TODO reuse those codes with pkgsrv.go
 	md5sum, md5Err := calcFileMD5Sum(pkgFilePath)
 	if md5Err != nil {
@@ -114,7 +122,7 @@ func (p *Program) bootstrap(s *Supervisor) error {
 		return fmt.Errorf("md5sum mismatch, %s != %s, package: %s", md5sum, p.PkgMD5Sum, p.PkgName)
 	}
 
-	// step.4 extract package
+	// step.5 extract package
 	tarCmd := []string{"tar", "xzvf", pkgFilePath, "-C", path.Join(jobRootDir, STDOUT_DIR)}
 	cmd := exec.Command(tarCmd[0], tarCmd[1:]...)
 	var stdout, stderr bytes.Buffer
@@ -124,7 +132,7 @@ func (p *Program) bootstrap(s *Supervisor) error {
 			strings.Join(tarCmd, " "), stdout.String(), stderr.String())
 		return err
 	}
-	// step.5 Move all files under <pkgRootDir>/<pkg-prefix-dir> to <pkgRootDir>
+	// step.6 Move all files under <pkgRootDir>/<pkg-prefix-dir> to <pkgRootDir>
 	if idx := strings.LastIndex(p.PkgName, ".tar.gz"); idx >= 0 {
 		pkgRootDir := path.Join(jobRootDir, STDOUT_DIR)
 		pkgPrefixDir := path.Join(pkgRootDir, p.PkgName[0:idx])
@@ -141,7 +149,7 @@ func (p *Program) bootstrap(s *Supervisor) error {
 		}
 	}
 
-	// step.6 dump configuration files
+	// step.7 dump configuration files
 	for fname, content := range p.Configs {
 		cfgPath := path.Join(jobRootDir, CONF_DIR, fname)
 		out, err := os.Create(cfgPath)
@@ -153,12 +161,12 @@ func (p *Program) bootstrap(s *Supervisor) error {
 		io.Copy(out, bytes.NewBufferString(content))
 	}
 
-	// step.7 start the job
+	// step.8 start the job
 	if err := p.start(s); err != nil {
 		return err
 	}
 
-	// step.8 update supervisor db file
+	// step.9 update supervisor db file
 	s.programs = append(s.programs, *p)
 	if err := s.dumpSupervisorDB(); err != nil {
 		return err
@@ -299,14 +307,11 @@ func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 	}
 	prog := &Program{}
 	err = json.Unmarshal(body, prog)
-	prog.Status = StatusStopped
-
-	log.Infof(prog.Name)
-
 	if err != nil {
 		w.Write(renderResp(err))
 		return
 	}
+
 	for _, p := range s.programs {
 		if prog.Name == p.Name && prog.Job == p.Job {
 			w.Write(renderResp(fmt.Errorf("Job %s.%s already exists.", prog.Name, prog.Job)))
@@ -314,6 +319,7 @@ func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	prog.Status = StatusStopped
 	if err = prog.bootstrap(s); err != nil {
 		w.Write(renderResp(err))
 		return

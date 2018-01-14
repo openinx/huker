@@ -6,6 +6,7 @@ import (
 	"github.com/qiniu/log"
 	"io"
 	"os"
+	"strconv"
 	"syscall"
 )
 
@@ -34,4 +35,24 @@ func calcFileMD5Sum(fName string) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(hashReader.Sum(nil)), nil
+}
+
+func ReadEnvStrValue(key string, defaultVal string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultVal
+	}
+	return val
+}
+
+func ReadEnvIntValue(key string, defaultVal int) int {
+	val := ReadEnvStrValue(key, string(defaultVal))
+	if val == "" {
+		return defaultVal
+	}
+	if valInt, err := strconv.Atoi(val); err != nil {
+		return defaultVal
+	} else {
+		return valInt
+	}
 }
