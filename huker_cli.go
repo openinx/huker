@@ -73,7 +73,7 @@ func (h *HukerShell) Show(c *cli.Context) error {
 		if p, err := supCli.show(args.cluster, args.jobName); err != nil {
 			log.Errorf("Show job %s at %s failed, err: %v", args.jobName, host, err)
 		} else {
-			log.Infof("Job %s at %s is -> %s", args.jobName, host, p.Status)
+			log.Infof("Show job %s at %s is -> %s", args.jobName, host, p.Status)
 		}
 	}
 	return nil
@@ -161,23 +161,23 @@ func (h *HukerShell) Stop(c *cli.Context) error {
 
 type PrevArgs struct {
 	cluster string
-	service string
+	project string
 	jobName string
 	srvCfg  *ServiceConfig
 	env     *EnvVariables
 }
 
 func (h *HukerShell) prevAction(c *cli.Context) (*PrevArgs, error) {
+	project := c.String("project")
 	cluster := c.String("cluster")
-	service := c.String("service")
 	jobName := c.String("job")
 
-	servicePath := path.Join(h.cfgRootDir, service)
-	if _, err := os.Stat(servicePath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("Invalid service `%s`, create configuration under %s directory please.", service, servicePath)
+	projectPath := path.Join(h.cfgRootDir, project)
+	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("Invalid service `%s`, create configuration under %s directory please.", project, projectPath)
 	}
 
-	clusterCfg := path.Join(servicePath, cluster+".yaml")
+	clusterCfg := path.Join(projectPath, cluster+".yaml")
 	if _, err := os.Stat(clusterCfg); os.IsNotExist(err) {
 		return nil, fmt.Errorf("Invalid cluster `%s`, %s does not exist.", cluster, clusterCfg)
 	}
@@ -202,7 +202,7 @@ func (h *HukerShell) prevAction(c *cli.Context) (*PrevArgs, error) {
 
 	cfg := &PrevArgs{
 		cluster: cluster,
-		service: service,
+		project: projectPath,
 		jobName: jobName,
 		srvCfg:  srvCfg,
 		env:     env,

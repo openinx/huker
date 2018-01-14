@@ -26,24 +26,24 @@ func main() {
 	app.Commands = []cli.Command{
 		{
 			Name:  "bootstrap",
-			Usage: "Bootstrap a service",
+			Usage: "Bootstrap a cluster of specific project, or jobs, or tasks",
 			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "project",
+					Usage: "project name, such as hdfs, yarn, zookeeper, hbase, etc",
+				},
 				cli.StringFlag{
 					Name:  "cluster",
 					Usage: "cluster name",
 				},
 				cli.StringFlag{
-					Name:  "service",
-					Usage: "service name",
-				},
-				cli.StringFlag{
 					Name:  "job",
-					Usage: "job name",
+					Usage: "job name of the project, for hbase, the job will be master, regionserver, canary etc.",
 				},
 				cli.StringFlag{
 					Name:   "task",
 					Hidden: true,
-					Usage:  "task id of given service and job",
+					Usage:  "task id of given service and job, type: integer",
 				},
 			},
 			Action: hShell.Bootstrap,
@@ -53,12 +53,12 @@ func main() {
 			Usage: "Show jobs of a given service",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "cluster",
-					Usage: "cluster name",
+					Name:  "project",
+					Usage: "project name, such as hdfs, yarn, zookeeper, hbase, etc",
 				},
 				cli.StringFlag{
-					Name:  "service",
-					Usage: "service name",
+					Name:  "cluster",
+					Usage: "cluster name",
 				},
 				cli.StringFlag{
 					Name:  "job",
@@ -77,12 +77,12 @@ func main() {
 			Usage: "Start a job",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "cluster",
-					Usage: "cluster name",
+					Name:  "project",
+					Usage: "project name, such as hdfs, yarn, zookeeper, hbase, etc",
 				},
 				cli.StringFlag{
-					Name:  "service",
-					Usage: "service name",
+					Name:  "cluster",
+					Usage: "cluster name",
 				},
 				cli.StringFlag{
 					Name:  "job",
@@ -101,12 +101,12 @@ func main() {
 			Usage: "Cleanup a job",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "cluster",
-					Usage: "cluster name",
+					Name:  "project",
+					Usage: "project name, such as hdfs, yarn, zookeeper, hbase, etc",
 				},
 				cli.StringFlag{
-					Name:  "service",
-					Usage: "service name",
+					Name:  "cluster",
+					Usage: "cluster name",
 				},
 				cli.StringFlag{
 					Name:  "job",
@@ -125,12 +125,12 @@ func main() {
 			Usage: "Rolling update a job",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "cluster",
-					Usage: "cluster name",
+					Name:  "project",
+					Usage: "project name, such as hdfs, yarn, zookeeper, hbase, etc",
 				},
 				cli.StringFlag{
-					Name:  "service",
-					Usage: "service name",
+					Name:  "cluster",
+					Usage: "cluster name",
 				},
 				cli.StringFlag{
 					Name:  "job",
@@ -149,12 +149,12 @@ func main() {
 			Usage: "Restart a job",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "cluster",
-					Usage: "cluster name",
+					Name:  "project",
+					Usage: "project name, such as hdfs, yarn, zookeeper, hbase, etc",
 				},
 				cli.StringFlag{
-					Name:  "service",
-					Usage: "service name",
+					Name:  "cluster",
+					Usage: "cluster name",
 				},
 				cli.StringFlag{
 					Name:  "job",
@@ -173,12 +173,12 @@ func main() {
 			Usage: "Stop a job",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "cluster",
-					Usage: "cluster name",
+					Name:  "project",
+					Usage: "project name, such as hdfs, yarn, zookeeper, hbase, etc",
 				},
 				cli.StringFlag{
-					Name:  "service",
-					Usage: "service name",
+					Name:  "cluster",
+					Usage: "cluster name",
 				},
 				cli.StringFlag{
 					Name:  "job",
