@@ -387,41 +387,54 @@ func (s *Supervisor) hStartProgram(w http.ResponseWriter, r *http.Request) {
 
 // Be Careful: Forbidden to let user delete the root.
 func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
-	s.handleProgram(w, r, func(p *Program) error {
-		// step.0 check he job status
-		if p.Status == StatusRunning {
-			return fmt.Errorf("Job %s.%s is still running, stop it first please.", p.Name, p.Job)
-		}
+	name := mux.Vars(r)["name"]
+	job := mux.Vars(r)["job"]
 
-		jobRootDir := path.Join(s.rootDir, p.Name, p.Job)
-		// step.1 check the job root dir
-		if _, err := os.Stat(jobRootDir); os.IsNotExist(err) {
-			return fmt.Errorf("Root dir of job %s does not exist.", jobRootDir)
+	// step.0 check and clear cache.
+	if prog := s.getProgram(name, job); prog != nil {
+		if prog.Status == StatusRunning {
+			w.Write(renderResp(fmt.Errorf("Job %s.%s is still running, stop it first please.", prog.Name, prog.Job)))
+			return
 		}
-		relDir, err := filepath.Rel(s.rootDir, jobRootDir)
-		if err != nil {
-			return err
-		}
-		if strings.Contains(relDir, "..") || s.rootDir == jobRootDir {
-			return fmt.Errorf("Cann't cleanup the directory %s, Permission Denied", jobRootDir)
-		}
-
-		// step.2 rename the job root dir into .trash
-		targetPath := path.Join(s.rootDir, p.Name, fmt.Sprintf(".trash.%s.%d", p.Job, int32(time.Now().Unix())))
-		if err := os.Rename(jobRootDir, targetPath); err != nil {
-			return err
-		}
-
-		// step.3 remove the program from cache.
+		// remove program from cache.
 		var programs []Program
 		for _, prog := range s.programs {
-			if prog.Name != p.Name && prog.Job != p.Job {
+			if prog.Name != name && prog.Job != job {
 				programs = append(programs, prog)
 			}
 		}
 		s.programs = programs
-		return nil
-	})
+	}
+
+	// issue#3: when the job does not exist in supervisor cache, still need to cleanup the data. because
+	// the supervisor may failed to start process when bootstrap and left the directory dir(pkg/data/conf..etc)
+
+	jobRootDir := path.Join(s.rootDir, name, job)
+
+	// step.1 check the job root dir
+	if _, err := os.Stat(jobRootDir); os.IsNotExist(err) {
+		w.Write(renderResp(fmt.Errorf("Root dir of job %s does not exist. no need to cleanup", jobRootDir)))
+		return
+	}
+	relDir, err := filepath.Rel(s.rootDir, jobRootDir)
+	if err != nil {
+		w.Write(renderResp(err))
+		return
+	}
+	if strings.Contains(relDir, "..") || s.rootDir == jobRootDir {
+		w.Write(renderResp(fmt.Errorf("Cann't cleanup the directory %s, Permission Denied", jobRootDir)))
+		return
+	}
+
+	// step.2 rename the job root dir into .trash
+	targetPath := path.Join(s.rootDir, name, fmt.Sprintf(".trash.%s.%d", job, int32(time.Now().Unix())))
+	if err := os.Rename(jobRootDir, targetPath); err != nil {
+		w.Write(renderResp(err))
+		return
+	}
+
+	// step.3 return success.
+	w.Write(renderResp(nil))
 }
 
 func (s *Supervisor) hRollingUpdateProgram(w http.ResponseWriter, r *http.Request) {
