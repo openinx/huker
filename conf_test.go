@@ -156,9 +156,6 @@ func assertJobEquals(a, b Job) error {
 	if a.jobName != b.jobName {
 		return fmt.Errorf("jobName mismatch, expected: %s, actual: %s", a.jobName, b.jobName)
 	}
-	if a.basePort != b.basePort {
-		return fmt.Errorf("basePort mismatch, expected: %d, actual: %d", a.basePort, b.basePort)
-	}
 	if err := assertSliceEquals(a.jvmOpts, b.jvmOpts, "jvm_opts"); err != nil {
 		return err
 	}
@@ -203,7 +200,10 @@ func TestNewServiceConfig(t *testing.T) {
       zookeeper:
         base_port: 9010
         hosts:
-          - 192.168.0.1
+          192.168.0.2/port=9001/id=1:
+            config:
+              zoo.cfg:
+                - clientPort=2181
         config:
           zoo.cfg:
             - tick_time=2000
@@ -214,7 +214,10 @@ func TestNewServiceConfig(t *testing.T) {
       zookeeper:
         base_port: 9012
         hosts:
-          - 192.168.0.2
+          192.168.0.2/port=9001/id=1:
+            config:
+              zoo.cfg:
+                - clientPort=2181
         jvm_opts:
           - -Xmn1024m
         jvm_properties:
@@ -238,9 +241,8 @@ func TestNewServiceConfig(t *testing.T) {
 			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
 			jobs: map[string]Job{
 				"zookeeper": Job{
-					jobName:       "zookeeper",
-					basePort:      9010,
-					hosts:         []string{"192.168.0.1"},
+					jobName: "zookeeper",
+					//hosts:         []string{"192.168.0.1"},
 					jvmOpts:       []string{"-Xmx4096m"},
 					jvmProperties: []string{"java.log.dir=."},
 					classpath:     []string{"./*"},
@@ -265,9 +267,8 @@ func TestNewServiceConfig(t *testing.T) {
 			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
 			jobs: map[string]Job{
 				"zookeeper": Job{
-					jobName:       "zookeeper",
-					basePort:      9010,
-					hosts:         []string{"192.168.0.1", "192.168.0.2"},
+					jobName: "zookeeper",
+					//hosts:         []string{"192.168.0.1", "192.168.0.2"},
 					jvmOpts:       []string{"-Xmn1024m"},
 					jvmProperties: []string{"java.log.file=/home/log/zk.log"},
 					classpath:     []string{},
@@ -289,9 +290,8 @@ func TestNewServiceConfig(t *testing.T) {
 			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
 			jobs: map[string]Job{
 				"zookeeper": Job{
-					jobName:       "zookeeper",
-					basePort:      9012,
-					hosts:         []string{"192.168.0.1", "192.168.0.2"},
+					jobName: "zookeeper",
+					//hosts:         []string{"192.168.0.1", "192.168.0.2"},
 					jvmOpts:       []string{"-Xmn1024m", "-Xmx4096m"},
 					jvmProperties: []string{"java.log.file=/home/log/zk.log", "java.log.dir=."},
 					classpath:     []string{"./*"},
@@ -351,9 +351,11 @@ func TestToShell(t *testing.T) {
       package_md5sum: 55aec6196ed9fa4c451cb5ae4a1f42d8
     jobs:
       zookeeper:
-        base_port: 9010
         hosts:
-          - 192.168.0.1
+          192.168.0.2/port=9001/id=1:
+            config:
+              zoo.cfg:
+                - clientPort=2182
         jvm_properties:
           - java.log.dir=.
         config:

@@ -62,10 +62,11 @@ func TestMiniHuker(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	prog := &Program{
-		Name: "tst-py",
-		Job:  "http-server.4",
-		Bin:  "python",
-		Args: []string{"-m", "SimpleHTTPServer"},
+		Name:   "tst-py",
+		Job:    "http-server.4",
+		TaskId: "100",
+		Bin:    "python",
+		Args:   []string{"-m", "SimpleHTTPServer"},
 		Configs: map[string]string{
 			"a": "b", "c": "d",
 		},
@@ -78,33 +79,33 @@ func TestMiniHuker(t *testing.T) {
 		t.Fatalf("bootstrap failed: %v", err)
 	}
 
-	if p, err := m.cli.show(prog.Name, prog.Job); err != nil {
+	if p, err := m.cli.show(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("show process failed: %v", err)
 	} else if p.Status != StatusRunning {
 		t.Fatalf("process is not running, cause: %v", err)
-	} else if p.RootDir != path.Join(agentRootDir, p.Name, p.Job) {
+	} else if p.RootDir != path.Join(agentRootDir, p.Name, fmt.Sprintf("%s.%s", p.Job, p.TaskId)) {
 		t.Fatalf("root directory of program mismatch. rootDir: %s", p.RootDir)
 	}
 
-	if err := m.cli.stop(prog.Name, prog.Job); err != nil {
+	if err := m.cli.stop(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("stop process failed: %v", err)
 	}
 
-	if err := m.cli.restart(prog.Name, prog.Job); err != nil {
+	if err := m.cli.restart(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("restart process failed: %v", err)
 	}
 
-	if p, err := m.cli.show(prog.Name, prog.Job); err != nil {
+	if p, err := m.cli.show(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("show process failed: %v", err)
 	} else if p.Status != StatusRunning {
 		t.Fatalf("process is not running, cause: %v", err)
 	}
 
-	if err := m.cli.stop(prog.Name, prog.Job); err != nil {
+	if err := m.cli.stop(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("stop process failed: %v", err)
 	}
 
-	if err := m.cli.cleanup(prog.Name, prog.Job); err != nil {
+	if err := m.cli.cleanup(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("cleanup program faile: %v", err)
 	}
 }

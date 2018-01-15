@@ -49,6 +49,7 @@ type Supervisor struct {
 type Program struct {
 	Name       string            `json:"name"`
 	Job        string            `json:"job"`
+	TaskId     string            `json:"task_id"`
 	Bin        string            `json:"bin"`
 	Args       []string          `json:"args"`
 	Configs    map[string]string `json:"configs"`
@@ -61,7 +62,7 @@ type Program struct {
 }
 
 func (p *Program) bootstrap(s *Supervisor) error {
-	jobRootDir := path.Join(s.rootDir, p.Name, p.Job)
+	jobRootDir := path.Join(s.rootDir, p.Name, fmt.Sprintf("%s.%s", p.Job, p.TaskId))
 
 	// step.0 prev-check
 	if relDir, err := filepath.Rel(s.rootDir, jobRootDir); err != nil {
@@ -75,10 +76,14 @@ func (p *Program) bootstrap(s *Supervisor) error {
 
 	// step.1 render the agent root directory for config files and arguments.
 	for fname, content := range p.Configs {
-		p.Configs[fname] = strings.Replace(content, "$AgentRootDir", s.rootDir, -1)
+		content = strings.Replace(content, "$AgentRootDir", s.rootDir, -1)
+		content = strings.Replace(content, "$TaskId", p.TaskId, -1)
+		p.Configs[fname] = content
 	}
 	for idx, arg := range p.Args {
-		p.Args[idx] = strings.Replace(arg, "$AgentRootDir", s.rootDir, -1)
+		arg = strings.Replace(arg, "$AgentRootDir", s.rootDir, -1)
+		arg = strings.Replace(arg, "$TaskId", p.TaskId, -1)
+		p.Args[idx] = arg
 	}
 	p.RootDir = jobRootDir
 
@@ -163,16 +168,17 @@ func (p *Program) bootstrap(s *Supervisor) error {
 		io.Copy(out, bytes.NewBufferString(content))
 	}
 
-	// step.8 start the job
-	if err := p.start(s); err != nil {
-		return err
-	}
-
-	// step.9 update supervisor db file
+	// step.8 update supervisor db file
 	s.programs = append(s.programs, *p)
 	if err := s.dumpSupervisorDB(); err != nil {
 		return err
 	}
+
+	// step.9 start the job
+	if err := p.start(s); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -315,8 +321,8 @@ func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, p := range s.programs {
-		if prog.Name == p.Name && prog.Job == p.Job {
-			w.Write(renderResp(fmt.Errorf("Job %s.%s already exists.", prog.Name, prog.Job)))
+		if prog.Name == p.Name && prog.Job == p.Job && prog.TaskId == p.TaskId {
+			w.Write(renderResp(fmt.Errorf("Job %s.%s.%s already exists.", prog.Name, prog.Job, prog.TaskId)))
 			return
 		}
 	}
@@ -329,9 +335,9 @@ func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 	w.Write(renderResp(nil))
 }
 
-func (s *Supervisor) getProgram(name, job string) *Program {
+func (s *Supervisor) getProgram(name, job, taskId string) *Program {
 	for _, prog := range s.programs {
-		if prog.Name == name && prog.Job == job {
+		if prog.Name == name && prog.Job == job && prog.TaskId == taskId {
 			return &prog
 		}
 	}
@@ -342,7 +348,8 @@ func (s *Supervisor) getProgram(name, job string) *Program {
 func (s *Supervisor) handleProgram(w http.ResponseWriter, r *http.Request, handleFunc func(*Program) error) {
 	name := mux.Vars(r)["name"]
 	job := mux.Vars(r)["job"]
-	if prog := s.getProgram(name, job); prog != nil {
+	taskId := mux.Vars(r)["taskId"]
+	if prog := s.getProgram(name, job, taskId); prog != nil {
 		if err := handleFunc(prog); err != nil {
 			w.Write(renderResp(err))
 			return
@@ -350,7 +357,7 @@ func (s *Supervisor) handleProgram(w http.ResponseWriter, r *http.Request, handl
 		// Keep the latest version of program save in supervisor.
 		// TODO check the similar case.
 		for i := range s.programs {
-			if s.programs[i].Name == prog.Name && s.programs[i].Job == prog.Job {
+			if s.programs[i].Name == prog.Name && s.programs[i].Job == prog.Job && s.programs[i].TaskId == prog.TaskId {
 				s.programs[i] = *prog
 			}
 		}
@@ -360,14 +367,15 @@ func (s *Supervisor) handleProgram(w http.ResponseWriter, r *http.Request, handl
 		}
 		w.Write(renderResp(nil))
 	} else {
-		w.Write(renderResp(fmt.Errorf("name: %s, job: %s not found.", name, job)))
+		w.Write(renderResp(fmt.Errorf("name: %s, job: %s, taskId: %s not found.", name, job, taskId)))
 	}
 }
 
 func (s *Supervisor) hShowProgram(w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	job := mux.Vars(r)["job"]
-	if prog := s.getProgram(name, job); prog != nil {
+	taskId := mux.Vars(r)["taskId"]
+	if prog := s.getProgram(name, job, taskId); prog != nil {
 		data, err := json.Marshal(prog)
 		if err != nil {
 			w.Write(renderResp(err))
@@ -389,17 +397,19 @@ func (s *Supervisor) hStartProgram(w http.ResponseWriter, r *http.Request) {
 func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	job := mux.Vars(r)["job"]
+	taskId := mux.Vars(r)["taskId"]
 
 	// step.0 check and clear cache.
-	if prog := s.getProgram(name, job); prog != nil {
+	if prog := s.getProgram(name, job, taskId); prog != nil {
 		if prog.Status == StatusRunning {
-			w.Write(renderResp(fmt.Errorf("Job %s.%s is still running, stop it first please.", prog.Name, prog.Job)))
+			w.Write(renderResp(fmt.Errorf("Job %s.%s.%s is still running, stop it first please.",
+				prog.Name, prog.Job, prog.TaskId)))
 			return
 		}
 		// remove program from cache.
 		var programs []Program
 		for _, prog := range s.programs {
-			if prog.Name != name && prog.Job != job {
+			if prog.Name != name && prog.Job != job && prog.TaskId != taskId {
 				programs = append(programs, prog)
 			}
 		}
@@ -409,7 +419,8 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 	// issue#3: when the job does not exist in supervisor cache, still need to cleanup the data. because
 	// the supervisor may failed to start process when bootstrap and left the directory dir(pkg/data/conf..etc)
 
-	jobRootDir := path.Join(s.rootDir, name, job)
+	// TODO abstract a common method to generate jobRootDir.
+	jobRootDir := path.Join(s.rootDir, name, fmt.Sprintf("%s.%s", job, taskId))
 
 	// step.1 check the job root dir
 	if _, err := os.Stat(jobRootDir); os.IsNotExist(err) {
@@ -427,7 +438,7 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// step.2 rename the job root dir into .trash
-	targetPath := path.Join(s.rootDir, name, fmt.Sprintf(".trash.%s.%d", job, int32(time.Now().Unix())))
+	targetPath := path.Join(s.rootDir, name, fmt.Sprintf(".trash.%s.%s.%d", job, taskId, int32(time.Now().Unix())))
 	if err := os.Rename(jobRootDir, targetPath); err != nil {
 		w.Write(renderResp(err))
 		return
@@ -480,7 +491,7 @@ func (s *Supervisor) loadSupervisorDB() error {
 		return fmt.Errorf("Read %s error: %v", s.dbFile, err)
 	}
 	if err := json.Unmarshal(buf.Bytes(), &s.programs); err != nil {
-		return fmt.Errorf("Deserilize %s error: %v", s.dbFile, err)
+		return fmt.Errorf("Unmarshal %s error: %v", s.dbFile, err)
 	}
 
 	// TODO check current status of programs
@@ -548,12 +559,12 @@ func (s *Supervisor) Start() error {
 	r.HandleFunc("/", s.hIndex)
 	r.HandleFunc("/api/programs", s.hGetProgramList).Methods("GET")
 	r.HandleFunc("/api/programs", s.hBootstrapProgram).Methods("POST")
-	r.HandleFunc("/api/programs/{name}/{job}", s.hShowProgram).Methods("GET")
-	r.HandleFunc("/api/programs/{name}/{job}/start", s.hStartProgram).Methods("PUT")
+	r.HandleFunc("/api/programs/{name}/{job}/{taskId}", s.hShowProgram).Methods("GET")
+	r.HandleFunc("/api/programs/{name}/{job}/{taskId}/start", s.hStartProgram).Methods("PUT")
 	r.HandleFunc("/api/programs/rolling_update", s.hRollingUpdateProgram).Methods("POST")
-	r.HandleFunc("/api/programs/{name}/{job}/restart", s.hRestartProgram).Methods("PUT")
-	r.HandleFunc("/api/programs/{name}/{job}", s.hCleanupProgram).Methods("DELETE")
-	r.HandleFunc("/api/programs/{name}/{job}/stop", s.hStopProgram).Methods("PUT")
+	r.HandleFunc("/api/programs/{name}/{job}/{taskId}/restart", s.hRestartProgram).Methods("PUT")
+	r.HandleFunc("/api/programs/{name}/{job}/{taskId}", s.hCleanupProgram).Methods("DELETE")
+	r.HandleFunc("/api/programs/{name}/{job}/{taskId}/stop", s.hStopProgram).Methods("PUT")
 	srv := http.Server{
 		Addr:    fmt.Sprintf(":%d", s.port),
 		Handler: r,

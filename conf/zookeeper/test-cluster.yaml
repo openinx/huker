@@ -8,9 +8,28 @@ cluster:
 
 jobs:
   zookeeper:
-    base_port: 9010
-    hosts:
-      - 127.0.0.1
     config:
       zoo.cfg:
         - tick_time=2000
+        - server.1=127.0.0.1:2188:3188
+        - server.2=127.0.0.1:2288:3288
+        - server.3=127.0.0.1:2388:3388
+    hosts:
+      127.0.0.1/port=9001/id=1:  # host.1
+        config:
+          zoo.cfg:
+            - clientPort=2181
+          myid:
+            - 1
+      127.0.0.1/port=9001/id=2:  # host.2
+        config:
+          zoo.cfg:
+            - clientPort=2281
+          myid:
+            - 2
+      127.0.0.1/port=9001/id=3:  # host.3
+        config:
+          zoo.cfg:
+            - clientPort=2381
+          myid:
+            - 3

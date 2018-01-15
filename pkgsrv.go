@@ -212,3 +212,7 @@ func (p *PackageServer) Start() error {
 	p.httpSrv.Handler = r
 	return p.httpSrv.ListenAndServe()
 }
+
+func (p *PackageServer) Stop() error {
+	return p.httpSrv.Close()
+}

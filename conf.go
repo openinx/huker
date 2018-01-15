@@ -6,11 +6,13 @@ import (
 	"github.com/qiniu/log"
 	"io/ioutil"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
 /********************************** ConfigFile Implementation *****************************/
 type ConfigFile interface {
+	mergeWith(c ConfigFile) ConfigFile
 	toString() string
 	toKeyValue() map[string]string
 	getConfigName() string
@@ -26,6 +28,22 @@ func NewINIConfigFile(cfgName string, keyValues []string) INIConfigFile {
 		cfgName:   cfgName,
 		keyValues: keyValues,
 	}
+}
+
+func (c INIConfigFile) mergeWith(other ConfigFile) ConfigFile {
+	cMap := c.toKeyValue()
+	oMap := other.toKeyValue()
+	// If key exist in both cMap and oMap, then use value of cMap.
+	for key, val := range cMap {
+		oMap[key] = val
+	}
+	// convert oMap to []string
+	keyValues := []string{}
+	for key, val := range oMap {
+		keyValues = append(keyValues, fmt.Sprintf("%s=%s", key, val))
+	}
+	c.keyValues = keyValues
+	return c
 }
 
 func (c INIConfigFile) toString() string {
@@ -60,6 +78,22 @@ func NewXMLConfigFile(cfgName string, keyValues []string) XMLConfigFile {
 	}
 }
 
+func (c XMLConfigFile) mergeWith(other ConfigFile) ConfigFile {
+	cMap := c.toKeyValue()
+	oMap := other.toKeyValue()
+	// If key exist in both cMap and oMap, the use value of cMap.
+	for key, val := range cMap {
+		oMap[key] = val
+	}
+	// convert oMap to []string
+	keyValues := []string{}
+	for key, val := range oMap {
+		keyValues = append(keyValues, fmt.Sprintf("%s=%s", key, val))
+	}
+	c.keyValues = keyValues
+	return c
+}
+
 func (c XMLConfigFile) toString() string {
 	var buf []string
 	buf = append(buf, "<configuration>")
@@ -92,6 +126,45 @@ func (c XMLConfigFile) getConfigName() string {
 	return c.cfgName
 }
 
+type PlainConfigFile struct {
+	cfgName string
+	lines   []string
+}
+
+func NewPlainConfigFile(cfgName string, lines []string) PlainConfigFile {
+	return PlainConfigFile{
+		cfgName: cfgName,
+		lines:   lines,
+	}
+}
+
+func (c PlainConfigFile) mergeWith(other ConfigFile) ConfigFile {
+	for _, line := range other.toKeyValue() {
+		c.lines = append(c.lines, line)
+	}
+	return c
+}
+
+func (c PlainConfigFile) toString() string {
+	var buf []string
+	for _, line := range c.lines {
+		buf = append(buf, line)
+	}
+	return strings.Join(buf, "\n")
+}
+
+func (c PlainConfigFile) toKeyValue() map[string]string {
+	ret := make(map[string]string)
+	for i, line := range c.lines {
+		ret[strconv.Itoa(i)] = line
+	}
+	return ret
+}
+
+func (c PlainConfigFile) getConfigName() string {
+	return c.cfgName
+}
+
 /********************************** ServiceConfig Implementation *****************************/
 
 type MainEntry struct {
@@ -103,10 +176,65 @@ func (m MainEntry) toShell() []string {
 	return []string{m.javaClass, m.extraArgs}
 }
 
+type HostInfo struct {
+	hostName    string
+	taskId      string
+	hostPort    string
+	configFiles map[string]ConfigFile
+}
+
+func NewHostInfo(hostKey string, configFiles []ConfigFile) HostInfo {
+	parts := strings.Split(hostKey, "/")
+	hostName := parts[0]
+	hostPort := "9001" // default agent port
+	taskId := "1"      // default task Id
+	for _, s := range parts {
+		if strings.HasPrefix(s, "port=") {
+			hostPort = strings.TrimPrefix(s, "port=")
+		}
+		if strings.HasPrefix(s, "id=") {
+			taskId = strings.TrimPrefix(s, "id=")
+		}
+	}
+	host := HostInfo{hostName: hostName, taskId: taskId, hostPort: hostPort}
+
+	host.configFiles = make(map[string]ConfigFile)
+	for _, cf := range configFiles {
+		host.configFiles[cf.getConfigName()] = cf
+	}
+	return host
+}
+
+func (h HostInfo) toHttpAddress() string {
+	return fmt.Sprintf("http://%s:%s", h.hostName, h.hostPort)
+}
+
+func (h HostInfo) toKey() string {
+	return fmt.Sprintf("%s/port=%s/id=%s", h.hostName, h.hostPort, h.taskId)
+}
+
+func (h HostInfo) toConfigMap() map[string]string {
+	cfgMap := make(map[string]string)
+	for fname, cfgFile := range h.configFiles {
+		cfgMap[fname] = cfgFile.toString()
+	}
+	return cfgMap
+}
+
+func (h HostInfo) mergeWith(configFiles map[string]ConfigFile) {
+	for fname, cfg := range configFiles {
+		if _, ok := h.configFiles[fname]; ok {
+			newCfg := h.configFiles[fname].mergeWith(cfg)
+			h.configFiles[fname] = newCfg
+		} else {
+			h.configFiles[fname] = cfg
+		}
+	}
+}
+
 type Job struct {
 	jobName       string
-	basePort      int
-	hosts         []string
+	hosts         []HostInfo
 	jvmOpts       []string
 	jvmProperties []string
 	classpath     []string
@@ -203,7 +331,14 @@ func parseStringArray(s interface{}) ([]string, error) {
 		array := s.([]interface{})
 		var strings []string
 		for i := range array {
-			strings = append(strings, array[i].(string))
+			typeOItem := reflect.TypeOf(array[i])
+			if typeOItem.Kind() == reflect.String {
+				strings = append(strings, array[i].(string))
+			} else if typeOItem.Kind() == reflect.Int {
+				strings = append(strings, strconv.Itoa(array[i].(int)))
+			} else {
+				return []string{}, fmt.Errorf("Invalid type: %v, %v", typeOItem.Kind(), array[i])
+			}
 		}
 		return strings, nil
 	}
@@ -230,6 +365,8 @@ func parseConfigFile(cfgName string, keyValues []string) (ConfigFile, error) {
 		return NewINIConfigFile(cfgName, keyValues), nil
 	} else if strings.HasSuffix(cfgName, ".xml") {
 		return NewXMLConfigFile(cfgName, keyValues), nil
+	} else if !strings.Contains(cfgName, ".") || strings.HasSuffix(cfgName, ".txt") {
+		return NewPlainConfigFile(cfgName, keyValues), nil
 	} else {
 		return nil, fmt.Errorf("Unsupported configuration file format. %s", cfgName)
 	}
@@ -265,15 +402,7 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (Job, error) {
 	job := Job{
 		jobName: jobName,
 	}
-	if jobMap["base_port"] != nil {
-		job.basePort = jobMap["base_port"].(int)
-	}
 	var err error
-	if jobMap["hosts"] != nil {
-		if job.hosts, err = parseStringArray(jobMap["hosts"]); err != nil {
-			return Job{}, err
-		}
-	}
 	if jobMap["jvm_opts"] != nil {
 		if job.jvmOpts, err = parseStringArray(jobMap["jvm_opts"]); err != nil {
 			return Job{}, err
@@ -298,6 +427,30 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (Job, error) {
 				job.configFiles[confFiles[i].getConfigName()] = confFiles[i]
 			}
 		}
+	}
+
+	if jobMap["hosts"] != nil {
+		if reflect.TypeOf(jobMap["hosts"]).Kind() != reflect.Map {
+			return Job{}, fmt.Errorf("`hosts` part of job `%s` is not a map", jobName)
+		}
+		hostsMap := jobMap["hosts"].(map[interface{}]interface{})
+
+		hosts := []HostInfo{}
+		for hostKey, hostObj := range hostsMap {
+			if reflect.TypeOf(hostObj).Kind() != reflect.Map {
+				return Job{}, fmt.Errorf("`config` part of host `%s` in job `%s` is not a map", hostKey, jobName)
+			}
+
+			hostMap := hostObj.(map[interface{}]interface{})
+			if confFiles, err2 := parseConfigFileArray(hostMap["config"]); err2 != nil {
+				return Job{}, err2
+			} else {
+				hostInfo := NewHostInfo(hostKey.(string), confFiles)
+				hostInfo.mergeWith(job.configFiles)
+				hosts = append(hosts, hostInfo)
+			}
+		}
+		job.hosts = hosts
 	}
 
 	if jobMap["main_entry"] != nil {
