@@ -40,12 +40,11 @@ type Supervisor struct {
 	rootDir       string
 	port          int
 	dbFile        string
-	programs      []Program
+	programs      *ProgramMap
 	quit          chan struct{}
 	refreshTicker *time.Ticker
 }
 
-// TODO lock for modification of status
 type Program struct {
 	Name       string            `json:"name"`
 	Job        string            `json:"job"`
@@ -179,8 +178,7 @@ func (p *Program) bootstrap(s *Supervisor) error {
 
 	// Update supervisor db file, whether start job success or not.
 	defer func() {
-		s.programs = append(s.programs, *p)
-		if err := s.dumpSupervisorDB(); err != nil {
+		if err := s.programs.PutAndDump(p, s.dbFile); err != nil {
 			log.Errorf("Failed to dump supervisor db files: %v", err)
 		}
 	}()
@@ -291,13 +289,13 @@ func (s *Supervisor) hIndex(w http.ResponseWriter, r *http.Request) {
 		log.Error("Parse template failed: %v", err)
 		return
 	}
-	if err := t.Execute(w, s.programs); err != nil {
+	if err := t.Execute(w, s.programs.toArray()); err != nil {
 		log.Errorf("Render template error: %v", err)
 	}
 }
 
 func (s *Supervisor) hGetProgramList(w http.ResponseWriter, r *http.Request) {
-	data, err := json.Marshal(s.programs)
+	data, err := json.Marshal(s.programs.toArray())
 	if err != nil {
 		w.Write(renderResp(err))
 	}
@@ -331,28 +329,13 @@ func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, p := range s.programs {
-		if prog.Name == p.Name && prog.Job == p.Job && prog.TaskId == p.TaskId {
-			w.Write(renderResp(fmt.Errorf("Job %s.%s.%s already exists.", prog.Name, prog.Job, prog.TaskId)))
-			return
-		}
+	if p, ok := s.programs.Get(prog.Name, prog.Job, prog.TaskId); ok {
+		w.Write(renderResp(fmt.Errorf("Job %s.%s.%s already exists.", p.Name, p.Job, p.TaskId)))
+		return
 	}
 
 	prog.Status = StatusStopped
-	if err = prog.bootstrap(s); err != nil {
-		w.Write(renderResp(err))
-		return
-	}
-	w.Write(renderResp(nil))
-}
-
-func (s *Supervisor) getProgram(name, job, taskId string) *Program {
-	for _, prog := range s.programs {
-		if prog.Name == name && prog.Job == job && prog.TaskId == taskId {
-			return &prog
-		}
-	}
-	return nil
+	w.Write(renderResp(prog.bootstrap(s)))
 }
 
 // Abstract method for start/cleanup/rolling_update/restart/stop logic
@@ -360,23 +343,15 @@ func (s *Supervisor) handleProgram(w http.ResponseWriter, r *http.Request, handl
 	name := mux.Vars(r)["name"]
 	job := mux.Vars(r)["job"]
 	taskId := mux.Vars(r)["taskId"]
-	if prog := s.getProgram(name, job, taskId); prog != nil {
-		if err := handleFunc(prog); err != nil {
+
+	if prog, ok := s.programs.Get(name, job, taskId); ok {
+		if err := handleFunc(&prog); err != nil {
 			w.Write(renderResp(err))
 			return
 		}
-		// Keep the latest version of program save in supervisor.
-		// TODO check the similar case.
-		for i := range s.programs {
-			if s.programs[i].Name == prog.Name && s.programs[i].Job == prog.Job && s.programs[i].TaskId == prog.TaskId {
-				s.programs[i] = *prog
-			}
-		}
-		if err := s.dumpSupervisorDB(); err != nil {
-			w.Write(renderResp(err))
-			return
-		}
-		w.Write(renderResp(nil))
+
+		// Keep the latest version of program saved in supervisor.
+		w.Write(renderResp(s.programs.PutAndDump(&prog, s.dbFile)))
 	} else {
 		w.Write(renderResp(fmt.Errorf("name: %s, job: %s, taskId: %s not found.", name, job, taskId)))
 	}
@@ -386,7 +361,7 @@ func (s *Supervisor) hShowProgram(w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	job := mux.Vars(r)["job"]
 	taskId := mux.Vars(r)["taskId"]
-	if prog := s.getProgram(name, job, taskId); prog != nil {
+	if prog, ok := s.programs.Get(name, job, taskId); ok {
 		data, err := json.Marshal(prog)
 		if err != nil {
 			w.Write(renderResp(err))
@@ -411,20 +386,13 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 	taskId := mux.Vars(r)["taskId"]
 
 	// step.0 check and clear cache.
-	if prog := s.getProgram(name, job, taskId); prog != nil {
+	if prog, ok := s.programs.Get(name, job, taskId); ok {
 		if prog.Status == StatusRunning {
 			w.Write(renderResp(fmt.Errorf("Job %s.%s.%s is still running, stop it first please.",
 				prog.Name, prog.Job, prog.TaskId)))
 			return
 		}
-		// remove program from cache.
-		var programs []Program
-		for _, prog := range s.programs {
-			if prog.Name != name && prog.Job != job && prog.TaskId != taskId {
-				programs = append(programs, prog)
-			}
-		}
-		s.programs = programs
+		s.programs.Remove(&prog)
 	}
 
 	// issue#3: when the job does not exist in supervisor cache, still need to cleanup the data. because
@@ -478,20 +446,13 @@ func (s *Supervisor) hStopProgram(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Supervisor) loadSupervisorDB() error {
+	// step.0 Create if not exist
 	if _, err := os.Stat(s.dbFile); os.IsNotExist(err) {
-		// create if not exist
 		log.Infof("%s does not exist, initialize to be empty program list.", s.dbFile)
-		out, err := os.Create(s.dbFile)
-		if err != nil {
-			return err
-		}
-		defer out.Close()
-		data, _ := json.Marshal(s.programs)
-		if _, err := io.Copy(out, bytes.NewBuffer(data)); err != nil {
-			return err
-		}
-		return nil
+		return s.programs.DumpToFile(s.dbFile)
 	}
+
+	// step.1 Load programs from file
 	f, err := os.Open(s.dbFile)
 	if err != nil {
 		return fmt.Errorf("Open %s error: %v", s.dbFile, err)
@@ -501,28 +462,10 @@ func (s *Supervisor) loadSupervisorDB() error {
 	if _, err := io.Copy(&buf, f); err != nil {
 		return fmt.Errorf("Read %s error: %v", s.dbFile, err)
 	}
-	if err := json.Unmarshal(buf.Bytes(), &s.programs); err != nil {
+	if err := json.Unmarshal(buf.Bytes(), &(s.programs.programs)); err != nil {
 		return fmt.Errorf("Unmarshal %s error: %v", s.dbFile, err)
 	}
 
-	// TODO check current status of programs
-	return nil
-}
-
-func (s *Supervisor) dumpSupervisorDB() error {
-	// TODO write to a .tmp file first, then db file.
-	f, createErr := os.Create(s.dbFile)
-	if createErr != nil {
-		return createErr
-	}
-	defer f.Close()
-	data, err := json.Marshal(s.programs)
-	if err != nil {
-		return err
-	}
-	if _, err := io.Copy(f, bytes.NewBuffer(data)); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -531,7 +474,7 @@ func NewSupervisor(rootDir string, port int, supervisorDB string) (*Supervisor, 
 		rootDir:       rootDir,
 		port:          port,
 		dbFile:        supervisorDB,
-		programs:      []Program{},
+		programs:      NewProgramMap(),
 		quit:          make(chan struct{}),
 		refreshTicker: time.NewTicker(1 * time.Second),
 	}
@@ -546,15 +489,8 @@ func NewSupervisor(rootDir string, port int, supervisorDB string) (*Supervisor, 
 		for {
 			select {
 			case <-s.refreshTicker.C:
-				for i := range s.programs {
-					if isProcessOK(s.programs[i].PID) {
-						s.programs[i].Status = StatusRunning
-					} else {
-						s.programs[i].Status = StatusStopped
-					}
-				}
-				if err := s.dumpSupervisorDB(); err != nil {
-					log.Warnf("Failed to refresh program's status, dump supervisor db error: %v", err)
+				if err := s.programs.RefreshAndDump(s.dbFile); err != nil {
+					log.Errorf("Failed to refresh and dump %s, %s", s.dbFile, err)
 				}
 			case <-s.quit:
 				s.refreshTicker.Stop()
