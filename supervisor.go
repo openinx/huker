@@ -177,11 +177,13 @@ func (p *Program) bootstrap(s *Supervisor) error {
 		io.Copy(out, bytes.NewBufferString(content))
 	}
 
-	// step.8 update supervisor db file
-	s.programs = append(s.programs, *p)
-	if err := s.dumpSupervisorDB(); err != nil {
-		return err
-	}
+	// Update supervisor db file, whether start job success or not.
+	defer func() {
+		s.programs = append(s.programs, *p)
+		if err := s.dumpSupervisorDB(); err != nil {
+			log.Errorf("Failed to dump supervisor db files: %v", err)
+		}
+	}()
 
 	// step.9 start the job
 	if err := p.start(s); err != nil {
