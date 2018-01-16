@@ -5,6 +5,7 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/qiniu/log"
 	"io/ioutil"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -361,11 +362,12 @@ func parseMainEntry(s interface{}) (MainEntry, error) {
 }
 
 func parseConfigFile(cfgName string, keyValues []string) (ConfigFile, error) {
-	if strings.HasSuffix(cfgName, ".cfg") {
+	fname := filepath.Base(cfgName)
+	if strings.HasSuffix(fname, ".cfg") {
 		return NewINIConfigFile(cfgName, keyValues), nil
-	} else if strings.HasSuffix(cfgName, ".xml") {
+	} else if strings.HasSuffix(fname, ".xml") {
 		return NewXMLConfigFile(cfgName, keyValues), nil
-	} else if !strings.Contains(cfgName, ".") || strings.HasSuffix(cfgName, ".txt") {
+	} else if !strings.Contains(fname, ".") || strings.HasSuffix(fname, ".txt") {
 		return NewPlainConfigFile(cfgName, keyValues), nil
 	} else {
 		return nil, fmt.Errorf("Unsupported configuration file format. %s", cfgName)

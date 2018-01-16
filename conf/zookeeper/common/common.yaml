@@ -34,6 +34,8 @@ jobs:
           - initLimit=30
           - syncLimit=20
           - maxSessionTimeout=40000
+        {{.PkgDataDir}}/myid:
+          - $TaskId
       classpath:
         - {{.PkgRootDir}}/lib/*
         - {{.PkgRootDir}}/*

@@ -75,11 +75,16 @@ func (p *Program) bootstrap(s *Supervisor) error {
 	}
 
 	// step.1 render the agent root directory for config files and arguments.
+	newConfigMap := make(map[string]string)
 	for fname, content := range p.Configs {
 		content = strings.Replace(content, "$AgentRootDir", s.rootDir, -1)
 		content = strings.Replace(content, "$TaskId", p.TaskId, -1)
-		p.Configs[fname] = content
+		fname = strings.Replace(fname, "$AgentRootDir", s.rootDir, -1)
+		fname = strings.Replace(fname, "$TaskId", p.TaskId, -1)
+		newConfigMap[fname] = content
 	}
+	p.Configs = newConfigMap
+
 	for idx, arg := range p.Args {
 		arg = strings.Replace(arg, "$AgentRootDir", s.rootDir, -1)
 		arg = strings.Replace(arg, "$TaskId", p.TaskId, -1)
@@ -158,7 +163,11 @@ func (p *Program) bootstrap(s *Supervisor) error {
 
 	// step.7 dump configuration files
 	for fname, content := range p.Configs {
-		cfgPath := path.Join(jobRootDir, CONF_DIR, fname)
+		// When fname is /tmp/huker/agent01/myid case, we should write directly.
+		cfgPath := fname
+		if !strings.Contains(fname, "/") {
+			cfgPath = path.Join(jobRootDir, CONF_DIR, fname)
+		}
 		out, err := os.Create(cfgPath)
 		if err != nil {
 			log.Errorf("save configuration file error: %v", err)
