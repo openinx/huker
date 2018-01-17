@@ -60,36 +60,36 @@ type Program struct {
 	RootDir    string            `json:"root_dir"`
 }
 
-func (p *Program) bootstrap(s *Supervisor) error {
-	jobRootDir := path.Join(s.rootDir, p.Name, fmt.Sprintf("%s.%s", p.Job, p.TaskId))
+func (p *Program) install(agentRootDir string) error {
+	jobRootDir := path.Join(agentRootDir, p.Name, fmt.Sprintf("%s.%s", p.Job, p.TaskId))
 
-	// step.0 prev-check
-	if relDir, err := filepath.Rel(s.rootDir, jobRootDir); err != nil {
-		return err
-	} else if strings.Contains(relDir, "..") || s.rootDir == jobRootDir {
-		return fmt.Errorf("Permission denied, mkdir %s", jobRootDir)
-	}
-	if _, err := os.Stat(jobRootDir); os.IsExist(err) {
-		return fmt.Errorf("%s is already exists, cleanup it first please.", jobRootDir)
-	}
-
-	// step.1 render the agent root directory for config files and arguments.
+	// step.0 render the agent root directory for config files and arguments.
 	newConfigMap := make(map[string]string)
 	for fname, content := range p.Configs {
-		content = strings.Replace(content, "$AgentRootDir", s.rootDir, -1)
+		content = strings.Replace(content, "$AgentRootDir", agentRootDir, -1)
 		content = strings.Replace(content, "$TaskId", p.TaskId, -1)
-		fname = strings.Replace(fname, "$AgentRootDir", s.rootDir, -1)
+		fname = strings.Replace(fname, "$AgentRootDir", agentRootDir, -1)
 		fname = strings.Replace(fname, "$TaskId", p.TaskId, -1)
 		newConfigMap[fname] = content
 	}
 	p.Configs = newConfigMap
 
 	for idx, arg := range p.Args {
-		arg = strings.Replace(arg, "$AgentRootDir", s.rootDir, -1)
+		arg = strings.Replace(arg, "$AgentRootDir", agentRootDir, -1)
 		arg = strings.Replace(arg, "$TaskId", p.TaskId, -1)
 		p.Args[idx] = arg
 	}
 	p.RootDir = jobRootDir
+
+	// step.1 prev-check
+	if relDir, err := filepath.Rel(agentRootDir, jobRootDir); err != nil {
+		return err
+	} else if strings.Contains(relDir, "..") || agentRootDir == jobRootDir {
+		return fmt.Errorf("Permission denied, mkdir %s", jobRootDir)
+	}
+	if _, err := os.Stat(jobRootDir); err == nil {
+		return fmt.Errorf("%s is already exists, cleanup it first please.", jobRootDir)
+	}
 
 	// step.2 create directories recursively
 	if err := os.MkdirAll(jobRootDir, 0755); err != nil {
@@ -174,18 +174,6 @@ func (p *Program) bootstrap(s *Supervisor) error {
 		}
 		defer out.Close()
 		io.Copy(out, bytes.NewBufferString(content))
-	}
-
-	// Update supervisor db file, whether start job success or not.
-	defer func() {
-		if err := s.programs.PutAndDump(p, s.dbFile); err != nil {
-			log.Errorf("Failed to dump supervisor db files: %v", err)
-		}
-	}()
-
-	// step.9 start the job
-	if err := p.start(s); err != nil {
-		return err
 	}
 
 	return nil
@@ -317,6 +305,7 @@ func renderResp(err error) []byte {
 }
 
 func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
+	// Step.0 Read and unmarshal the program.
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.Write(renderResp(err))
@@ -329,13 +318,29 @@ func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Step.1 check the existence of program.
 	if p, ok := s.programs.Get(prog.Name, prog.Job, prog.TaskId); ok {
 		w.Write(renderResp(fmt.Errorf("Job %s.%s.%s already exists.", p.Name, p.Job, p.TaskId)))
 		return
 	}
 
+	// Step.2 Install package under root directory of agent.
+	err = prog.install(s.rootDir)
+	if err != nil {
+		w.Write(renderResp(err))
+		return
+	}
+
+	// Defer to update supervisor db file, whether start job success or not.
+	defer func() {
+		if err := s.programs.PutAndDump(prog, s.dbFile); err != nil {
+			log.Errorf("Failed to dump supervisor db files: %v", err)
+		}
+	}()
+
+	// Step.4 Start the job
 	prog.Status = StatusStopped
-	w.Write(renderResp(prog.bootstrap(s)))
+	w.Write(renderResp(prog.start(s)))
 }
 
 // Abstract method for start/cleanup/rolling_update/restart/stop logic

@@ -30,6 +30,30 @@ func main() {
 
 	app.Commands = []cli.Command{
 		{
+			Name:  "shell",
+			Usage: "Start an interactive shell terminal, and execute command in local",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "project",
+					Usage: "project name, such as hdfs, yarn, zookeeper, hbase, etc",
+				},
+				cli.StringFlag{
+					Name:  "cluster",
+					Usage: "cluster name",
+				},
+				cli.StringFlag{
+					Name:  "job",
+					Usage: "job name of the project, for hbase, the job will be master, regionserver, canary etc.",
+				},
+				cli.StringFlag{
+					Name:  "dir, d",
+					Value: "/tmp/huker-packages",
+					Usage: "Directory to store packages downloding from package manager server",
+				},
+			},
+			Action: hShell.Shell,
+		},
+		{
 			Name:  "bootstrap",
 			Usage: "Bootstrap a cluster of specific project, or jobs, or tasks",
 			Flags: []cli.Flag{

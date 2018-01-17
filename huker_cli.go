@@ -5,7 +5,9 @@ import (
 	"github.com/qiniu/log"
 	"github.com/urfave/cli"
 	"os"
+	"os/exec"
 	"path"
+	"strings"
 )
 
 type HukerShell struct {
@@ -28,6 +30,54 @@ func NewHukerShell(cfgRootDir, pkgServerAddress string) (*HukerShell, error) {
 	}
 
 	return h, nil
+}
+
+func (h *HukerShell) Shell(c *cli.Context) error {
+	args, err := h.prevAction(c)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	job := args.srvCfg.jobs[args.jobName]
+	if job.mode != "local" {
+		err := fmt.Errorf("Could not run a shell for a job[%s] with mode `%s`", args.jobName, job.mode)
+		log.Error(err)
+		return err
+	}
+
+	p := &Program{
+		Name:       args.srvCfg.clusterName,
+		Job:        args.jobName,
+		TaskId:     "0", // default task id is 0 for local mode job.
+		Bin:        args.srvCfg.javaHome,
+		Args:       job.toShell(),
+		Configs:    job.toConfigMap(),
+		PkgAddress: fmt.Sprintf("%s/%s", h.pkgServerAddress, args.srvCfg.packageName),
+		PkgName:    args.srvCfg.packageName,
+		PkgMD5Sum:  args.srvCfg.packageMd5sum,
+	}
+
+	agentRootDir := c.String("dir")
+	// TODO need to consider config change (or other host adjustment).
+	if err := p.install(agentRootDir); err != nil {
+		if !strings.Contains(err.Error(), "already exists, cleanup it first please.") {
+			log.Errorf("Failed to install package, %v", err)
+			return err
+		}
+	}
+
+	// Start the command.
+	cmd := exec.Command(p.Bin, p.Args...)
+	cmd.Stderr, cmd.Stdout, cmd.Stdin = os.Stderr, os.Stdout, os.Stdin
+
+	log.Infof("%s %s", p.Bin, strings.Join(p.Args, " "))
+
+	if err := cmd.Run(); err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
 }
 
 func (h *HukerShell) Bootstrap(c *cli.Context) error {

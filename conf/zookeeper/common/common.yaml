@@ -1,44 +1,52 @@
 jobs:
-  zookeeper:
-      jvm_opts:
-        - -Xmx4096m
-        - -Xms3072m
-        - -Xmn2048m
-        - -XX:MaxDirectMemorySize=1024m
-        - -XX:MaxPermSize=512m
-        - -XX:+DisableExplicitGC
-        - -XX:+HeapDumpOnOutOfMemoryError
-        - -XX:HeapDumpPath={{.PkgStdoutDir}}
-        - -XX:+PrintGCApplicationStoppedTime
-        - -XX:+UseConcMarkSweepGC
-        - -XX:CMSInitiatingOccupancyFraction=80
-        - -XX:+UseMembar
-        - -verbose:gc
-        - -XX:+PrintGCDetails
-        - -XX:+PrintHeapAtGC
-        - -XX:+PrintGCDateStamps
-        - -Xloggc:{{.PkgStdoutDir}}/zk_gc.log
-      jvm_properties:
-        - java.net.preferIPv4Stack=true
-        - jute.maxbuffer=10240000
-        - zookeeper.log.dir={{.PkgLogDir}}
-        - zookeeper.log.level=INFO,CONSOLE
-        - zookeeper.maxCnxns=13000
-      config:
-        zoo.cfg:
-          - dataDir={{.PkgDataDir}}
-          - dataLogDir={{.PkgLogDir}}
-          - clientPort=2182
-          - tickTime=2000
-          - maxClientCnxns=60
-          - initLimit=30
-          - syncLimit=20
-          - maxSessionTimeout=40000
-        {{.PkgDataDir}}/myid:
-          - $TaskId
-      classpath:
-        - {{.PkgRootDir}}/lib/*
-        - {{.PkgRootDir}}/*
-      main_entry:
-        java_class: org.apache.zookeeper.server.quorum.QuorumPeerMain
-        extra_args: {{.PkgConfDir}}/zoo.cfg
+  zkServer:
+    mode: remote
+    jvm_opts:
+      - -Xmx4096m
+      - -Xms3072m
+      - -Xmn2048m
+      - -XX:MaxDirectMemorySize=1024m
+      - -XX:MaxPermSize=512m
+      - -XX:+DisableExplicitGC
+      - -XX:+HeapDumpOnOutOfMemoryError
+      - -XX:HeapDumpPath={{.PkgStdoutDir}}
+      - -XX:+PrintGCApplicationStoppedTime
+      - -XX:+UseConcMarkSweepGC
+      - -XX:CMSInitiatingOccupancyFraction=80
+      - -XX:+UseMembar
+      - -verbose:gc
+      - -XX:+PrintGCDetails
+      - -XX:+PrintHeapAtGC
+      - -XX:+PrintGCDateStamps
+      - -Xloggc:{{.PkgStdoutDir}}/zk_gc.log
+    jvm_properties:
+      - java.net.preferIPv4Stack=true
+      - jute.maxbuffer=10240000
+      - zookeeper.log.dir={{.PkgLogDir}}
+      - zookeeper.log.level=INFO,CONSOLE
+      - zookeeper.maxCnxns=13000
+    config:
+      zoo.cfg:
+        - dataDir={{.PkgDataDir}}
+        - dataLogDir={{.PkgLogDir}}
+        - clientPort=2182
+        - tickTime=2000
+        - maxClientCnxns=60
+        - initLimit=30
+        - syncLimit=20
+        - maxSessionTimeout=40000
+      {{.PkgDataDir}}/myid:
+        - $TaskId
+    classpath:
+      - {{.PkgRootDir}}/lib/*
+      - {{.PkgRootDir}}/*
+    main_entry:
+      java_class: org.apache.zookeeper.server.quorum.QuorumPeerMain
+      extra_args: {{.PkgConfDir}}/zoo.cfg
+  zkCli:
+    mode: local
+    classpath:
+      - {{.PkgRootDir}}/lib/*
+      - {{.PkgRootDir}}/*
+    main_entry:
+      java_class: org.apache.zookeeper.ZooKeeperMain

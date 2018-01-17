@@ -174,7 +174,15 @@ type MainEntry struct {
 }
 
 func (m MainEntry) toShell() []string {
-	return []string{m.javaClass, m.extraArgs}
+	var buf []string
+	buf = append(buf, m.javaClass)
+	// TODO need to consider tab ?
+	for _, arg := range strings.Split(m.extraArgs, " ") {
+		if len(arg) > 0 {
+			buf = append(buf, arg)
+		}
+	}
+	return buf
 }
 
 type HostInfo struct {
@@ -235,6 +243,7 @@ func (h HostInfo) mergeWith(configFiles map[string]ConfigFile) {
 
 type Job struct {
 	jobName       string
+	mode          string
 	hosts         []HostInfo
 	jvmOpts       []string
 	jvmProperties []string
@@ -403,8 +412,15 @@ func parseConfigFileArray(s interface{}) ([]ConfigFile, error) {
 func NewJob(jobName string, jobMap map[interface{}]interface{}) (Job, error) {
 	job := Job{
 		jobName: jobName,
+		mode:    "remote", // remote job default.
 	}
 	var err error
+	if obj, ok := jobMap["mode"]; ok {
+		if reflect.TypeOf(obj).Kind() != reflect.String {
+			return Job{}, fmt.Errorf("`mode` field in job `%s` should be a string, now: %v", jobName, obj)
+		}
+		job.mode = obj.(string)
+	}
 	if jobMap["jvm_opts"] != nil {
 		if job.jvmOpts, err = parseStringArray(jobMap["jvm_opts"]); err != nil {
 			return Job{}, err

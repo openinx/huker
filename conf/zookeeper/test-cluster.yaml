@@ -7,7 +7,7 @@ cluster:
   package_md5sum: 55aec6196ed9fa4c451cb5ae4a1f42d8
 
 jobs:
-  zookeeper:
+  zkServer:
     config:
       zoo.cfg:
         - tick_time=2000
@@ -37,3 +37,6 @@ jobs:
         config:
           zoo.cfg:
             - clientPort=2581
+  zkCli:
+    main_entry:
+      extra_args: -server 127.0.0.1:2181,127.0.0.1:2281,127.0.0.1:2381,127.0.0.1:2481,127.0.0.1:2581
