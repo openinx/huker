@@ -1,0 +1,95 @@
+jobs:
+  job_common:
+    jvm_opts:
+      - -XX:+DisableExplicitGC
+      - -XX:+HeapDumpOnOutOfMemoryError
+      - -XX:+PrintGCApplicationStoppedTime
+      - -XX:+PrintGCDateStamps
+      - -XX:+PrintGCDetails
+      - -XX:+PrintHeapAtGC
+      - -XX:+UseConcMarkSweepGC
+      - -XX:+UseMembar
+      - -XX:CMSInitiatingOccupancyFraction=80
+      - -XX:HeapDumpPath={{.PkgStdoutDir}}
+      - -Xloggc:{{.PkgStdoutDir}}/gc.log
+      - -Xmx1024m
+      - -verbose:gc
+    jvm_properties:
+      - java.net.preferIPv4Stack=true
+      - java.library.path={{.PkgRootDir}}/lib/native
+      - hadoop.home.dir={{.PkgRootDir}}
+      - hadoop.id.str=openinx
+      - hadoop.log.dir={{.PkgLogDir}}
+      - hadoop.log.file=namenode.log
+      - hadoop.policy.file=hadoop-policy.xml
+      - hadoop.root.logger=INFO,RFA
+      - hadoop.security.logger=INFO,RFAS
+      - hdfs.audit.logger=INFO,NullAppender
+    config:
+      core-site.xml:
+        - fs.defaultFS=hdfs://localhost:9000
+        - io.file.buffer.size=131072
+      hdfs-site.xml:
+        - dfs.blocksize=268435456
+        - dfs.datanode.address=0.0.0.0:50010
+        - dfs.datanode.data.dir={{.PkgDataDir}}
+        - dfs.datanode.http.address=0.0.0.0:50075
+        - dfs.datanode.https.address=0.0.0.0:50475
+        - dfs.datanode.ipc.address=0.0.0.0:50020
+        - dfs.journalnode.http-address=0.0.0.0:8480
+        - dfs.journalnode.https-address=0.0.0.0:8481
+        - dfs.journalnode.rpc-address=0.0.0.0:8485
+        - dfs.namenode.backup.address=0.0.0.0:50100
+        - dfs.namenode.backup.http-address=0.0.0.0:50105
+        - dfs.namenode.rpc-address=0.0.0.0:50015
+        - dfs.namenode.http-address=0.0.0.0:50070
+        - dfs.namenode.https-address=0.0.0.0:50470
+        - dfs.namenode.name.dir={{.PkgDataDir}}
+        - dfs.namenode.secondary.http-address=0.0.0.0:50090
+        - dfs.namenode.secondary.https-address=0.0.0.0:50091
+        - dfs.replication=1
+      mapred-site.xml:
+        - mapreduce.framework.name=yarn
+        - mapreduce.jobhistory.address=0.0.0.0:10020
+        - mapreduce.jobhistory.admin.address=0.0.0.0:10033
+        - mapreduce.jobhistory.webapp.address=0.0.0.0:19888
+        - mapreduce.jobtracker.http.address=0.0.0.0:50030
+        - mapreduce.tasktracker.http.address=0.0.0.0:50060
+      yarn-site.xml:
+        - yarn.acl.enable=false
+        - yarn.admin.acl=*
+        - yarn.log-aggregation-enable=false
+        - yarn.nodemanager.aux-services=mapreduce_shuffle
+        - yarn.resourcemanager.resource-tracker.address=0.0.0.0:8031
+        - yarn.resourcemanager.scheduler.address=0.0.0.0::8030
+        - yarn.resourcemanager.webapp.address=0.0.0.0:8088
+        - yarn.timeline-service.address=0.0.0.0:10200
+    classpath:
+      - {{.PkgConfDir}}
+      - {{.PkgRootDir}}/contrib/capacity-scheduler/*.jar
+      - {{.PkgRootDir}}/lib/native/*
+      - {{.PkgRootDir}}/share/hadoop/common/*
+      - {{.PkgRootDir}}/share/hadoop/common/lib/*
+      - {{.PkgRootDir}}/share/hadoop/hdfs
+      - {{.PkgRootDir}}/share/hadoop/hdfs/*
+      - {{.PkgRootDir}}/share/hadoop/hdfs/lib/*
+      - {{.PkgRootDir}}/share/hadoop/mapreduce/*
+      - {{.PkgRootDir}}/share/hadoop/mapreduce/lib/*
+      - {{.PkgRootDir}}/share/hadoop/yarn/*
+      - {{.PkgRootDir}}/share/hadoop/yarn/lib/*
+  namenode:
+    super_job: job_common
+    main_entry:
+      java_class: org.apache.hadoop.hdfs.server.namenode.NameNode
+  datanode:
+    super_job: job_common
+    main_entry:
+      java_class: org.apache.hadoop.hdfs.server.datanode.DataNode
+  journalnode:
+    super_job: job_common
+    main_entry:
+      java_class: org.apache.hadoop.hdfs.qjournal.server.JournalNode
+  shell:
+    super_job: job_common
+    main_entry:
+      java_class: org.apache.hadoop.fs.FsShell

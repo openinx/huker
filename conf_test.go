@@ -333,8 +333,8 @@ func TestNewServiceConfig(t *testing.T) {
 				t.Errorf("test case #%d failed, job size mismatch", i)
 			}
 			for k := range s.jobs {
-				if s.jobs[k].mode != "remote" {
-					t.Errorf("test case #%d, mode should be remote", i)
+				if s.jobs[k].superJob != "" {
+					t.Errorf("test case #%d, superJob should be empty by default.", i)
 				}
 				if err := assertJobEquals(s.jobs[k], expected[i].jobs[k]); err != nil {
 					t.Errorf("test case #%d failed, cause: %v", i, err)

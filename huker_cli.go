@@ -40,11 +40,6 @@ func (h *HukerShell) Shell(c *cli.Context) error {
 	}
 
 	job := args.srvCfg.jobs[args.jobName]
-	if job.mode != "local" {
-		err := fmt.Errorf("Could not run a shell for a job[%s] with mode `%s`", args.jobName, job.mode)
-		log.Error(err)
-		return err
-	}
 
 	p := &Program{
 		Name:       args.srvCfg.clusterName,

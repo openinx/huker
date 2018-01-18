@@ -1,0 +1,21 @@
+base: {{.ConfRootDir}}/hdfs/common/common.yaml
+
+cluster:
+  cluster_name: test-hdfs
+  java_home: java
+  package_name: hadoop-2.6.5.tar.gz
+  package_md5sum: 967c24f3c15fcdd058f34923e92ce8ac
+
+jobs:
+  namenode:
+    hosts:
+      127.0.0.1/port=9001/id=1:  # host.1
+        config:
+          hdfs-site.xml:
+            - clientPort=2181
+  datanode:
+    hosts:
+      127.0.0.1/port=9001/id=2:  # host.1
+        config:
+          hdfs-site.xml:
+            - clientPort=2181

@@ -1,6 +1,6 @@
 jobs:
   zkServer:
-    mode: remote
+    super_job: remote
     jvm_opts:
       - -Xmx4096m
       - -Xms3072m
@@ -44,7 +44,7 @@ jobs:
       java_class: org.apache.zookeeper.server.quorum.QuorumPeerMain
       extra_args: {{.PkgConfDir}}/zoo.cfg
   zkCli:
-    mode: local
+    super_job: local
     classpath:
       - {{.PkgRootDir}}/lib/*
       - {{.PkgRootDir}}/*

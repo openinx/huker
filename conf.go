@@ -230,20 +230,24 @@ func (h HostInfo) toConfigMap() map[string]string {
 	return cfgMap
 }
 
-func (h HostInfo) mergeWith(configFiles map[string]ConfigFile) {
-	for fname, cfg := range configFiles {
-		if _, ok := h.configFiles[fname]; ok {
-			newCfg := h.configFiles[fname].mergeWith(cfg)
-			h.configFiles[fname] = newCfg
+func mergeConfigFiles(this, other map[string]ConfigFile) map[string]ConfigFile {
+	for fname, cfg := range other {
+		if _, ok := this[fname]; ok {
+			this[fname] = this[fname].mergeWith(cfg)
 		} else {
-			h.configFiles[fname] = cfg
+			this[fname] = cfg
 		}
 	}
+	return this
+}
+
+func (h HostInfo) mergeWith(configFiles map[string]ConfigFile) {
+	h.configFiles = mergeConfigFiles(h.configFiles, configFiles)
 }
 
 type Job struct {
 	jobName       string
-	mode          string
+	superJob      string
 	hosts         []HostInfo
 	jvmOpts       []string
 	jvmProperties []string
@@ -289,6 +293,42 @@ func (job Job) toConfigMap() map[string]string {
 		cfgMap[cfgKey] = cfgFile.toString()
 	}
 	return cfgMap
+}
+
+func (job Job) mergeWith(other Job) (Job, error) {
+	if job.superJob != other.jobName {
+		return Job{}, fmt.Errorf("job `%s` is not inherited from job `%s`", job.jobName, other.jobName)
+	}
+
+	// Merge array a with array b. if exist in both a and b, then use item in a.
+	mergeStringArray := func(a, b []string) []string {
+		for k := range b {
+			found := false
+			for i := range a {
+				if a[i] == b[k] {
+					found = true
+					break
+				}
+			}
+			if !found {
+				a = append(a, b[k])
+			}
+		}
+		return a
+	}
+
+	// merge jvm opts
+	job.jvmOpts = mergeStringArray(job.jvmOpts, other.jvmOpts)
+
+	// merge jvm properties.
+	job.jvmProperties = mergeStringArray(job.jvmProperties, other.jvmProperties)
+
+	// merge jvm classpath
+	job.classpath = mergeStringArray(job.classpath, other.classpath)
+
+	// merge config files
+	job.configFiles = mergeConfigFiles(job.configFiles, other.configFiles)
+	return job, nil
 }
 
 type ServiceConfig struct {
@@ -411,15 +451,16 @@ func parseConfigFileArray(s interface{}) ([]ConfigFile, error) {
 
 func NewJob(jobName string, jobMap map[interface{}]interface{}) (Job, error) {
 	job := Job{
-		jobName: jobName,
-		mode:    "remote", // remote job default.
+		jobName:     jobName,
+		superJob:    "", // no super job by default.
+		configFiles: make(map[string]ConfigFile),
 	}
 	var err error
-	if obj, ok := jobMap["mode"]; ok {
+	if obj, ok := jobMap["super_job"]; ok {
 		if reflect.TypeOf(obj).Kind() != reflect.String {
-			return Job{}, fmt.Errorf("`mode` field in job `%s` should be a string, now: %v", jobName, obj)
+			return Job{}, fmt.Errorf("`super_job` field in job `%s` should be a string, now: %v", jobName, obj)
 		}
-		job.mode = obj.(string)
+		job.superJob = obj.(string)
 	}
 	if jobMap["jvm_opts"] != nil {
 		if job.jvmOpts, err = parseStringArray(jobMap["jvm_opts"]); err != nil {
@@ -464,7 +505,6 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (Job, error) {
 				return Job{}, err2
 			} else {
 				hostInfo := NewHostInfo(hostKey.(string), confFiles)
-				hostInfo.mergeWith(job.configFiles)
 				hosts = append(hosts, hostInfo)
 			}
 		}
@@ -569,7 +609,24 @@ func NewServiceConfig(yamlConfigs []string) (*ServiceConfig, error) {
 			jobs[jobName.(string)] = job
 		}
 	}
-	svCfg.jobs = jobs
+
+	// Merge job with its parent job. Be careful that we only allow one layer of inheritance.
+	// The case A -> B -> C is not allowed.
+	newJobs := make(map[string]Job)
+	for jobName, job := range jobs {
+		if parentJob, ok := jobs[job.superJob]; ok {
+			var err error
+			if job, err = job.mergeWith(parentJob); err != nil {
+				return nil, err
+			}
+		}
+		for _, host := range job.hosts {
+			host.mergeWith(job.configFiles)
+		}
+		newJobs[jobName] = job
+	}
+
+	svCfg.jobs = newJobs
 	return svCfg, nil
 }
 
