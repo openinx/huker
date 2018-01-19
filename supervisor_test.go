@@ -3,6 +3,7 @@ package huker
 import (
 	"fmt"
 	"github.com/qiniu/log"
+	"os"
 	"path"
 	"testing"
 	"time"
@@ -15,12 +16,16 @@ type MiniHuker struct {
 }
 
 func NewMiniHuker(agentRootDir string) *MiniHuker {
+	// mkdir root dir of agent if not exist.
+	if _, err := os.Stat(agentRootDir); os.IsNotExist(err) {
+		os.MkdirAll(agentRootDir, 755)
+	}
+	supervisor, err := NewSupervisor(agentRootDir, 9743, agentRootDir+"/supervisor.db")
+	if err != nil {
+		panic(err)
+	}
 	m := &MiniHuker{
-		s: &Supervisor{
-			rootDir: agentRootDir,
-			port:    9743,
-			dbFile:  agentRootDir + "/supervisor.db",
-		},
+		s: supervisor,
 		cli: &SupervisorCli{
 			serverAddr: "http://127.0.0.1:9743",
 		},
