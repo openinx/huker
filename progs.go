@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
+	"strings"
 	"sync"
 )
 
@@ -92,5 +94,17 @@ func (p *ProgramMap) toArray() []Program {
 	for _, prog := range p.programs {
 		progArray = append(progArray, prog)
 	}
+	sort.Slice(progArray, func(i, j int) bool {
+		c0 := strings.Compare(progArray[i].Name, progArray[j].Name)
+		if c0 != 0 {
+			return c0 < 0
+		}
+		c0 = strings.Compare(progArray[i].Job, progArray[j].Job)
+		if c0 != 0 {
+			return c0 < 0
+		}
+		return progArray[i].PID < progArray[j].PID
+
+	})
 	return progArray
 }

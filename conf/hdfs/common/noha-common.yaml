@@ -1,0 +1,75 @@
+jobs:
+  job_common:
+    jvm_opts:
+      - -XX:+DisableExplicitGC
+      - -XX:+HeapDumpOnOutOfMemoryError
+      - -XX:+PrintGCApplicationStoppedTime
+      - -XX:+PrintGCDateStamps
+      - -XX:+PrintGCDetails
+      - -XX:+PrintHeapAtGC
+      - -XX:+UseConcMarkSweepGC
+      - -XX:+UseMembar
+      - -XX:CMSInitiatingOccupancyFraction=80
+      - -XX:HeapDumpPath={{.PkgStdoutDir}}
+      - -Xloggc:{{.PkgStdoutDir}}/gc.log
+      - -Xmx1024m
+      - -verbose:gc
+    jvm_properties:
+      - java.net.preferIPv4Stack=true
+      - java.library.path={{.PkgRootDir}}/lib/native
+      - hadoop.home.dir={{.PkgRootDir}}
+      - hadoop.id.str=openinx
+      - hadoop.log.dir={{.PkgLogDir}}
+      - hadoop.policy.file=hadoop-policy.xml
+      - hadoop.root.logger=INFO,RFA
+      - hadoop.security.logger=INFO,RFAS
+      - hdfs.audit.logger=INFO,NullAppender
+    config:
+      core-site.xml:
+        - fs.defaultFS=hdfs://%{namenode.0.host}:%{namenode.0.base_port}
+        - io.file.buffer.size=131072
+      hdfs-site.xml:
+        - dfs.blocksize=268435456
+        # DataNode
+        - dfs.datanode.data.dir={{.PkgDataDir}}
+        - dfs.datanode.address=0.0.0.0:%{datanode.x.base_port}
+        - dfs.datanode.http.address=0.0.0.0:%{datanode.x.base_port+1}
+        - dfs.datanode.ipc.address=0.0.0.0:%{datanode.x.base_port+2}
+        # NameNode
+        - dfs.namenode.rpc-address=%{namenode.0.host}:%{namenode.0.base_port}
+        - dfs.namenode.http-address=%{namenode.0.host}:%{namenode.0.base_port+1}
+        - dfs.namenode.name.dir={{.PkgDataDir}}
+        - dfs.replication=1
+      log4j.properties:
+        file: {{.ConfRootDir}}/hdfs/common/log4j.properties
+    classpath:
+      - {{.PkgConfDir}}
+      - {{.PkgRootDir}}/contrib/capacity-scheduler/*.jar
+      - {{.PkgRootDir}}/lib/native/*
+      - {{.PkgRootDir}}/share/hadoop/common/*
+      - {{.PkgRootDir}}/share/hadoop/common/lib/*
+      - {{.PkgRootDir}}/share/hadoop/hdfs
+      - {{.PkgRootDir}}/share/hadoop/hdfs/*
+      - {{.PkgRootDir}}/share/hadoop/hdfs/lib/*
+      - {{.PkgRootDir}}/share/hadoop/mapreduce/*
+      - {{.PkgRootDir}}/share/hadoop/mapreduce/lib/*
+      - {{.PkgRootDir}}/share/hadoop/yarn/*
+      - {{.PkgRootDir}}/share/hadoop/yarn/lib/*
+
+  # HDFS Service.
+  namenode:
+    super_job: job_common
+    jvm_properties:
+      - hadoop.log.file=namenode.log
+    main_entry:
+      java_class: org.apache.hadoop.hdfs.server.namenode.NameNode
+  datanode:
+    super_job: job_common
+    jvm_properties:
+      - hadoop.log.file=datanode.log
+    main_entry:
+      java_class: org.apache.hadoop.hdfs.server.datanode.DataNode
+  shell:
+    super_job: job_common
+    main_entry:
+      java_class: org.apache.hadoop.fs.FsShell

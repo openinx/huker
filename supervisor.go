@@ -209,6 +209,7 @@ func (p *Program) start(s *Supervisor) error {
 	time.Sleep(time.Second * 1)
 
 	if cmd.Process != nil && isProcessOK(cmd.Process.Pid) {
+		log.Infof("Start process success. [%s %s]", p.Bin, strings.Join(p.Args, " "))
 		p.Status = StatusRunning
 		p.PID = cmd.Process.Pid
 		return nil
@@ -321,7 +322,7 @@ func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 
 	// Step.1 check the existence of program.
 	if p, ok := s.programs.Get(prog.Name, prog.Job, prog.TaskId); ok {
-		w.Write(renderResp(fmt.Errorf("Job %s.%s.%s already exists.", p.Name, p.Job, p.TaskId)))
+		w.Write(renderResp(fmt.Errorf("Job %s.%s.%d already exists.", p.Name, p.Job, p.TaskId)))
 		return
 	}
 
@@ -394,7 +395,7 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 	// step.0 check and clear cache.
 	if prog, ok := s.programs.Get(name, job, taskId); ok {
 		if prog.Status == StatusRunning {
-			w.Write(renderResp(fmt.Errorf("Job %s.%s.%s is still running, stop it first please.",
+			w.Write(renderResp(fmt.Errorf("Job %s.%s.%d is still running, stop it first please.",
 				prog.Name, prog.Job, prog.TaskId)))
 			return
 		}
@@ -405,7 +406,7 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 	// the supervisor may failed to start process when bootstrap and left the directory dir(pkg/data/conf..etc)
 
 	// TODO abstract a common method to generate jobRootDir.
-	jobRootDir := path.Join(s.rootDir, name, fmt.Sprintf("%s.%s", job, taskId))
+	jobRootDir := path.Join(s.rootDir, name, fmt.Sprintf("%s.%d", job, taskId))
 
 	// step.1 check the job root dir
 	if _, err := os.Stat(jobRootDir); os.IsNotExist(err) {
@@ -423,7 +424,7 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// step.2 rename the job root dir into .trash
-	targetPath := path.Join(s.rootDir, name, fmt.Sprintf(".trash.%s.%s.%d", job, taskId, int32(time.Now().Unix())))
+	targetPath := path.Join(s.rootDir, name, fmt.Sprintf(".trash.%s.%d.%d", job, taskId, int32(time.Now().Unix())))
 	if err := os.Rename(jobRootDir, targetPath); err != nil {
 		w.Write(renderResp(err))
 		return

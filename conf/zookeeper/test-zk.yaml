@@ -17,26 +17,11 @@ jobs:
         - server.4=127.0.0.1:2488:3488
         - server.5=127.0.0.1:2588:3588
     hosts:
-      127.0.0.1/port=9001/id=1:  # host.1
-        config:
-          zoo.cfg:
-            - clientPort=2181
-      127.0.0.1/port=9001/id=2:  # host.2
-        config:
-          zoo.cfg:
-            - clientPort=2281
-      127.0.0.1/port=9001/id=3:  # host.3
-        config:
-          zoo.cfg:
-            - clientPort=2381
-      127.0.0.1/port=9002/id=4:  # host.4
-        config:
-          zoo.cfg:
-            - clientPort=2481
-      127.0.0.1/port=9002/id=5:  # host.5
-        config:
-          zoo.cfg:
-            - clientPort=2581
+      - 127.0.0.1:9001/id=1/base_port=10010  # host.1
+      - 127.0.0.1:9001/id=2/base_port=10020  # host.2
+      - 127.0.0.1:9001/id=3/base_port=10030  # host.3
+      - 127.0.0.1:9001/id=4/base_port=10040  # host.4
+      - 127.0.0.1:9001/id=5/base_port=10050  # host.5
   zkCli:
     main_entry:
       extra_args: -server 127.0.0.1:2181,127.0.0.1:2281,127.0.0.1:2381,127.0.0.1:2481,127.0.0.1:2581

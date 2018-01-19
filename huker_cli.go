@@ -17,19 +17,13 @@ type HukerShell struct {
 	pkgServerAddress string
 }
 
-func NewHukerShell(cfgRootDir, pkgServerAddress string) (*HukerShell, error) {
-	h := &HukerShell{
+func NewHukerShell(cfgRootDir, pkgServerAddress string) *HukerShell {
+	return &HukerShell{
 		cfgRootDir:       cfgRootDir,
 		agentRootDir:     "$AgentRootDir", // it will render this variable by value at agent side.
 		taskId:           "$TaskId",       // ditto
 		pkgServerAddress: pkgServerAddress,
 	}
-
-	if _, err := os.Stat(cfgRootDir); os.IsNotExist(err) {
-		return nil, fmt.Errorf("Root configuration directory %s does not exist.", cfgRootDir)
-	}
-
-	return h, nil
 }
 
 func (h *HukerShell) Shell(c *cli.Context) error {
@@ -38,18 +32,18 @@ func (h *HukerShell) Shell(c *cli.Context) error {
 		return err
 	}
 
-	job := args.srvCfg.jobs[args.jobName]
+	job := args.cluster.jobs[args.jobName]
 
 	p := &Program{
-		Name:       args.srvCfg.clusterName,
+		Name:       args.cluster.clusterName,
 		Job:        args.jobName,
 		TaskId:     0, // default task id is 0 for local mode job.
-		Bin:        args.srvCfg.javaHome,
+		Bin:        args.cluster.javaHome,
 		Args:       job.toShell(),
 		Configs:    job.toConfigMap(),
-		PkgAddress: fmt.Sprintf("%s/%s", h.pkgServerAddress, args.srvCfg.packageName),
-		PkgName:    args.srvCfg.packageName,
-		PkgMD5Sum:  args.srvCfg.packageMd5sum,
+		PkgAddress: fmt.Sprintf("%s/%s", h.pkgServerAddress, args.cluster.packageName),
+		PkgName:    args.cluster.packageName,
+		PkgMD5Sum:  args.cluster.packageMd5sum,
 	}
 
 	agentRootDir := c.String("dir")
@@ -75,20 +69,23 @@ func (h *HukerShell) Bootstrap(c *cli.Context) error {
 		return err
 	}
 
-	job := args.srvCfg.jobs[args.jobName]
+	job := args.cluster.jobs[args.jobName]
 	for _, host := range job.hosts {
+		cfgMap, err := args.cluster.RenderConfigFiles(job, host.taskId)
+		if err != nil {
+			return err
+		}
 		supCli := NewSupervisorCli(host.toHttpAddress())
-
 		p := &Program{
-			Name:       args.srvCfg.clusterName,
+			Name:       args.cluster.clusterName,
 			Job:        args.jobName,
 			TaskId:     host.taskId,
-			Bin:        args.srvCfg.javaHome,
+			Bin:        args.cluster.javaHome,
 			Args:       job.toShell(),
-			Configs:    host.toConfigMap(),
-			PkgAddress: fmt.Sprintf("%s/%s", h.pkgServerAddress, args.srvCfg.packageName),
-			PkgName:    args.srvCfg.packageName,
-			PkgMD5Sum:  args.srvCfg.packageMd5sum,
+			Configs:    cfgMap,
+			PkgAddress: fmt.Sprintf("%s/%s", h.pkgServerAddress, args.cluster.packageName),
+			PkgName:    args.cluster.packageName,
+			PkgMD5Sum:  args.cluster.packageMd5sum,
 		}
 		if err := supCli.bootstrap(p); err != nil {
 			log.Errorf("Bootstrap job %s at %s failed, err: %v", args.jobName, host.toKey(), err)
@@ -104,11 +101,10 @@ func (h *HukerShell) Show(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
-	job := args.srvCfg.jobs[args.jobName]
+	job := args.cluster.jobs[args.jobName]
 	for _, host := range job.hosts {
 		supCli := NewSupervisorCli(host.toHttpAddress())
-		if p, err := supCli.show(args.cluster, args.jobName, host.taskId); err != nil {
+		if p, err := supCli.show(args.clusterName, args.jobName, host.taskId); err != nil {
 			log.Errorf("Show job %s at %s failed, err: %v", args.jobName, host.toKey(), err)
 		} else {
 			log.Infof("Show job %s at %s is -> %s", args.jobName, host.toKey(), p.Status)
@@ -123,10 +119,10 @@ func (h *HukerShell) Start(c *cli.Context) error {
 		return err
 	}
 
-	job := args.srvCfg.jobs[args.jobName]
+	job := args.cluster.jobs[args.jobName]
 	for _, host := range job.hosts {
 		supCli := NewSupervisorCli(host.toHttpAddress())
-		if err := supCli.start(args.cluster, args.jobName, host.taskId); err != nil {
+		if err := supCli.start(args.clusterName, args.jobName, host.taskId); err != nil {
 			log.Errorf("Start job %s at %s failed, err: %v", args.jobName, host.toKey(), err)
 		} else {
 			log.Infof("Start job %s at %s success.", args.jobName, host.toKey())
@@ -141,10 +137,10 @@ func (h *HukerShell) Cleanup(c *cli.Context) error {
 		return err
 	}
 
-	job := args.srvCfg.jobs[args.jobName]
+	job := args.cluster.jobs[args.jobName]
 	for _, host := range job.hosts {
 		supCli := NewSupervisorCli(host.toHttpAddress())
-		if err := supCli.cleanup(args.cluster, args.jobName, host.taskId); err != nil {
+		if err := supCli.cleanup(args.clusterName, args.jobName, host.taskId); err != nil {
 			log.Errorf("Cleanup job %s at %s failed, err: %v", args.jobName, host.toKey(), err)
 		} else {
 			log.Infof("Cleanup job %s at %s success.", args.jobName, host.toKey())
@@ -163,10 +159,10 @@ func (h *HukerShell) Restart(c *cli.Context) error {
 		return err
 	}
 
-	job := args.srvCfg.jobs[args.jobName]
+	job := args.cluster.jobs[args.jobName]
 	for _, host := range job.hosts {
 		supCli := NewSupervisorCli(host.toHttpAddress())
-		if err := supCli.restart(args.cluster, args.jobName, host.taskId); err != nil {
+		if err := supCli.restart(args.clusterName, args.jobName, host.taskId); err != nil {
 			log.Errorf("Restart job %s at %s failed, err: %v", args.jobName, host.toKey(), err)
 		} else {
 			log.Infof("Restart job %s at %s success.", args.jobName, host.toKey())
@@ -181,10 +177,10 @@ func (h *HukerShell) Stop(c *cli.Context) error {
 		return err
 	}
 
-	job := args.srvCfg.jobs[args.jobName]
+	job := args.cluster.jobs[args.jobName]
 	for _, host := range job.hosts {
 		supCli := NewSupervisorCli(host.toHttpAddress())
-		if err := supCli.stop(args.cluster, args.jobName, host.taskId); err != nil {
+		if err := supCli.stop(args.clusterName, args.jobName, host.taskId); err != nil {
 			log.Errorf("Stop job %s at %s failed, err: %v", args.jobName, host.toKey(), err)
 		} else {
 			log.Infof("Stop job %s at %s success.", args.jobName, host.toKey())
@@ -194,16 +190,16 @@ func (h *HukerShell) Stop(c *cli.Context) error {
 }
 
 type PrevArgs struct {
-	cluster string
-	project string
-	jobName string
-	srvCfg  *ServiceConfig
-	env     *EnvVariables
+	clusterName string
+	project     string
+	jobName     string
+	cluster     *Cluster
+	env         *EnvVariables
 }
 
 func (h *HukerShell) prevAction(c *cli.Context) (*PrevArgs, error) {
-	project := c.String("project") // TODO project field is required
-	cluster := c.String("cluster") // TODO cluster field is required
+	project := c.String("project")     // TODO project field is required
+	clusterName := c.String("cluster") // TODO cluster field is required
 	jobName := c.String("job")
 
 	projectPath := path.Join(h.cfgRootDir, project)
@@ -211,12 +207,12 @@ func (h *HukerShell) prevAction(c *cli.Context) (*PrevArgs, error) {
 		return nil, fmt.Errorf("Invalid project `%s`, create configuration under %s directory please.", project, projectPath)
 	}
 
-	clusterCfg := path.Join(projectPath, cluster+".yaml")
+	clusterCfg := path.Join(projectPath, clusterName+".yaml")
 	if _, err := os.Stat(clusterCfg); os.IsNotExist(err) {
-		return nil, fmt.Errorf("Invalid cluster `%s`, %s does not exist.", cluster, clusterCfg)
+		return nil, fmt.Errorf("Invalid cluster `%s`, %s does not exist.", clusterName, clusterCfg)
 	}
 
-	jobRootDir := path.Join(h.agentRootDir, cluster, fmt.Sprintf("%s.%s", jobName, h.taskId))
+	jobRootDir := path.Join(h.agentRootDir, clusterName, fmt.Sprintf("%s.%s", jobName, h.taskId))
 	env := &EnvVariables{
 		ConfRootDir:  h.cfgRootDir,
 		PkgRootDir:   path.Join(jobRootDir, PKG_DIR),
@@ -226,21 +222,21 @@ func (h *HukerShell) prevAction(c *cli.Context) (*PrevArgs, error) {
 		PkgStdoutDir: path.Join(jobRootDir, STDOUT_DIR),
 	}
 
-	srvCfg, err := LoadServiceConfig(clusterCfg, env)
+	cluster, err := LoadClusterConfig(clusterCfg, env)
 	if err != nil {
 		return nil, fmt.Errorf("Load service configuration failed, err: %v", err)
 	}
 
-	if _, ok := srvCfg.jobs[jobName]; !ok {
+	if _, ok := cluster.jobs[jobName]; !ok {
 		return nil, fmt.Errorf("Job `%s` does not exist in %s", jobName, clusterCfg)
 	}
 
 	cfg := &PrevArgs{
-		cluster: cluster,
-		project: projectPath,
-		jobName: jobName,
-		srvCfg:  srvCfg,
-		env:     env,
+		clusterName: clusterName,
+		project:     projectPath,
+		jobName:     jobName,
+		cluster:     cluster,
+		env:         env,
 	}
 
 	return cfg, nil

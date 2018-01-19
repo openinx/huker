@@ -7,52 +7,6 @@ import (
 	"testing"
 )
 
-func TestConfigFile(t *testing.T) {
-	var cf ConfigFile
-	cf = NewINIConfigFile("test.cfg", []string{
-		"a=b", "c=d",
-	})
-	if cf.toString() != "a=b\nc=d" {
-		t.Error()
-	}
-	m := cf.toKeyValue()
-	for _, x := range []string{"a", "c"} {
-		if _, ok := m[x]; !ok {
-			t.Error()
-		}
-	}
-	if len(m) != 2 {
-		t.Error()
-	}
-
-	cf = NewINIConfigFile("test.cfg", []string{})
-	if cf.toString() != "" {
-		t.Error()
-	}
-	if len(cf.toKeyValue()) != 0 {
-		t.Error()
-	}
-
-	xml := NewXMLConfigFile("test.xml", []string{"a=b"})
-	expected := "<configuration>\n  <property>\n    <name>a</name>\n    <value>b</value>\n  </property>\n</configuration>"
-	if xml.toString() != expected {
-		t.Error(xml.toString())
-	}
-	m = xml.toKeyValue()
-	for _, x := range []string{"a"} {
-		if _, ok := m[x]; !ok {
-			t.Errorf("%s does not exists", x)
-		}
-	}
-
-	xml = NewXMLConfigFile("test.xml", []string{})
-	expected = "<configuration>\n</configuration>"
-	if xml.toString() != expected {
-		t.Error(xml.toString())
-	}
-
-}
-
 func testMapEquals(m1 map[interface{}]interface{}, m2 map[interface{}]interface{}) bool {
 	if m1 == nil && m2 == nil {
 		return true
@@ -127,12 +81,12 @@ func TestMergeYamlMap(t *testing.T) {
 		"compute": "d",
 	}
 
-	actualMap := MergeYamlMap(m1, m1)
+	actualMap := MergeMap(m1, m1)
 	if !testMapEquals(m1, actualMap) {
 		t.Errorf("Merge the same yaml map failed. expected: %v, actual: %v", m1, actualMap)
 	}
 
-	actualMap = MergeYamlMap(m1, m2)
+	actualMap = MergeMap(m1, m2)
 	if !testMapEquals(m3, actualMap) {
 		t.Errorf("Merge the m1 with m2 failed, expeced: %v, actual: %v", m3, actualMap)
 	}
@@ -152,7 +106,7 @@ func assertSliceEquals(a, b []string, key string) error {
 	return nil
 }
 
-func assertJobEquals(a, b Job) error {
+func assertJobEquals(a, b *Job) error {
 	if a.jobName != b.jobName {
 		return fmt.Errorf("jobName mismatch, expected: %s, actual: %s", a.jobName, b.jobName)
 	}
@@ -198,12 +152,8 @@ func TestNewServiceConfig(t *testing.T) {
       package_md5sum: 55aec6196ed9fa4c451cb5ae4a1f42d8
     jobs:
       zookeeper:
-        base_port: 9010
         hosts:
-          192.168.0.2/port=9001/id=1:
-            config:
-              zoo.cfg:
-                - clientPort=2181
+          - 192.168.0.2:9001/id=1/base_port=9002
         config:
           zoo.cfg:
             - tick_time=2000
@@ -212,12 +162,8 @@ func TestNewServiceConfig(t *testing.T) {
 	cfg2 := `
     jobs:
       zookeeper:
-        base_port: 9012
         hosts:
-          192.168.0.2/port=9001/id=1:
-            config:
-              zoo.cfg:
-                - clientPort=2181
+          - 192.168.0.2:9001/id=1/base_port=9003
         jvm_opts:
           - -Xmn1024m
         jvm_properties:
@@ -232,15 +178,15 @@ func TestNewServiceConfig(t *testing.T) {
 		cfgList0, cfgList1, cfgList2,
 	}
 
-	expected := []ServiceConfig{
-		ServiceConfig{
+	expected := []Cluster{
+		Cluster{
 			baseConfig:    "/home/test.yaml",
 			clusterName:   "tst-cluster",
 			javaHome:      "/usr/bin/java",
 			packageName:   "zookeeper-3.4.11.tar.gz",
 			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
-			jobs: map[string]Job{
-				"zookeeper": Job{
+			jobs: map[string]*Job{
+				"zookeeper": &Job{
 					jobName: "zookeeper",
 					//hosts:         []string{"192.168.0.1"},
 					jvmOpts:       []string{"-Xmx4096m"},
@@ -252,21 +198,21 @@ func TestNewServiceConfig(t *testing.T) {
 							keyValues: []string{"data_dir=/home/data", "tick_time=2000"},
 						},
 					},
-					mainEntry: MainEntry{
+					mainEntry: &MainEntry{
 						javaClass: "org.apache.zookeeper.server.quorum.QuorumPeerMain",
 						extraArgs: "conf/zoo_sample.cfg",
 					},
 				},
 			},
 		},
-		ServiceConfig{
+		Cluster{
 			baseConfig:    "/home/test.yaml",
 			clusterName:   "tst-cluster",
 			javaHome:      "/usr/bin/java",
 			packageName:   "zookeeper-3.4.11.tar.gz",
 			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
-			jobs: map[string]Job{
-				"zookeeper": Job{
+			jobs: map[string]*Job{
+				"zookeeper": &Job{
 					jobName: "zookeeper",
 					//hosts:         []string{"192.168.0.1", "192.168.0.2"},
 					jvmOpts:       []string{"-Xmn1024m"},
@@ -278,18 +224,18 @@ func TestNewServiceConfig(t *testing.T) {
 							keyValues: []string{"data_dir=/home/data", "tick_time=2000"},
 						},
 					},
-					mainEntry: MainEntry{},
+					mainEntry: &MainEntry{},
 				},
 			},
 		},
-		ServiceConfig{
+		Cluster{
 			baseConfig:    "/home/test.yaml",
 			clusterName:   "tst-cluster",
 			javaHome:      "/usr/bin/java",
 			packageName:   "zookeeper-3.4.11.tar.gz",
 			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
-			jobs: map[string]Job{
-				"zookeeper": Job{
+			jobs: map[string]*Job{
+				"zookeeper": &Job{
 					jobName: "zookeeper",
 					//hosts:         []string{"192.168.0.1", "192.168.0.2"},
 					jvmOpts:       []string{"-Xmn1024m", "-Xmx4096m"},
@@ -301,7 +247,7 @@ func TestNewServiceConfig(t *testing.T) {
 							keyValues: []string{"data_dir=/home/data", "tick_time=2000"},
 						},
 					},
-					mainEntry: MainEntry{
+					mainEntry: &MainEntry{
 						javaClass: "org.apache.zookeeper.server.quorum.QuorumPeerMain",
 						extraArgs: "conf/zoo_sample.cfg",
 					},
@@ -311,7 +257,7 @@ func TestNewServiceConfig(t *testing.T) {
 	}
 
 	for i := range testSet {
-		if s, err := NewServiceConfig(testSet[i]); err != nil {
+		if s, err := NewCluster(testSet[i], nil); err != nil {
 			t.Errorf("test case #%d failed, cause: %v", i, err)
 		} else {
 			if s.baseConfig != expected[i].baseConfig {
@@ -355,10 +301,7 @@ func TestToShell(t *testing.T) {
     jobs:
       zookeeper:
         hosts:
-          192.168.0.2/port=9001/id=1:
-            config:
-              zoo.cfg:
-                - clientPort=2182
+          - 192.168.0.2:9001/id=1/base_port=9003
         jvm_properties:
           - java.log.dir=.
         config:
@@ -370,7 +313,7 @@ func TestToShell(t *testing.T) {
           java_class: org.apache.zk.QuorumPeerMain
           extra_args: conf/zoo_sample.cfg
     `
-	s, err := NewServiceConfig([]string{cfg})
+	s, err := NewCluster([]string{cfg}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

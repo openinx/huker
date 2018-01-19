@@ -27,9 +27,9 @@ jobs:
       - zookeeper.maxCnxns=13000
     config:
       zoo.cfg:
+        - clientPort=%{zkServer.x.base_port}
         - dataDir={{.PkgDataDir}}
         - dataLogDir={{.PkgLogDir}}
-        - clientPort=2182
         - tickTime=2000
         - maxClientCnxns=60
         - initLimit=30
@@ -37,7 +37,10 @@ jobs:
         - maxSessionTimeout=40000
       {{.PkgDataDir}}/myid:
         - $TaskId
+      log4j.properties:
+        file: {{.ConfRootDir}}/zookeeper/common/log4j.properties
     classpath:
+      - {{.PkgRootDir}}/conf/*
       - {{.PkgRootDir}}/lib/*
       - {{.PkgRootDir}}/*
     main_entry:

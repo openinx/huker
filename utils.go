@@ -6,6 +6,7 @@ import (
 	"github.com/qiniu/log"
 	"io"
 	"os"
+	"reflect"
 	"strconv"
 	"syscall"
 )
@@ -55,4 +56,84 @@ func ReadEnvIntValue(key string, defaultVal int) int {
 	} else {
 		return valInt
 	}
+}
+
+func StringSliceContains(slice []string, s string) bool {
+	for i := range slice {
+		if slice[i] == s {
+			return true
+		}
+	}
+	return false
+}
+
+func IsStringType(x interface{}) bool {
+	return x != nil && reflect.TypeOf(x).Kind() == reflect.String
+}
+
+func IsIntegerType(x interface{}) bool {
+	return x != nil && reflect.TypeOf(x).Kind() == reflect.Int
+}
+
+func IsMapType(x interface{}) bool {
+	return x != nil && reflect.TypeOf(x).Kind() == reflect.Map
+}
+
+func IsSliceType(x interface{}) bool {
+	return x != nil && reflect.TypeOf(x).Kind() == reflect.Slice
+}
+
+func IsArrayType(x interface{}) bool {
+	return x != nil && reflect.TypeOf(x).Kind() == reflect.Array
+}
+
+func MergeMap(m1 map[interface{}]interface{}, m2 map[interface{}]interface{}) map[interface{}]interface{} {
+	if !IsMapType(m2) {
+		return m1
+	}
+	if !IsMapType(m1) {
+		return m2
+	}
+
+	for key := range m2 {
+		value := m2[key]
+		if value == nil {
+			continue
+		}
+		if m1[key] == nil {
+			m1[key] = value
+			continue
+		}
+		if IsSliceType(value) || IsArrayType(value) {
+			if !IsSliceType(m1[key]) && !IsArrayType(m1[key]) {
+				panic("Type mismatch")
+			}
+			a1 := m1[key].([]interface{})
+			a2 := m2[key].([]interface{})
+			var a3 []interface{}
+			for i := range a1 {
+				a3 = append(a3, a1[i])
+			}
+			for i := range a2 {
+				exist := false
+				for j := range a1 {
+					if a1[j] == a2[i] {
+						exist = true
+					}
+				}
+				if exist {
+					continue
+				}
+				a3 = append(a3, a2[i])
+			}
+			m1[key] = a3
+		} else if IsMapType(value) {
+			if !IsMapType(m1[key]) {
+				panic("Type mismatch")
+			}
+			m1[key] = MergeMap(m1[key].(map[interface{}]interface{}), m2[key].(map[interface{}]interface{}))
+		}
+	}
+
+	return m1
 }

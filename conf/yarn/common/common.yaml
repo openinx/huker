@@ -18,7 +18,7 @@ jobs:
       - java.net.preferIPv4Stack=true
       - java.library.path={{.PkgRootDir}}/lib/native
       - hadoop.home.dir={{.PkgRootDir}}
-      - hadoop.id.str=hadoop
+      - hadoop.id.str=openinx
       - hadoop.log.dir={{.PkgLogDir}}
       - hadoop.policy.file=hadoop-policy.xml
       - hadoop.root.logger=INFO,RFA
@@ -26,35 +26,43 @@ jobs:
       - hdfs.audit.logger=INFO,NullAppender
     config:
       core-site.xml:
-        - fs.defaultFS=hdfs://%{cluster.name}
+        - fs.defaultFS=hdfs://localhost:9000
         - io.file.buffer.size=131072
       hdfs-site.xml:
         - dfs.blocksize=268435456
-        - dfs.replication=1
         # DataNode
         - dfs.datanode.data.dir={{.PkgDataDir}}
-        - dfs.datanode.address=0.0.0.0:%{datanode.x.base_port}
-        - dfs.datanode.http.address=0.0.0.0:%{datanode.x.base_port+1}
-        - dfs.datanode.ipc.address=0.0.0.0:%{datanode.x.base_port+2}
+        - dfs.datanode.address=0.0.0.0:50011
+        - dfs.datanode.http.address=0.0.0.0:50012
+        - dfs.datanode.ipc.address=0.0.0.0:50013
         # JournalNode
-        - dfs.journalnode.rpc-address=0.0.0.0:%{journalnode.x.base_port}
-        - dfs.journalnode.http-address=0.0.0.0:%{journalnode.x.base_port+1}
-        - dfs.journalnode.edits.dir={{.PkgDataDir}}
+        - dfs.journalnode.http-address=0.0.0.0:8481
+        - dfs.journalnode.rpc-address=0.0.0.0:8480
         # NameNode
+        - dfs.namenode.backup.address=0.0.0.0:50100
+        - dfs.namenode.backup.http-address=0.0.0.0:50105
+        - dfs.namenode.rpc-address=127.0.0.1:9000
+        - dfs.namenode.http-address=0.0.0.0:50070
         - dfs.namenode.name.dir={{.PkgDataDir}}
-        # NameNode HA
-        - dfs.nameservices=%{cluster.name}
-        - dfs.ha.namenodes.%{cluster.name}=nn0,nn1
-        - dfs.namenode.rpc-address.%{cluster.name}.nn0=%{namenode.0.host}:%{namenode.0.base_port}
-        - dfs.namenode.rpc-address.%{cluster.name}.nn1=%{namenode.1.host}:%{namenode.1.base_port}
-        - dfs.namenode.http-address.%{cluster.name}.nn0=%{namenode.0.host}:%{namenode.0.base_port+1}
-        - dfs.namenode.http-address.%{cluster.name}.nn1=%{namenode.1.host}:%{namenode.1.base_port+1}
-        - dfs.client.failover.proxy.provider.mycluster=org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider
-        - dfs.namenode.shared.edits.dir=qjournal://%{journalnode.server_list}/test-hdfs
-        - dfs.ha.fencing.methods=shell(/bin/true)
-        - dfs.ha.automatic-failover.enabled=true
-        - dfs.journalnode.edits.dir={{.PkgDataDir}}
-        - ha.zookeeper.quorum=%{dependencies.0.zkServer.server_list}
+        - dfs.namenode.secondary.http-address=0.0.0.0:50090
+        - dfs.replication=1
+      mapred-site.xml:
+        - mapreduce.framework.name=yarn
+        - mapreduce.jobhistory.address=0.0.0.0:10020
+        - mapreduce.jobhistory.admin.address=0.0.0.0:10033
+        - mapreduce.jobhistory.webapp.address=0.0.0.0:19888
+        - mapreduce.jobtracker.http.address=0.0.0.0:50030
+        - mapreduce.tasktracker.http.address=0.0.0.0:50060
+      yarn-site.xml:
+        - yarn.acl.enable=false
+        - yarn.admin.acl=*
+        - yarn.log-aggregation-enable=false
+        - yarn.nodemanager.aux-services=mapreduce_shuffle
+        - yarn.resourcemanager.resource-tracker.address=0.0.0.0:8031
+        - yarn.resourcemanager.scheduler.address=127.0.0.1:8030
+        - yarn.resourcemanager.webapp.address=0.0.0.0:8089
+        - yarn.timeline-service.address=0.0.0.0:10200
+        - yarn.web-proxy.address=127.0.0.1:7889
       log4j.properties:
         file: {{.ConfRootDir}}/hdfs/common/log4j.properties
       capacity-scheduler.xml:
@@ -84,31 +92,35 @@ jobs:
       - {{.PkgRootDir}}/share/hadoop/mapreduce/lib/*
       - {{.PkgRootDir}}/share/hadoop/yarn/*
       - {{.PkgRootDir}}/share/hadoop/yarn/lib/*
-  namenode:
+
+  # Yarn service.
+  resourcemanager:
     super_job: job_common
     jvm_properties:
-      - hadoop.log.file=namenode.log
+      - hadoop.log.file=resourcemanager.log
     main_entry:
-      java_class: org.apache.hadoop.hdfs.server.namenode.NameNode
-  datanode:
+      java_class: org.apache.hadoop.yarn.server.resourcemanager.ResourceManager
+  nodemanager:
     super_job: job_common
     jvm_properties:
-      - hadoop.log.file=datanode.log
+      - hadoop.log.file=nodemanager.log
     main_entry:
-      java_class: org.apache.hadoop.hdfs.server.datanode.DataNode
-  journalnode:
+      java_class: org.apache.hadoop.yarn.server.nodemanager.NodeManager
+  historyserver:
     super_job: job_common
     jvm_properties:
-      - hadoop.log.file=journalnode.log
+      - hadoop.log.file=historyserver.log
     main_entry:
-      java_class: org.apache.hadoop.hdfs.qjournal.server.JournalNode
-  zkfc:
+      java_class: org.apache.hadoop.mapreduce.v2.hs.JobHistoryServer
+  proxyserver:
     super_job: job_common
     jvm_properties:
-      - hadoop.log.file=zkfc.log
+      - hadoop.log.file=proxyserver.log
     main_entry:
-      java_class: org.apache.hadoop.hdfs.tools.DFSZKFailoverController
-  shell:
+      java_class: org.apache.hadoop.yarn.server.webproxy.WebAppProxyServer
+  timelineserver:
     super_job: job_common
+    jvm_properties:
+      - hadoop.log.file=timelineserver.log
     main_entry:
-      java_class: org.apache.hadoop.fs.FsShell
+      java_class: org.apache.hadoop.yarn.server.applicationhistoryservice.ApplicationHistoryServer

@@ -32,7 +32,7 @@ func NewMiniHuker(agentRootDir string) *MiniHuker {
 	}
 
 	// Initialize the package server.
-	p, err := NewPackageServer(4000, "./testdata/lib", "./testdata/conf/pkg.yaml")
+	p, err := NewPackageServer(4321, "./testdata/lib", "./testdata/conf/pkg.yaml")
 	if err != nil {
 		panic(err)
 	}
@@ -75,7 +75,7 @@ func TestMiniHuker(t *testing.T) {
 		Configs: map[string]string{
 			"a": "b", "c": "d",
 		},
-		PkgAddress: "http://127.0.0.1:4000/test.tar.gz",
+		PkgAddress: "http://127.0.0.1:4321/test.tar.gz",
 		PkgName:    "test.tar.gz",
 		PkgMD5Sum:  "f77f526dcfbdbfb2dd942b6628f4c0ab",
 	}

@@ -21,12 +21,7 @@ func main() {
 	cfgRootDir := huker.ReadEnvStrValue(HUKER_CONF_DIR, HUKER_CONF_DIR_DEFAULT)
 	pkgServerAddress := huker.ReadEnvStrValue(HUKER_PKG_HTTP_SERVER, HUKER_PKG_HTTP_SERVER_DEFAULT)
 
-	hShell, err := huker.NewHukerShell(cfgRootDir, pkgServerAddress)
-
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
+	hShell := huker.NewHukerShell(cfgRootDir, pkgServerAddress)
 
 	app.Commands = []cli.Command{
 		{
@@ -247,7 +242,6 @@ func main() {
 				file := c.String("file")
 				s, err := huker.NewSupervisor(dir, port, file)
 				if err != nil {
-					log.Error(err)
 					return err
 				}
 				return s.Start()
@@ -279,7 +273,6 @@ func main() {
 				conf := c.String("conf")
 				p, err := huker.NewPackageServer(port, dir, conf)
 				if err != nil {
-					log.Error(err)
 					return err
 				}
 				return p.Start()
