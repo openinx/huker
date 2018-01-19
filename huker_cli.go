@@ -35,7 +35,6 @@ func NewHukerShell(cfgRootDir, pkgServerAddress string) (*HukerShell, error) {
 func (h *HukerShell) Shell(c *cli.Context) error {
 	args, err := h.prevAction(c)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
@@ -57,7 +56,6 @@ func (h *HukerShell) Shell(c *cli.Context) error {
 	// TODO need to consider config change (or other host adjustment).
 	if err := p.install(agentRootDir); err != nil {
 		if !strings.Contains(err.Error(), "already exists, cleanup it first please.") {
-			log.Errorf("Failed to install package, %v", err)
 			return err
 		}
 	}
@@ -68,17 +66,12 @@ func (h *HukerShell) Shell(c *cli.Context) error {
 
 	log.Infof("%s %s", p.Bin, strings.Join(p.Args, " "))
 
-	if err := cmd.Run(); err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
+	return cmd.Run()
 }
 
 func (h *HukerShell) Bootstrap(c *cli.Context) error {
 	args, err := h.prevAction(c)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
@@ -109,7 +102,6 @@ func (h *HukerShell) Bootstrap(c *cli.Context) error {
 func (h *HukerShell) Show(c *cli.Context) error {
 	args, err := h.prevAction(c)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
@@ -128,7 +120,6 @@ func (h *HukerShell) Show(c *cli.Context) error {
 func (h *HukerShell) Start(c *cli.Context) error {
 	args, err := h.prevAction(c)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
@@ -147,7 +138,6 @@ func (h *HukerShell) Start(c *cli.Context) error {
 func (h *HukerShell) Cleanup(c *cli.Context) error {
 	args, err := h.prevAction(c)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
@@ -170,7 +160,6 @@ func (h *HukerShell) RollingUpdate(c *cli.Context) error {
 func (h *HukerShell) Restart(c *cli.Context) error {
 	args, err := h.prevAction(c)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
@@ -189,7 +178,6 @@ func (h *HukerShell) Restart(c *cli.Context) error {
 func (h *HukerShell) Stop(c *cli.Context) error {
 	args, err := h.prevAction(c)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 

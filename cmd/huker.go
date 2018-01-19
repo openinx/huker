@@ -250,11 +250,7 @@ func main() {
 					log.Error(err)
 					return err
 				}
-				if err = s.Start(); err != nil {
-					log.Error(err)
-					return err
-				}
-				return err
+				return s.Start()
 			},
 		},
 		{
@@ -286,14 +282,12 @@ func main() {
 					log.Error(err)
 					return err
 				}
-				if err = p.Start(); err != nil {
-					log.Error(err)
-					return err
-				}
-				return err
+				return p.Start()
 			},
 		},
 	}
 
-	app.Run(os.Args)
+	if err := app.Run(os.Args); err != nil {
+		log.Error(err)
+	}
 }
