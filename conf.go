@@ -1,10 +1,13 @@
 package huker
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/qiniu/log"
+	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -391,6 +394,44 @@ func parseStringArray(s interface{}) ([]string, error) {
 			}
 		}
 		return strings, nil
+	} else if s != nil && typeOf.Kind() == reflect.Map {
+		mapObj := s.(map[interface{}]interface{})
+		if fileObj, ok := mapObj["file"]; ok {
+			if reflect.TypeOf(fileObj).Kind() == reflect.String {
+				fileName := fileObj.(string)
+				// Read local file content.
+				f, err := os.Open(fileName)
+				if err != nil {
+					return []string{}, fmt.Errorf("Open %s error: %v", fileName, err)
+				}
+				defer f.Close()
+				var buf bytes.Buffer
+				if _, err := io.Copy(&buf, f); err != nil {
+					return []string{}, fmt.Errorf("Read %s error: %v", fileName, err)
+				}
+
+				var results []string
+				for buf.Len() > 0 {
+					line, err := buf.ReadString(byte('\n'))
+					if err != nil {
+						return []string{}, fmt.Errorf("Read line failed, line: %s, %v", line, err)
+					}
+					line = strings.Trim(strings.Trim(line, "\n"), " ")
+					if strings.HasPrefix(line, "#") {
+						continue
+					}
+					if len(line) > 0 {
+						results = append(results, line)
+					}
+				}
+
+				return results, nil
+			} else {
+				return []string{}, fmt.Errorf("`file` part is not a string, %v", fileObj)
+			}
+		} else {
+			return []string{}, fmt.Errorf("`file` part does not exist. %v", mapObj)
+		}
 	}
 	return []string{}, fmt.Errorf("Not a Array type, type: %v, content: %v", typeOf, s)
 }
@@ -412,7 +453,7 @@ func parseMainEntry(s interface{}) (MainEntry, error) {
 
 func parseConfigFile(cfgName string, keyValues []string) (ConfigFile, error) {
 	fname := filepath.Base(cfgName)
-	if strings.HasSuffix(fname, ".cfg") {
+	if strings.HasSuffix(fname, ".cfg") || strings.HasSuffix(fname, ".properties") {
 		return NewINIConfigFile(cfgName, keyValues), nil
 	} else if strings.HasSuffix(fname, ".xml") {
 		return NewXMLConfigFile(cfgName, keyValues), nil
@@ -453,6 +494,7 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (Job, error) {
 	job := Job{
 		jobName:     jobName,
 		superJob:    "", // no super job by default.
+		hosts:       []HostInfo{},
 		configFiles: make(map[string]ConfigFile),
 	}
 	var err error
@@ -496,10 +538,13 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (Job, error) {
 
 		hosts := []HostInfo{}
 		for hostKey, hostObj := range hostsMap {
+			if hostObj == nil {
+				hosts = append(hosts, NewHostInfo(hostKey.(string), []ConfigFile{}))
+				continue
+			}
 			if reflect.TypeOf(hostObj).Kind() != reflect.Map {
 				return Job{}, fmt.Errorf("`config` part of host `%s` in job `%s` is not a map", hostKey, jobName)
 			}
-
 			hostMap := hostObj.(map[interface{}]interface{})
 			if confFiles, err2 := parseConfigFileArray(hostMap["config"]); err2 != nil {
 				return Job{}, err2

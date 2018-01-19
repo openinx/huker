@@ -20,7 +20,6 @@ jobs:
       - hadoop.home.dir={{.PkgRootDir}}
       - hadoop.id.str=openinx
       - hadoop.log.dir={{.PkgLogDir}}
-      - hadoop.log.file=namenode.log
       - hadoop.policy.file=hadoop-policy.xml
       - hadoop.root.logger=INFO,RFA
       - hadoop.security.logger=INFO,RFAS
@@ -41,7 +40,7 @@ jobs:
         - dfs.journalnode.rpc-address=0.0.0.0:8485
         - dfs.namenode.backup.address=0.0.0.0:50100
         - dfs.namenode.backup.http-address=0.0.0.0:50105
-        - dfs.namenode.rpc-address=0.0.0.0:50015
+        - dfs.namenode.rpc-address=127.0.0.1:9000
         - dfs.namenode.http-address=0.0.0.0:50070
         - dfs.namenode.https-address=0.0.0.0:50470
         - dfs.namenode.name.dir={{.PkgDataDir}}
@@ -64,6 +63,8 @@ jobs:
         - yarn.resourcemanager.scheduler.address=0.0.0.0::8030
         - yarn.resourcemanager.webapp.address=0.0.0.0:8088
         - yarn.timeline-service.address=0.0.0.0:10200
+      log4j.properties:
+        file: {{.ConfRootDir}}/hdfs/common/log4j.properties
     classpath:
       - {{.PkgConfDir}}
       - {{.PkgRootDir}}/contrib/capacity-scheduler/*.jar
@@ -79,14 +80,20 @@ jobs:
       - {{.PkgRootDir}}/share/hadoop/yarn/lib/*
   namenode:
     super_job: job_common
+    jvm_properties:
+      - hadoop.log.file=namenode.log
     main_entry:
       java_class: org.apache.hadoop.hdfs.server.namenode.NameNode
   datanode:
     super_job: job_common
+    jvm_properties:
+      - hadoop.log.file=datanode.log
     main_entry:
       java_class: org.apache.hadoop.hdfs.server.datanode.DataNode
   journalnode:
     super_job: job_common
+    jvm_properties:
+      - hadoop.log.file=journalnode.log
     main_entry:
       java_class: org.apache.hadoop.hdfs.qjournal.server.JournalNode
   shell:
