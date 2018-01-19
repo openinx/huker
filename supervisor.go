@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -48,7 +49,7 @@ type Supervisor struct {
 type Program struct {
 	Name       string            `json:"name"`
 	Job        string            `json:"job"`
-	TaskId     string            `json:"task_id"`
+	TaskId     int               `json:"task_id"`
 	Bin        string            `json:"bin"`
 	Args       []string          `json:"args"`
 	Configs    map[string]string `json:"configs"`
@@ -61,22 +62,22 @@ type Program struct {
 }
 
 func (p *Program) install(agentRootDir string) error {
-	jobRootDir := path.Join(agentRootDir, p.Name, fmt.Sprintf("%s.%s", p.Job, p.TaskId))
+	jobRootDir := path.Join(agentRootDir, p.Name, fmt.Sprintf("%s.%d", p.Job, p.TaskId))
 
 	// step.0 render the agent root directory for config files and arguments.
 	newConfigMap := make(map[string]string)
 	for fname, content := range p.Configs {
 		content = strings.Replace(content, "$AgentRootDir", agentRootDir, -1)
-		content = strings.Replace(content, "$TaskId", p.TaskId, -1)
+		content = strings.Replace(content, "$TaskId", strconv.Itoa(p.TaskId), -1)
 		fname = strings.Replace(fname, "$AgentRootDir", agentRootDir, -1)
-		fname = strings.Replace(fname, "$TaskId", p.TaskId, -1)
+		fname = strings.Replace(fname, "$TaskId", strconv.Itoa(p.TaskId), -1)
 		newConfigMap[fname] = content
 	}
 	p.Configs = newConfigMap
 
 	for idx, arg := range p.Args {
 		arg = strings.Replace(arg, "$AgentRootDir", agentRootDir, -1)
-		arg = strings.Replace(arg, "$TaskId", p.TaskId, -1)
+		arg = strings.Replace(arg, "$TaskId", strconv.Itoa(p.TaskId), -1)
 		p.Args[idx] = arg
 	}
 	p.RootDir = jobRootDir
@@ -347,7 +348,7 @@ func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 func (s *Supervisor) handleProgram(w http.ResponseWriter, r *http.Request, handleFunc func(*Program) error) {
 	name := mux.Vars(r)["name"]
 	job := mux.Vars(r)["job"]
-	taskId := mux.Vars(r)["taskId"]
+	taskId, _ := strconv.Atoi(mux.Vars(r)["taskId"])
 
 	if prog, ok := s.programs.Get(name, job, taskId); ok {
 		if err := handleFunc(&prog); err != nil {
@@ -365,7 +366,7 @@ func (s *Supervisor) handleProgram(w http.ResponseWriter, r *http.Request, handl
 func (s *Supervisor) hShowProgram(w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	job := mux.Vars(r)["job"]
-	taskId := mux.Vars(r)["taskId"]
+	taskId, _ := strconv.Atoi(mux.Vars(r)["taskId"])
 	if prog, ok := s.programs.Get(name, job, taskId); ok {
 		data, err := json.Marshal(prog)
 		if err != nil {
@@ -388,7 +389,7 @@ func (s *Supervisor) hStartProgram(w http.ResponseWriter, r *http.Request) {
 func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	job := mux.Vars(r)["job"]
-	taskId := mux.Vars(r)["taskId"]
+	taskId, _ := strconv.Atoi(mux.Vars(r)["taskId"])
 
 	// step.0 check and clear cache.
 	if prog, ok := s.programs.Get(name, job, taskId); ok {

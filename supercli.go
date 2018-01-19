@@ -68,8 +68,8 @@ func (s *SupervisorCli) bootstrap(p *Program) error {
 	return err2
 }
 
-func (s *SupervisorCli) show(name, job, taskId string) (*Program, error) {
-	url := fmt.Sprintf("%s/api/programs/%s/%s/%s", s.serverAddr, name, job, taskId)
+func (s *SupervisorCli) show(name, job string, taskId int) (*Program, error) {
+	url := fmt.Sprintf("%s/api/programs/%s/%s/%d", s.serverAddr, name, job, taskId)
 	data, err := request("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -81,14 +81,14 @@ func (s *SupervisorCli) show(name, job, taskId string) (*Program, error) {
 	return p, nil
 }
 
-func (s *SupervisorCli) start(name, job, taskId string) error {
-	url := fmt.Sprintf("%s/api/programs/%s/%s/%s/start", s.serverAddr, name, job, taskId)
+func (s *SupervisorCli) start(name, job string, taskId int) error {
+	url := fmt.Sprintf("%s/api/programs/%s/%s/%d/start", s.serverAddr, name, job, taskId)
 	_, err := request("PUT", url, nil)
 	return err
 }
 
-func (s *SupervisorCli) cleanup(name, job, taskId string) error {
-	url := fmt.Sprintf("%s/api/programs/%s/%s/%s", s.serverAddr, name, job, taskId)
+func (s *SupervisorCli) cleanup(name, job string, taskId int) error {
+	url := fmt.Sprintf("%s/api/programs/%s/%s/%d", s.serverAddr, name, job, taskId)
 	_, err := request("DELETE", url, nil)
 	return err
 }
@@ -103,14 +103,14 @@ func (s *SupervisorCli) rollingUpdate(p *Program) error {
 	return err2
 }
 
-func (s *SupervisorCli) restart(name, job, taskId string) error {
-	url := fmt.Sprintf("%s/api/programs/%s/%s/%s/restart", s.serverAddr, name, job, taskId)
+func (s *SupervisorCli) restart(name, job string, taskId int) error {
+	url := fmt.Sprintf("%s/api/programs/%s/%s/%d/restart", s.serverAddr, name, job, taskId)
 	_, err := request("PUT", url, nil)
 	return err
 }
 
-func (s *SupervisorCli) stop(name, job, taskId string) error {
-	url := fmt.Sprintf("%s/api/programs/%s/%s/%s/stop", s.serverAddr, name, job, taskId)
+func (s *SupervisorCli) stop(name, job string, taskId int) error {
+	url := fmt.Sprintf("%s/api/programs/%s/%s/%d/stop", s.serverAddr, name, job, taskId)
 	_, err := request("PUT", url, nil)
 	return err
 }

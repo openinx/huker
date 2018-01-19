@@ -44,7 +44,7 @@ func (h *HukerShell) Shell(c *cli.Context) error {
 	p := &Program{
 		Name:       args.srvCfg.clusterName,
 		Job:        args.jobName,
-		TaskId:     "0", // default task id is 0 for local mode job.
+		TaskId:     0, // default task id is 0 for local mode job.
 		Bin:        args.srvCfg.javaHome,
 		Args:       job.toShell(),
 		Configs:    job.toConfigMap(),

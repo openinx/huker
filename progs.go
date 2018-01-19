@@ -14,8 +14,8 @@ type ProgramMap struct {
 	programs map[string]Program // Map hash of (cluster, job, taskId) to program instance.
 }
 
-func programHash(cluster, job, taskId string) string {
-	return fmt.Sprintf("cluster=%s/job=%s/task_id=%s", cluster, job, taskId)
+func programHash(cluster, job string, taskId int) string {
+	return fmt.Sprintf("cluster=%s/job=%s/task_id=%d", cluster, job, taskId)
 }
 
 func NewProgramMap() *ProgramMap {
@@ -24,7 +24,7 @@ func NewProgramMap() *ProgramMap {
 	}
 }
 
-func (p *ProgramMap) Get(cluster, job, taskId string) (Program, bool) {
+func (p *ProgramMap) Get(cluster, job string, taskId int) (Program, bool) {
 	key := programHash(cluster, job, taskId)
 	prog, ok := p.programs[key]
 	return prog, ok

@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -190,7 +191,7 @@ func (m MainEntry) toShell() []string {
 
 type HostInfo struct {
 	hostName    string
-	taskId      string
+	taskId      int
 	hostPort    string
 	configFiles map[string]ConfigFile
 }
@@ -199,13 +200,17 @@ func NewHostInfo(hostKey string, configFiles []ConfigFile) HostInfo {
 	parts := strings.Split(hostKey, "/")
 	hostName := parts[0]
 	hostPort := "9001" // default agent port
-	taskId := "1"      // default task Id
+	taskId := 1        // default task Id
 	for _, s := range parts {
 		if strings.HasPrefix(s, "port=") {
 			hostPort = strings.TrimPrefix(s, "port=")
 		}
 		if strings.HasPrefix(s, "id=") {
-			taskId = strings.TrimPrefix(s, "id=")
+			var err error
+			taskId, err = strconv.Atoi(strings.TrimPrefix(s, "id="))
+			if err != nil {
+				panic(fmt.Sprintf("TaskId should be a integer, %s", s))
+			}
 		}
 	}
 	host := HostInfo{hostName: hostName, taskId: taskId, hostPort: hostPort}
@@ -222,7 +227,7 @@ func (h HostInfo) toHttpAddress() string {
 }
 
 func (h HostInfo) toKey() string {
-	return fmt.Sprintf("%s/port=%s/id=%s", h.hostName, h.hostPort, h.taskId)
+	return fmt.Sprintf("%s/port=%s/id=%d", h.hostName, h.hostPort, h.taskId)
 }
 
 func (h HostInfo) toConfigMap() map[string]string {
@@ -668,6 +673,9 @@ func NewServiceConfig(yamlConfigs []string) (*ServiceConfig, error) {
 		for _, host := range job.hosts {
 			host.mergeWith(job.configFiles)
 		}
+		sort.Slice(job.hosts, func(i, j int) bool {
+			return job.hosts[i].taskId < job.hosts[j].taskId
+		})
 		newJobs[jobName] = job
 	}
 

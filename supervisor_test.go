@@ -69,7 +69,7 @@ func TestMiniHuker(t *testing.T) {
 	prog := &Program{
 		Name:   "tst-py",
 		Job:    "http-server.4",
-		TaskId: "100",
+		TaskId: 100,
 		Bin:    "python",
 		Args:   []string{"-m", "SimpleHTTPServer"},
 		Configs: map[string]string{
@@ -88,7 +88,7 @@ func TestMiniHuker(t *testing.T) {
 		t.Fatalf("show process failed: %v", err)
 	} else if p.Status != StatusRunning {
 		t.Fatalf("process is not running, cause: %v", err)
-	} else if p.RootDir != path.Join(agentRootDir, p.Name, fmt.Sprintf("%s.%s", p.Job, p.TaskId)) {
+	} else if p.RootDir != path.Join(agentRootDir, p.Name, fmt.Sprintf("%s.%d", p.Job, p.TaskId)) {
 		t.Fatalf("root directory of program mismatch. rootDir: %s", p.RootDir)
 	}
 
