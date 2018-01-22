@@ -23,13 +23,13 @@ jobs:
       - java.net.preferIPv4Stack=true
       - jute.maxbuffer=10240000
       - zookeeper.log.dir={{.PkgLogDir}}
-      - zookeeper.log.level=INFO,CONSOLE
+      - zookeeper.root.logger=INFO,ROLLINGFILE
       - zookeeper.maxCnxns=13000
     config:
       zoo.cfg:
         - clientPort=%{zkServer.x.base_port}
         - dataDir={{.PkgDataDir}}
-        - dataLogDir={{.PkgLogDir}}
+        - dataLogDir={{.PkgDataDir}}
         - tickTime=2000
         - maxClientCnxns=60
         - initLimit=30
@@ -40,7 +40,7 @@ jobs:
       log4j.properties:
         file: {{.ConfRootDir}}/zookeeper/common/log4j.properties
     classpath:
-      - {{.PkgRootDir}}/conf/*
+      - {{.PkgRootDir}}/conf
       - {{.PkgRootDir}}/lib/*
       - {{.PkgRootDir}}/*
     main_entry:

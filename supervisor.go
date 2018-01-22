@@ -135,7 +135,11 @@ func (p *Program) install(agentRootDir string) error {
 	}
 
 	// step.5 extract package
-	tarCmd := []string{"tar", "xzvf", pkgFilePath, "-C", path.Join(jobRootDir, STDOUT_DIR)}
+	md5path := path.Join(jobRootDir, STDOUT_DIR, p.PkgMD5Sum)
+	if err := os.MkdirAll(md5path, 0755); err != nil {
+		return err
+	}
+	tarCmd := []string{"tar", "xzvf", pkgFilePath, "-C", md5path}
 	cmd := exec.Command(tarCmd[0], tarCmd[1:]...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
@@ -144,20 +148,23 @@ func (p *Program) install(agentRootDir string) error {
 			strings.Join(tarCmd, " "), stdout.String(), stderr.String())
 		return err
 	}
+
 	// step.6 Move all files under <pkgRootDir>/<pkg-prefix-dir> to <pkgRootDir>
-	if idx := strings.LastIndex(p.PkgName, ".tar.gz"); idx >= 0 {
-		pkgRootDir := path.Join(jobRootDir, STDOUT_DIR)
-		pkgPrefixDir := path.Join(pkgRootDir, p.PkgName[0:idx])
-		if _, err := os.Stat(pkgPrefixDir); os.IsNotExist(err) {
-			return fmt.Errorf("%s does not exist, skip to move all files under it to %s", pkgPrefixDir, pkgRootDir)
-		} else {
-			realPkgRootDir := path.Join(jobRootDir, PKG_DIR)
-			if _, err := os.Stat(realPkgRootDir); os.IsExist(err) {
-				os.RemoveAll(realPkgRootDir)
-			}
-			if err := os.Symlink(pkgPrefixDir, realPkgRootDir); err != nil {
+	files, errs := ioutil.ReadDir(md5path)
+	if errs != nil {
+		return errs
+	} else if len(files) != 1 {
+		return fmt.Errorf("Should only one sub-directory under %s, but there're %d directories.", md5path, len(files))
+	} else if !files[0].IsDir() {
+		return fmt.Errorf("%s is not a directory.", files[0].Name())
+	} else {
+		realPkgRootDir := path.Join(jobRootDir, PKG_DIR)
+		if _, err := os.Stat(realPkgRootDir); os.IsNotExist(err) {
+			if err := os.Symlink(path.Join(md5path, files[0].Name()), realPkgRootDir); err != nil {
 				return err
 			}
+		} else {
+			return err
 		}
 	}
 
@@ -360,7 +367,7 @@ func (s *Supervisor) handleProgram(w http.ResponseWriter, r *http.Request, handl
 		// Keep the latest version of program saved in supervisor.
 		w.Write(renderResp(s.programs.PutAndDump(&prog, s.dbFile)))
 	} else {
-		w.Write(renderResp(fmt.Errorf("name: %s, job: %s, taskId: %s not found.", name, job, taskId)))
+		w.Write(renderResp(fmt.Errorf("name: %s, job: %s, taskId: %d not found.", name, job, taskId)))
 	}
 }
 
@@ -376,7 +383,7 @@ func (s *Supervisor) hShowProgram(w http.ResponseWriter, r *http.Request) {
 			io.Copy(w, bytes.NewBuffer(data))
 		}
 	} else {
-		w.Write(renderResp(fmt.Errorf("name: %s, job: %s not found.", name, job)))
+		w.Write(renderResp(fmt.Errorf("name: %s, job: %s, taskId: %d not found.", name, job, taskId)))
 	}
 }
 

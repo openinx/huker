@@ -1,0 +1,56 @@
+jobs:
+  job_common:
+    super_job: remote
+    jvm_opts:
+      - -XX:+DisableExplicitGC
+      - -XX:+HeapDumpOnOutOfMemoryError
+      - -XX:HeapDumpPath={{.PkgStdoutDir}}
+      - -XX:+PrintGCApplicationStoppedTime
+      - -XX:+UseConcMarkSweepGC
+      - -XX:+UseMembar
+      - -verbose:gc
+      - -XX:+PrintGCDetails
+      - -XX:+PrintHeapAtGC
+      - -XX:+PrintGCDateStamps
+      - -Xloggc:{{.PkgStdoutDir}}/hbase_gc.log
+    jvm_properties:
+      - java.net.preferIPv4Stack=true
+      - jute.maxbuffer=10240000
+      - hbase.log.dir={{.PkgLogDir}}
+      - hbase.home.dir={{.PkgRootDir}}
+      - hbase.root.logger=DEBUG,RFA
+    config:
+      hbase-site.xml:
+        - hbase.cluster.distributed=true
+        - hbase.rootdir=hdfs://127.0.0.1:20100/hbase
+        - hbase.zookeeper.quorum=%{dependencies.0.zkServer.server_list}
+        - hbase.security.authentication=simple
+        - hbase.security.authorization=false
+      log4j.properties:
+        file: {{.ConfRootDir}}/hbase/common/log4j.properties
+    classpath:
+      - {{.PkgConfDir}}
+      - {{.PkgRootDir}}/lib/*
+      - {{.PkgRootDir}}/*
+  master:
+    super_job: job_common
+    jvm_properties:
+      - hbase.log.file=master.log
+    config:
+      hbase-site.xml:
+        - hbase.master.port=%{master.x.base_port}
+        - hbase.master.info.port=%{master.x.base_port+1}
+    main_entry:
+      java_class: org.apache.hadoop.hbase.master.HMaster
+      extra_args: start
+  regionserver:
+    super_job: job_common
+    jvm_properties:
+      - hbase.log.file=regionserver.log
+    config:
+      hbase-site.xml:
+        - hbase.regionserver.port=%{regionserver.x.base_port}
+        - hbase.regionserver.info.port=%{regionserver.x.base_port+1}
+    main_entry:
+      java_class: org.apache.hadoop.hbase.regionserver.HRegionServer
+      extra_args: start
