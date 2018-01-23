@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+const (
+	TEST_AGENT_PORT   = 9743
+	TEST_PKG_SRV_PORT = 4321
+)
+
 type MiniHuker struct {
 	s   *Supervisor
 	cli *SupervisorCli
@@ -18,21 +23,21 @@ type MiniHuker struct {
 func NewMiniHuker(agentRootDir string) *MiniHuker {
 	// mkdir root dir of agent if not exist.
 	if _, err := os.Stat(agentRootDir); os.IsNotExist(err) {
-		os.MkdirAll(agentRootDir, 755)
+		os.MkdirAll(agentRootDir, 0755)
 	}
-	supervisor, err := NewSupervisor(agentRootDir, 9743, agentRootDir+"/supervisor.db")
+	supervisor, err := NewSupervisor(agentRootDir, TEST_AGENT_PORT, agentRootDir+"/supervisor.db")
 	if err != nil {
 		panic(err)
 	}
 	m := &MiniHuker{
 		s: supervisor,
 		cli: &SupervisorCli{
-			serverAddr: "http://127.0.0.1:9743",
+			serverAddr: fmt.Sprintf("http://127.0.0.1:%d", TEST_AGENT_PORT),
 		},
 	}
 
 	// Initialize the package server.
-	p, err := NewPackageServer(4321, "./testdata/lib", "./testdata/conf/pkg.yaml")
+	p, err := NewPackageServer(TEST_PKG_SRV_PORT, "./testdata/lib", "./testdata/conf/pkg.yaml")
 	if err != nil {
 		panic(err)
 	}
@@ -41,7 +46,7 @@ func NewMiniHuker(agentRootDir string) *MiniHuker {
 	return m
 }
 
-func (m *MiniHuker) start() {
+func (m *MiniHuker) Start() {
 	// Start supervisor server
 	go func() {
 		if err := m.s.Start(); err != nil {
@@ -57,13 +62,26 @@ func (m *MiniHuker) start() {
 	}()
 }
 
+func (m *MiniHuker) Stop() {
+	if err := m.s.Stop(); err != nil {
+		log.Error(err)
+	}
+	if err := m.p.Stop(); err != nil {
+		log.Error(err)
+	}
+}
+
 func TestMiniHuker(t *testing.T) {
 
 	agentRootDir := fmt.Sprintf("/tmp/huker/%d", int32(time.Now().Unix()))
 	m := NewMiniHuker(agentRootDir)
 
 	// Wait supervisor server and package server start finished.
-	m.start()
+	m.Start()
+	defer func() {
+		m.Stop()
+	}()
+
 	time.Sleep(1 * time.Second)
 
 	prog := &Program{
@@ -75,7 +93,7 @@ func TestMiniHuker(t *testing.T) {
 		Configs: map[string]string{
 			"a": "b", "c": "d",
 		},
-		PkgAddress: "http://127.0.0.1:4321/test.tar.gz",
+		PkgAddress: fmt.Sprintf("http://127.0.0.1:%d/test.tar.gz", TEST_PKG_SRV_PORT),
 		PkgName:    "test.tar.gz",
 		PkgMD5Sum:  "f77f526dcfbdbfb2dd942b6628f4c0ab",
 	}
@@ -111,6 +129,6 @@ func TestMiniHuker(t *testing.T) {
 	}
 
 	if err := m.cli.cleanup(prog.Name, prog.Job, prog.TaskId); err != nil {
-		t.Fatalf("cleanup program faile: %v", err)
+		t.Fatalf("cleanup program failed: %v", err)
 	}
 }

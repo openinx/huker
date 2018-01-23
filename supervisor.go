@@ -42,8 +42,9 @@ type Supervisor struct {
 	port          int
 	dbFile        string
 	programs      *ProgramMap
-	quit          chan struct{}
+	quit          chan int
 	refreshTicker *time.Ticker
+	srv           *http.Server
 }
 
 type Program struct {
@@ -489,8 +490,11 @@ func NewSupervisor(rootDir string, port int, supervisorDB string) (*Supervisor, 
 		port:          port,
 		dbFile:        supervisorDB,
 		programs:      NewProgramMap(),
-		quit:          make(chan struct{}),
+		quit:          make(chan int),
 		refreshTicker: time.NewTicker(1 * time.Second),
+		srv: &http.Server{
+			Addr: fmt.Sprintf(":%d", port),
+		},
 	}
 
 	// Load supervisor db
@@ -526,9 +530,11 @@ func (s *Supervisor) Start() error {
 	r.HandleFunc("/api/programs/{name}/{job}/{taskId}/restart", s.hRestartProgram).Methods("PUT")
 	r.HandleFunc("/api/programs/{name}/{job}/{taskId}", s.hCleanupProgram).Methods("DELETE")
 	r.HandleFunc("/api/programs/{name}/{job}/{taskId}/stop", s.hStopProgram).Methods("PUT")
-	srv := http.Server{
-		Addr:    fmt.Sprintf(":%d", s.port),
-		Handler: r,
-	}
-	return srv.ListenAndServe()
+	s.srv.Handler = r
+	return s.srv.ListenAndServe()
+}
+
+func (s *Supervisor) Stop() error {
+	s.quit <- 1
+	return s.srv.Close()
 }
