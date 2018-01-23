@@ -7,53 +7,6 @@ import (
 	"testing"
 )
 
-func testMapEquals(m1 map[interface{}]interface{}, m2 map[interface{}]interface{}) bool {
-	if m1 == nil && m2 == nil {
-		return true
-	}
-	if m1 == nil || m2 == nil {
-		return false
-	}
-	if len(m1) != len(m2) {
-		return false
-	}
-	for key := range m1 {
-		value := m1[key]
-		if value == nil {
-			if m2[key] == nil {
-				continue
-			} else {
-				return false
-			}
-		}
-		if m2[key] == nil {
-			return false
-		}
-		switch reflect.TypeOf(value).Kind() {
-		case reflect.Map:
-			if !testMapEquals(m1[key].(map[interface{}]interface{}), m2[key].(map[interface{}]interface{})) {
-				return false
-			}
-		case reflect.Slice:
-			a1 := m1[key].([]interface{})
-			a2 := m2[key].([]interface{})
-			if len(a1) != len(a2) {
-				return false
-			}
-			for i := range a1 {
-				if a1[i] != a2[i] {
-					return false
-				}
-			}
-		default:
-			if value != m2[key] {
-				return false
-			}
-		}
-	}
-	return true
-}
-
 func TestMergeYamlMap(t *testing.T) {
 	m1 := map[interface{}]interface{}{
 		"jobs": map[interface{}]interface{}{
@@ -82,12 +35,12 @@ func TestMergeYamlMap(t *testing.T) {
 	}
 
 	actualMap := MergeMap(m1, m1)
-	if !testMapEquals(m1, actualMap) {
+	if !reflect.DeepEqual(m1, actualMap) {
 		t.Errorf("Merge the same yaml map failed. expected: %v, actual: %v", m1, actualMap)
 	}
 
 	actualMap = MergeMap(m1, m2)
-	if !testMapEquals(m3, actualMap) {
+	if !reflect.DeepEqual(m3, actualMap) {
 		t.Errorf("Merge the m1 with m2 failed, expeced: %v, actual: %v", m3, actualMap)
 	}
 }
