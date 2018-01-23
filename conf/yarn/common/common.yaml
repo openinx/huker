@@ -26,48 +26,32 @@ jobs:
       - hdfs.audit.logger=INFO,NullAppender
     config:
       core-site.xml:
-        - fs.defaultFS=hdfs://localhost:9000
+        - fs.defaultFS=hdfs://127.0.0.1:20100
         - io.file.buffer.size=131072
-      hdfs-site.xml:
-        - dfs.blocksize=268435456
-        # DataNode
-        - dfs.datanode.data.dir={{.PkgDataDir}}
-        - dfs.datanode.address=0.0.0.0:50011
-        - dfs.datanode.http.address=0.0.0.0:50012
-        - dfs.datanode.ipc.address=0.0.0.0:50013
-        # JournalNode
-        - dfs.journalnode.http-address=0.0.0.0:8481
-        - dfs.journalnode.rpc-address=0.0.0.0:8480
-        # NameNode
-        - dfs.namenode.backup.address=0.0.0.0:50100
-        - dfs.namenode.backup.http-address=0.0.0.0:50105
-        - dfs.namenode.rpc-address=127.0.0.1:9000
-        - dfs.namenode.http-address=0.0.0.0:50070
-        - dfs.namenode.name.dir={{.PkgDataDir}}
-        - dfs.namenode.secondary.http-address=0.0.0.0:50090
-        - dfs.replication=1
       mapred-site.xml:
         - mapreduce.framework.name=yarn
-        - mapreduce.jobhistory.address=0.0.0.0:10020
-        - mapreduce.jobhistory.admin.address=0.0.0.0:10033
-        - mapreduce.jobhistory.webapp.address=0.0.0.0:19888
-        - mapreduce.jobtracker.http.address=0.0.0.0:50030
-        - mapreduce.tasktracker.http.address=0.0.0.0:50060
+        - mapreduce.jobhistory.address=0.0.0.0:%{historyserver.0.base_port}
+        - mapreduce.jobhistory.admin.address=0.0.0.0:%{historyserver.0.base_port+1}
+        - mapreduce.jobhistory.webapp.address=0.0.0.0:%{historyserver.0.base_port+2}
+        - mapreduce.jobtracker.http.address=0.0.0.0:%{historyserver.0.base_port+3}
+        - mapreduce.tasktracker.http.address=0.0.0.0:%{historyserver.0.base_port+4}
       yarn-site.xml:
         - yarn.acl.enable=false
         - yarn.admin.acl=*
         - yarn.log-aggregation-enable=false
         - yarn.nodemanager.aux-services=mapreduce_shuffle
-        - yarn.resourcemanager.resource-tracker.address=0.0.0.0:8031
-        - yarn.resourcemanager.scheduler.address=127.0.0.1:8030
-        - yarn.resourcemanager.webapp.address=0.0.0.0:8089
-        - yarn.timeline-service.address=0.0.0.0:10200
-        - yarn.web-proxy.address=127.0.0.1:7889
+        - yarn.resourcemanager.scheduler.address=%{resourcemanager.0.host}:%{resourcemanager.0.base_port}
+        - yarn.resourcemanager.webapp.address=0.0.0.0:%{resourcemanager.0.base_port+1}
+        - yarn.resourcemanager.resource-tracker.address=0.0.0.0:%{resourcemanager.0.base_port+2}
+        - yarn.resourcemanager.address=%{resourcemanager.0.host}:%{resourcemanager.0.base_port+3}
+        - yarn.resourcemanager.admin.address=%{resourcemanager.0.host}:%{resourcemanager.0.base_port+4}
+        - yarn.timeline-service.address=%{resourcemanager.0.host}:%{resourcemanager.0.base_port+5}
+        - yarn.web-proxy.address=%{resourcemanager.0.host}:%{resourcemanager.0.base_port+6}
       log4j.properties:
         file: {{.ConfRootDir}}/hdfs/common/log4j.properties
       capacity-scheduler.xml:
         - yarn.scheduler.capacity.maximum-applications=10000
-        - yarn.scheduler.capacity.maximum-am-resource-percent=0.1
+        - yarn.scheduler.capacity.maximum-am-resource-percent=1
         - yarn.scheduler.capacity.resource-calculator=org.apache.hadoop.yarn.util.resource.DefaultResourceCalculator
         - yarn.scheduler.capacity.root.queues=default
         - yarn.scheduler.capacity.root.default.capacity=100
@@ -104,6 +88,13 @@ jobs:
     super_job: job_common
     jvm_properties:
       - hadoop.log.file=nodemanager.log
+    config:
+      yarn-site.xml:
+        - yarn.nodemanager.address=0.0.0.0:%{nodemanager.x.base_port}
+        - yarn.nodemanager.webapp.address=0.0.0.0:%{nodemanager.x.base_port+1}
+        - yarn.nodemanager.localizer.address=0.0.0.0:%{nodemanager.x.base_port+2}
+      mapred-site.xml:
+        - mapreduce.shuffle.port=%{nodemanager.x.base_port+3}
     main_entry:
       java_class: org.apache.hadoop.yarn.server.nodemanager.NodeManager
   historyserver:

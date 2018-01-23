@@ -6,22 +6,21 @@ cluster:
   package_name: hadoop-2.6.5.tar.gz
   package_md5sum: 967c24f3c15fcdd058f34923e92ce8ac
   dependencies:
-    - project=hdfs/cluster=test-hdfs
-    - project=zookeeper/cluster=test-zk
+    - {{.ConfRootDir}}/hdfs/test-hdfs.yaml
 
 jobs:
   resourcemanager:
     hosts:
-      127.0.0.1/port=9001/id=1:  # host.1
+      - 127.0.0.1:9001/id=0/base_port=4010
   nodemanager:
     hosts:
-      127.0.0.1/port=9001/id=1:  # host.1
+      - 127.0.0.1:9001/id=0/base_port=4020
   historyserver:
     hosts:
-      127.0.0.1/port=9001/id=1:  # host.1
+      - 127.0.0.1:9001/id=0/base_port=4100
   proxyserver:
     hosts:
-      127.0.0.1/port=9001/id=1:  # host.1
+      - 127.0.0.1:9001/id=0/base_port=4200
   timelineserver:
     hosts:
-      127.0.0.1/port=9001/id=1:  # host.1
+      - 127.0.0.1:9001/id=0/base_port=4300
