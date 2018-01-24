@@ -28,7 +28,7 @@ const (
 	LOG_DIR         = "log"
 	PKG_DIR         = "pkg"
 	CONF_DIR        = "conf"
-	ROOT_PKGS_DIR   = ".packages"
+	LIBRARY_DIR     = ".packages"
 	STDOUT_DIR      = "stdout"
 	StatusRunning   = "Running"
 	StatusStopped   = "Stopped"
@@ -63,51 +63,17 @@ type Program struct {
 	RootDir    string            `json:"root_dir"`
 }
 
-func (p *Program) install(agentRootDir string) error {
-	jobRootDir := path.Join(agentRootDir, p.Name, fmt.Sprintf("%s.%d", p.Job, p.TaskId))
-	packagesRootDir := path.Join(agentRootDir, ROOT_PKGS_DIR)
+// <agent-root-dir>/<cluster-name>/<job-name>.<task-id>
+func (p *Program) getJobRootDir(agentRootDir string) string {
+	return path.Join(agentRootDir, p.Name, fmt.Sprintf("%s.%d", p.Job, p.TaskId))
+}
 
-	// step.0 render the agent root directory for config files and arguments.
-	newConfigMap := make(map[string]string)
-	for fname, content := range p.Configs {
-		content = strings.Replace(content, "$AgentRootDir", agentRootDir, -1)
-		content = strings.Replace(content, "$TaskId", strconv.Itoa(p.TaskId), -1)
-		fname = strings.Replace(fname, "$AgentRootDir", agentRootDir, -1)
-		fname = strings.Replace(fname, "$TaskId", strconv.Itoa(p.TaskId), -1)
-		newConfigMap[fname] = content
-	}
-	p.Configs = newConfigMap
-
-	for idx, arg := range p.Args {
-		arg = strings.Replace(arg, "$AgentRootDir", agentRootDir, -1)
-		arg = strings.Replace(arg, "$TaskId", strconv.Itoa(p.TaskId), -1)
-		p.Args[idx] = arg
-	}
-	p.RootDir = jobRootDir
-
-	// step.1 prev-check
-	if relDir, err := filepath.Rel(agentRootDir, jobRootDir); err != nil {
-		return err
-	} else if strings.Contains(relDir, "..") || agentRootDir == jobRootDir {
-		return fmt.Errorf("Permission denied, mkdir %s", jobRootDir)
-	}
-	if _, err := os.Stat(jobRootDir); err == nil {
-		return fmt.Errorf("%s is already exists, cleanup it first please.", jobRootDir)
-	}
-
-	// step.2 create directories recursively
-	if err := os.MkdirAll(jobRootDir, 0755); err != nil {
-		return err
-	}
-	for _, sub := range progDirs() {
-		if err := os.MkdirAll(path.Join(jobRootDir, sub), 0755); err != nil {
-			return err
-		}
-	}
-
-	tmpPackageDir := path.Join(packagesRootDir, fmt.Sprintf("%s.tmp", p.PkgMD5Sum))
-	md5sumPackageDir := path.Join(packagesRootDir, p.PkgMD5Sum)
-	// Create <agent-root-dir>/packages/<md5sum>.tmp directory if not exists.
+// Update <job-root-dir>/pkg link.
+func (p *Program) updatePackage(agentRootDir string) error {
+	libsDir := path.Join(agentRootDir, LIBRARY_DIR)
+	tmpPackageDir := path.Join(libsDir, fmt.Sprintf("%s.tmp", p.PkgMD5Sum))
+	md5sumPackageDir := path.Join(libsDir, p.PkgMD5Sum)
+	// Step.0 Create <agent-root-dir>/packages/<md5sum>.tmp directory if not exists.
 	if _, err := os.Stat(md5sumPackageDir); os.IsNotExist(err) {
 		if _, err := os.Stat(tmpPackageDir); err == nil {
 			if err := os.RemoveAll(tmpPackageDir); err != nil {
@@ -118,7 +84,7 @@ func (p *Program) install(agentRootDir string) error {
 			return err
 		}
 
-		// step.3 download the package
+		// step.1 Download the package
 		pkgFilePath := path.Join(tmpPackageDir, p.PkgName)
 		resp, err := http.Get(p.PkgAddress)
 		if err != nil {
@@ -139,7 +105,7 @@ func (p *Program) install(agentRootDir string) error {
 		defer out.Close()
 		io.Copy(out, resp.Body)
 
-		// step.4 verify md5 checksum
+		// step.2 Verify md5 checksum
 		// TODO reuse those codes with pkgsrv.go
 		md5sum, md5Err := calcFileMD5Sum(pkgFilePath)
 		if md5Err != nil {
@@ -150,7 +116,7 @@ func (p *Program) install(agentRootDir string) error {
 			return fmt.Errorf("md5sum mismatch, %s != %s, package: %s", md5sum, p.PkgMD5Sum, p.PkgName)
 		}
 
-		// step.5 extract package
+		// step.3 Extract package
 		tarCmd := []string{"tar", "xzvf", pkgFilePath, "-C", tmpPackageDir}
 		cmd := exec.Command(tarCmd[0], tarCmd[1:]...)
 		var stdout, stderr bytes.Buffer
@@ -165,27 +131,30 @@ func (p *Program) install(agentRootDir string) error {
 		}
 	}
 
-	// step.6 link <job-root-dir>/pkg to <agent-root-dir>/packages/<md5sum>
+	// Step.4 Link <job-root-dir>/pkg to <agent-root-dir>/packages/<md5sum>
 	files, errs := ioutil.ReadDir(md5sumPackageDir)
 	if errs != nil {
 		return errs
 	}
 	for _, f := range files {
 		if f.IsDir() {
-			realPkgRootDir := path.Join(jobRootDir, PKG_DIR)
-			if err := os.Symlink(path.Join(md5sumPackageDir, f.Name()), realPkgRootDir); err != nil {
-				return err
+			linkPkgDir := path.Join(p.getJobRootDir(agentRootDir), PKG_DIR)
+			pkgDir := path.Join(md5sumPackageDir, f.Name())
+			if _, err := os.Stat(linkPkgDir); err == nil {
+				os.RemoveAll(linkPkgDir)
 			}
-			break
+			return os.Symlink(pkgDir, linkPkgDir)
 		}
 	}
+	return fmt.Errorf("Sub-directory under %s does not exist.", md5sumPackageDir)
+}
 
-	// step.7 dump configuration files
+func (p *Program) updateConfigFiles(agentRootDir string) error {
 	for fname, content := range p.Configs {
 		// When fname is /tmp/huker/agent01/myid case, we should write directly.
 		cfgPath := fname
 		if !strings.Contains(fname, "/") {
-			cfgPath = path.Join(jobRootDir, CONF_DIR, fname)
+			cfgPath = path.Join(p.getJobRootDir(agentRootDir), CONF_DIR, fname)
 		}
 		out, err := os.Create(cfgPath)
 		if err != nil {
@@ -195,12 +164,60 @@ func (p *Program) install(agentRootDir string) error {
 		defer out.Close()
 		io.Copy(out, bytes.NewBufferString(content))
 	}
-
 	return nil
 }
 
+// Render the agent root directory for config files and arguments.
+func (p *Program) renderVars(agentRootDir string) {
+	newConfigMap := make(map[string]string)
+	for fname, content := range p.Configs {
+		content = strings.Replace(content, "$AgentRootDir", agentRootDir, -1)
+		content = strings.Replace(content, "$TaskId", strconv.Itoa(p.TaskId), -1)
+		fname = strings.Replace(fname, "$AgentRootDir", agentRootDir, -1)
+		fname = strings.Replace(fname, "$TaskId", strconv.Itoa(p.TaskId), -1)
+		newConfigMap[fname] = content
+	}
+	p.Configs = newConfigMap
+
+	for idx, arg := range p.Args {
+		arg = strings.Replace(arg, "$AgentRootDir", agentRootDir, -1)
+		arg = strings.Replace(arg, "$TaskId", strconv.Itoa(p.TaskId), -1)
+		p.Args[idx] = arg
+	}
+	p.RootDir = p.getJobRootDir(agentRootDir)
+}
+
+func (p *Program) Install(agentRootDir string) error {
+	jobRootDir := p.getJobRootDir(agentRootDir)
+
+	// step.0 Prev-check
+	if relDir, err := filepath.Rel(agentRootDir, jobRootDir); err != nil {
+		return err
+	} else if strings.Contains(relDir, "..") || agentRootDir == jobRootDir {
+		return fmt.Errorf("Permission denied, mkdir %s", jobRootDir)
+	}
+	if _, err := os.Stat(jobRootDir); err == nil {
+		return fmt.Errorf("%s already exists, cleanup it first please.", jobRootDir)
+	}
+
+	// step.1 Create directories recursively
+	for _, sub := range progDirs() {
+		if err := os.MkdirAll(path.Join(jobRootDir, sub), 0755); err != nil {
+			return err
+		}
+	}
+
+	// step.2 Download package and link pkg to library.
+	if err := p.updatePackage(agentRootDir); err != nil {
+		return err
+	}
+
+	// step.3 Dump configuration files
+	return p.updateConfigFiles(agentRootDir)
+}
+
 // TODO pipe stdout & stderr into pkg_root_dir/stdout directories.
-func (p *Program) start(s *Supervisor) error {
+func (p *Program) Start(s *Supervisor) error {
 	if isProcessOK(p.PID) {
 		return fmt.Errorf("Process %d is already running.", p.PID)
 	}
@@ -214,7 +231,6 @@ func (p *Program) start(s *Supervisor) error {
 	stderr.Reset()
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 
-	// TODO handle the ERROR, otherwise cmd.Process will panic because of NULL pointer.
 	go func() {
 		if err := cmd.Start(); err != nil {
 			log.Errorf("Start job failed. [cmd: %s %s], [stdout: %s], [stderr: %s], err: %v",
@@ -237,7 +253,7 @@ func (p *Program) start(s *Supervisor) error {
 	}
 }
 
-func (p *Program) stop(s *Supervisor) error {
+func (p *Program) Stop(s *Supervisor) error {
 	process, err := os.FindProcess(p.PID)
 	if err != nil {
 		return err
@@ -255,19 +271,13 @@ func (p *Program) stop(s *Supervisor) error {
 	return nil
 }
 
-func (p *Program) restart(s *Supervisor) error {
-	p.stop(s)
+func (p *Program) Restart(s *Supervisor) error {
+	p.Stop(s)
 	if isProcessOK(p.PID) {
 		// TODO check process status
 		return fmt.Errorf("Failed to stop the process %d, still running.", p.PID)
 	}
-	err := p.start(s)
-	return err
-}
-
-func (p *Program) rollingUpdate(s *Supervisor) error {
-	// TODO
-	return nil
+	return p.Start(s)
 }
 
 func (s *Supervisor) hIndex(w http.ResponseWriter, r *http.Request) {
@@ -326,7 +336,18 @@ func renderResp(err error) []byte {
 }
 
 func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
-	// Step.0 Read and unmarshal the program.
+	s.updateProgram(w, r, func(p *Program) error {
+		// Step.0 check the existence of program.
+		if _, ok := s.programs.Get(p.Name, p.Job, p.TaskId); ok {
+			return fmt.Errorf("Job %s.%s.%d already exists.", p.Name, p.Job, p.TaskId)
+		}
+		// Step.1 Install package under root directory of agent.
+		return p.Install(s.rootDir)
+	})
+}
+
+// Abstract method for bootstrap/rolling_update.
+func (s *Supervisor) updateProgram(w http.ResponseWriter, r *http.Request, handleFunc func(*Program) error) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.Write(renderResp(err))
@@ -339,15 +360,8 @@ func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Step.1 check the existence of program.
-	if p, ok := s.programs.Get(prog.Name, prog.Job, prog.TaskId); ok {
-		w.Write(renderResp(fmt.Errorf("Job %s.%s.%d already exists.", p.Name, p.Job, p.TaskId)))
-		return
-	}
-
-	// Step.2 Install package under root directory of agent.
-	err = prog.install(s.rootDir)
-	if err != nil {
+	prog.renderVars(s.rootDir)
+	if err := handleFunc(prog); err != nil {
 		w.Write(renderResp(err))
 		return
 	}
@@ -359,12 +373,12 @@ func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// Step.4 Start the job
+	// Start the job in the final.
 	prog.Status = StatusStopped
-	w.Write(renderResp(prog.start(s)))
+	w.Write(renderResp(prog.Start(s)))
 }
 
-// Abstract method for start/cleanup/rolling_update/restart/stop logic
+// Abstract method for start/cleanup/restart/stop.
 func (s *Supervisor) handleProgram(w http.ResponseWriter, r *http.Request, handleFunc func(*Program) error) {
 	name := mux.Vars(r)["name"]
 	job := mux.Vars(r)["job"]
@@ -401,7 +415,7 @@ func (s *Supervisor) hShowProgram(w http.ResponseWriter, r *http.Request) {
 
 func (s *Supervisor) hStartProgram(w http.ResponseWriter, r *http.Request) {
 	s.handleProgram(w, r, func(p *Program) error {
-		return p.start(s)
+		return p.Start(s)
 	})
 }
 
@@ -454,20 +468,32 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Supervisor) hRollingUpdateProgram(w http.ResponseWriter, r *http.Request) {
-	s.handleProgram(w, r, func(p *Program) error {
-		return p.rollingUpdate(s)
+	s.updateProgram(w, r, func(p *Program) error {
+		// Step.0 check the existence of program.
+		if curProg, ok := s.programs.Get(p.Name, p.Job, p.TaskId); !ok {
+			return fmt.Errorf("Bootstrap %s.%s.%d first please.", p.Name, p.Job, p.TaskId)
+		} else {
+			curProg.Stop(s)
+		}
+		// Step.2 Update packages.
+		if err := p.updatePackage(s.rootDir); err != nil {
+			return err
+		}
+
+		// Step.3 Update config files.
+		return p.updateConfigFiles(s.rootDir)
 	})
 }
 
 func (s *Supervisor) hRestartProgram(w http.ResponseWriter, r *http.Request) {
 	s.handleProgram(w, r, func(p *Program) error {
-		return p.restart(s)
+		return p.Restart(s)
 	})
 }
 
 func (s *Supervisor) hStopProgram(w http.ResponseWriter, r *http.Request) {
 	s.handleProgram(w, r, func(p *Program) error {
-		return p.stop(s)
+		return p.Stop(s)
 	})
 }
 

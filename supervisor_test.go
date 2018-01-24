@@ -5,6 +5,7 @@ import (
 	"github.com/qiniu/log"
 	"os"
 	"path"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -130,5 +131,65 @@ func TestMiniHuker(t *testing.T) {
 
 	if err := m.cli.cleanup(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("cleanup program failed: %v", err)
+	}
+}
+
+func TestRollingUpdate(t *testing.T) {
+	agentRootDir := fmt.Sprintf("/tmp/huker/%d", int32(time.Now().Unix()))
+	m := NewMiniHuker(agentRootDir)
+
+	m.Start()
+	defer m.Stop()
+
+	prog := NewProgram()
+	if err := m.cli.bootstrap(prog); err != nil {
+		t.Fatalf("bootstrap failed: %v", err)
+	}
+
+	// Update config files.
+	configCases := []map[string]string{
+		map[string]string{
+			"a": "b", "c": "d", "e": "f",
+		},
+		map[string]string{
+			"a": "bb", "c": "dd", "e": "f",
+		},
+	}
+	for _, cas := range configCases {
+		prog.Configs = cas
+		if err := m.cli.rollingUpdate(prog); err != nil {
+			t.Fatalf("RollingUpdate failed [config case]: %v", err)
+		}
+		if p, err := m.cli.show(prog.Name, prog.Job, prog.TaskId); err != nil {
+			t.Fatalf("Show process failed: %v", err)
+		} else if !reflect.DeepEqual(cas, p.Configs) {
+			t.Errorf("Config files mismatch %v != %v", cas, p.Configs)
+		}
+	}
+
+	// Update package
+	pkgCases := [][]string{
+		[]string{"http://127.0.0.1:4321/test-2.6.6.tar.gz", "test-2.6.6.tar.gz", "ddb85c4ba8fe5c1d4ad8a216ae5cda6d"},
+	}
+	for _, cas := range pkgCases {
+		prog.PkgAddress, prog.PkgName, prog.PkgMD5Sum = cas[0], cas[1], cas[2]
+		if err := m.cli.rollingUpdate(prog); err != nil {
+			t.Fatalf("RollingUpdate failed [package case]: %v", err)
+		}
+		if p, err := m.cli.show(prog.Name, prog.Job, prog.TaskId); err != nil {
+			t.Fatalf("Show process failed: %v", err)
+		} else if !reflect.DeepEqual(p.Configs, p.Configs) {
+			t.Errorf("Config files mismatch %v != %v", p.Configs, prog.Configs)
+		} else if p.PkgAddress != prog.PkgAddress {
+			t.Errorf("PkgAddress mismatch %v != %v", p.PkgAddress, prog.PkgAddress)
+		} else if p.PkgName != prog.PkgName {
+			t.Errorf("PkgName mismatch %v != %v", p.PkgName, prog.PkgName)
+		} else if p.PkgMD5Sum != prog.PkgMD5Sum {
+			t.Errorf("PkgMD5Sum mismatch %v != %v", p.PkgMD5Sum, prog.PkgMD5Sum)
+		}
+	}
+
+	if err := m.cli.stop(prog.Name, prog.Job, prog.TaskId); err != nil {
+		t.Fatalf("Stop process failed: %v", err)
 	}
 }

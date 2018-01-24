@@ -48,7 +48,7 @@ func (h *HukerShell) Shell(c *cli.Context) error {
 
 	agentRootDir := c.String("dir")
 	// TODO need to consider config change (or other host adjustment).
-	if err := p.install(agentRootDir); err != nil {
+	if err := p.Install(agentRootDir); err != nil {
 		if !strings.Contains(err.Error(), "already exists, cleanup it first please.") {
 			return err
 		}
@@ -63,7 +63,7 @@ func (h *HukerShell) Shell(c *cli.Context) error {
 	return cmd.Run()
 }
 
-func (h *HukerShell) Bootstrap(c *cli.Context) error {
+func (h *HukerShell) updateJobWithLatestConfig(c *cli.Context, updateFunc func(*Job, *Host, *SupervisorCli, *Program) error) error {
 	args, err := h.prevAction(c)
 	if err != nil {
 		return err
@@ -87,13 +87,20 @@ func (h *HukerShell) Bootstrap(c *cli.Context) error {
 			PkgName:    args.cluster.packageName,
 			PkgMD5Sum:  args.cluster.packageMd5sum,
 		}
-		if err := supCli.bootstrap(p); err != nil {
-			log.Errorf("Bootstrap job %s at %s failed, err: %v", args.jobName, host.toKey(), err)
-		} else {
-			log.Infof("Bootstrap job %s at %s success.", args.jobName, host.toKey())
-		}
+		updateFunc(job, host, supCli, p)
 	}
 	return nil
+}
+
+func (h *HukerShell) Bootstrap(c *cli.Context) error {
+	return h.updateJobWithLatestConfig(c, func(job *Job, host *Host, cli *SupervisorCli, p *Program) error {
+		if err := cli.bootstrap(p); err != nil {
+			log.Errorf("Bootstrap job %s at %s failed, err: %v", job.jobName, host.toKey(), err)
+		} else {
+			log.Infof("Bootstrap job %s at %s -> Success", job.jobName, host.toKey())
+		}
+		return nil
+	})
 }
 
 func (h *HukerShell) Show(c *cli.Context) error {
@@ -150,7 +157,14 @@ func (h *HukerShell) Cleanup(c *cli.Context) error {
 }
 
 func (h *HukerShell) RollingUpdate(c *cli.Context) error {
-	return nil
+	return h.updateJobWithLatestConfig(c, func(job *Job, host *Host, cli *SupervisorCli, p *Program) error {
+		if err := cli.rollingUpdate(p); err != nil {
+			log.Errorf("RollingUpdate job %s at %s failed, err: %v", job.jobName, host.toKey(), err)
+		} else {
+			log.Infof("RollingUpdate job %s at %s -> Success", job.jobName, host.toKey())
+		}
+		return nil
+	})
 }
 
 func (h *HukerShell) Restart(c *cli.Context) error {

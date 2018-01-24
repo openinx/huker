@@ -4,3 +4,9 @@ test.tar.gz:
   md5sum: f77f526dcfbdbfb2dd942b6628f4c0ab
   size: 125
   link: http://github.com/test.tar.gz
+test-2.6.6.tar.gz:
+  version: 2.6.6
+  date: 2018-01-25 10:21
+  md5sum: ddb85c4ba8fe5c1d4ad8a216ae5cda6d
+  size: 163
+  link: http://github.com/test.tar.gz
