@@ -28,6 +28,7 @@ const (
 	LOG_DIR         = "log"
 	PKG_DIR         = "pkg"
 	CONF_DIR        = "conf"
+	ROOT_PKGS_DIR   = ".packages"
 	STDOUT_DIR      = "stdout"
 	StatusRunning   = "Running"
 	StatusStopped   = "Stopped"
@@ -64,6 +65,7 @@ type Program struct {
 
 func (p *Program) install(agentRootDir string) error {
 	jobRootDir := path.Join(agentRootDir, p.Name, fmt.Sprintf("%s.%d", p.Job, p.TaskId))
+	packagesRootDir := path.Join(agentRootDir, ROOT_PKGS_DIR)
 
 	// step.0 render the agent root directory for config files and arguments.
 	newConfigMap := make(map[string]string)
@@ -103,69 +105,78 @@ func (p *Program) install(agentRootDir string) error {
 		}
 	}
 
-	// step.3 download the package
-	pkgFilePath := path.Join(jobRootDir, STDOUT_DIR, p.PkgName)
-	resp, err := http.Get(p.PkgAddress)
-	if err != nil {
-		log.Errorf("Downloading package failed. package : %s, err: %s", p.PkgAddress, err.Error())
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		log.Errorf("Downloading package failed. package : %s, err: %s", p.PkgAddress, resp.Status)
-		data, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("%s", string(data))
-	}
-	out, err := os.Create(pkgFilePath)
-	if err != nil {
-		log.Errorf("Create package file error: %v", err)
-		return err
-	}
-	defer out.Close()
-	io.Copy(out, resp.Body)
-
-	// step.4 verify md5 checksum
-	// TODO reuse those codes with pkgsrv.go
-	md5sum, md5Err := calcFileMD5Sum(pkgFilePath)
-	if md5Err != nil {
-		log.Errorf("Calculate the md5 checksum of file %s failed, cause: %v", pkgFilePath, md5Err)
-		return md5Err
-	}
-	if md5sum != p.PkgMD5Sum {
-		return fmt.Errorf("md5sum mismatch, %s != %s, package: %s", md5sum, p.PkgMD5Sum, p.PkgName)
-	}
-
-	// step.5 extract package
-	md5path := path.Join(jobRootDir, STDOUT_DIR, p.PkgMD5Sum)
-	if err := os.MkdirAll(md5path, 0755); err != nil {
-		return err
-	}
-	tarCmd := []string{"tar", "xzvf", pkgFilePath, "-C", md5path}
-	cmd := exec.Command(tarCmd[0], tarCmd[1:]...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout, cmd.Stderr = &stdout, &stderr
-	if err := cmd.Run(); err != nil {
-		log.Errorf("exec cmd failed. [cmd: %s], [stdout: %s], [stderr: %s]",
-			strings.Join(tarCmd, " "), stdout.String(), stderr.String())
-		return err
-	}
-
-	// step.6 Move all files under <pkgRootDir>/<pkg-prefix-dir> to <pkgRootDir>
-	files, errs := ioutil.ReadDir(md5path)
-	if errs != nil {
-		return errs
-	} else if len(files) != 1 {
-		return fmt.Errorf("Should only one sub-directory under %s, but there're %d directories.", md5path, len(files))
-	} else if !files[0].IsDir() {
-		return fmt.Errorf("%s is not a directory.", files[0].Name())
-	} else {
-		realPkgRootDir := path.Join(jobRootDir, PKG_DIR)
-		if _, err := os.Stat(realPkgRootDir); os.IsNotExist(err) {
-			if err := os.Symlink(path.Join(md5path, files[0].Name()), realPkgRootDir); err != nil {
+	tmpPackageDir := path.Join(packagesRootDir, fmt.Sprintf("%s.tmp", p.PkgMD5Sum))
+	md5sumPackageDir := path.Join(packagesRootDir, p.PkgMD5Sum)
+	// Create <agent-root-dir>/packages/<md5sum>.tmp directory if not exists.
+	if _, err := os.Stat(md5sumPackageDir); os.IsNotExist(err) {
+		if _, err := os.Stat(tmpPackageDir); err == nil {
+			if err := os.RemoveAll(tmpPackageDir); err != nil {
 				return err
 			}
-		} else {
+		}
+		if err := os.MkdirAll(tmpPackageDir, 0755); err != nil {
 			return err
+		}
+
+		// step.3 download the package
+		pkgFilePath := path.Join(tmpPackageDir, p.PkgName)
+		resp, err := http.Get(p.PkgAddress)
+		if err != nil {
+			log.Errorf("Downloading package failed. package : %s, err: %s", p.PkgAddress, err.Error())
+			return err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode >= 400 {
+			log.Errorf("Downloading package failed. package : %s, err: %s", p.PkgAddress, resp.Status)
+			data, _ := ioutil.ReadAll(resp.Body)
+			return fmt.Errorf("%s", string(data))
+		}
+		out, err := os.Create(pkgFilePath)
+		if err != nil {
+			log.Errorf("Create package file error: %v", err)
+			return err
+		}
+		defer out.Close()
+		io.Copy(out, resp.Body)
+
+		// step.4 verify md5 checksum
+		// TODO reuse those codes with pkgsrv.go
+		md5sum, md5Err := calcFileMD5Sum(pkgFilePath)
+		if md5Err != nil {
+			log.Errorf("Calculate the md5 checksum of file %s failed, cause: %v", pkgFilePath, md5Err)
+			return md5Err
+		}
+		if md5sum != p.PkgMD5Sum {
+			return fmt.Errorf("md5sum mismatch, %s != %s, package: %s", md5sum, p.PkgMD5Sum, p.PkgName)
+		}
+
+		// step.5 extract package
+		tarCmd := []string{"tar", "xzvf", pkgFilePath, "-C", tmpPackageDir}
+		cmd := exec.Command(tarCmd[0], tarCmd[1:]...)
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout, cmd.Stderr = &stdout, &stderr
+		if err := cmd.Run(); err != nil {
+			log.Errorf("exec cmd failed. [cmd: %s], [stdout: %s], [stderr: %s]",
+				strings.Join(tarCmd, " "), stdout.String(), stderr.String())
+			return err
+		}
+		if err := os.Rename(tmpPackageDir, md5sumPackageDir); err != nil {
+			return err
+		}
+	}
+
+	// step.6 link <job-root-dir>/pkg to <agent-root-dir>/packages/<md5sum>
+	files, errs := ioutil.ReadDir(md5sumPackageDir)
+	if errs != nil {
+		return errs
+	}
+	for _, f := range files {
+		if f.IsDir() {
+			realPkgRootDir := path.Join(jobRootDir, PKG_DIR)
+			if err := os.Symlink(path.Join(md5sumPackageDir, f.Name()), realPkgRootDir); err != nil {
+				return err
+			}
+			break
 		}
 	}
 
