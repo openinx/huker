@@ -60,6 +60,9 @@ func (m *MiniHuker) Start() {
 			log.Error(err)
 		}
 	}()
+
+	// Wait until both supervisor and package server finished.
+	time.Sleep(1 * time.Second)
 }
 
 func (m *MiniHuker) Stop() {
@@ -71,20 +74,8 @@ func (m *MiniHuker) Stop() {
 	}
 }
 
-func TestMiniHuker(t *testing.T) {
-
-	agentRootDir := fmt.Sprintf("/tmp/huker/%d", int32(time.Now().Unix()))
-	m := NewMiniHuker(agentRootDir)
-
-	// Wait supervisor server and package server start finished.
-	m.Start()
-	defer func() {
-		m.Stop()
-	}()
-
-	time.Sleep(1 * time.Second)
-
-	prog := &Program{
+func NewProgram() *Program {
+	return &Program{
 		Name:   "tst-py",
 		Job:    "http-server.4",
 		TaskId: 100,
@@ -97,7 +88,16 @@ func TestMiniHuker(t *testing.T) {
 		PkgName:    "test.tar.gz",
 		PkgMD5Sum:  "f77f526dcfbdbfb2dd942b6628f4c0ab",
 	}
+}
 
+func TestMiniHuker(t *testing.T) {
+	agentRootDir := fmt.Sprintf("/tmp/huker/%d", int32(time.Now().Unix()))
+	m := NewMiniHuker(agentRootDir)
+
+	m.Start()
+	defer m.Stop()
+
+	prog := NewProgram()
 	if err := m.cli.bootstrap(prog); err != nil {
 		t.Fatalf("bootstrap failed: %v", err)
 	}

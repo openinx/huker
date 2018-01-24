@@ -5,6 +5,7 @@ import (
 	"github.com/qiniu/log"
 	"github.com/urfave/cli"
 	"os"
+	"path/filepath"
 )
 
 const (
@@ -240,11 +241,13 @@ func main() {
 				dir := c.String("dir")
 				port := c.Int("port")
 				file := c.String("file")
-				s, err := huker.NewSupervisor(dir, port, file)
-				if err != nil {
+				if absDir, err := filepath.Abs(dir); err != nil {
 					return err
+				} else if s, err := huker.NewSupervisor(absDir, port, file); err != nil {
+					return err
+				} else {
+					return s.Start()
 				}
-				return s.Start()
 			},
 		},
 		{
@@ -271,11 +274,13 @@ func main() {
 				port := c.Int("port")
 				dir := c.String("dir")
 				conf := c.String("conf")
-				p, err := huker.NewPackageServer(port, dir, conf)
-				if err != nil {
+				if absDir, err := filepath.Abs(dir); err != nil {
 					return err
+				} else if p, err := huker.NewPackageServer(port, absDir, conf); err != nil {
+					return err
+				} else {
+					return p.Start()
 				}
-				return p.Start()
 			},
 		},
 	}
