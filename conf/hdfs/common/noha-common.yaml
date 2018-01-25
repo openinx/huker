@@ -30,11 +30,6 @@ jobs:
         - io.file.buffer.size=131072
       hdfs-site.xml:
         - dfs.blocksize=268435456
-        # DataNode
-        - dfs.datanode.data.dir={{.PkgDataDir}}
-        - dfs.datanode.address=0.0.0.0:%{datanode.x.base_port}
-        - dfs.datanode.http.address=0.0.0.0:%{datanode.x.base_port+1}
-        - dfs.datanode.ipc.address=0.0.0.0:%{datanode.x.base_port+2}
         # NameNode
         - dfs.namenode.rpc-address=%{namenode.0.host}:%{namenode.0.base_port}
         - dfs.namenode.http-address=%{namenode.0.host}:%{namenode.0.base_port+1}
@@ -67,6 +62,13 @@ jobs:
     super_job: job_common
     jvm_properties:
       - hadoop.log.file=datanode.log
+    config:
+      hdfs-site.xml:
+        # DataNode
+        - dfs.datanode.data.dir={{.PkgDataDir}}
+        - dfs.datanode.address=0.0.0.0:%{datanode.x.base_port}
+        - dfs.datanode.http.address=0.0.0.0:%{datanode.x.base_port+1}
+        - dfs.datanode.ipc.address=0.0.0.0:%{datanode.x.base_port+2}
     main_entry:
       java_class: org.apache.hadoop.hdfs.server.datanode.DataNode
   shell:
