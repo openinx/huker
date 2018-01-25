@@ -86,6 +86,7 @@ func (h *HukerShell) updateJobWithLatestConfig(c *cli.Context, updateFunc func(*
 			PkgAddress: fmt.Sprintf("%s/%s", h.pkgServerAddress, args.cluster.packageName),
 			PkgName:    args.cluster.packageName,
 			PkgMD5Sum:  args.cluster.packageMd5sum,
+			Hooks:      job.hooks,
 		}
 		updateFunc(job, host, supCli, p)
 	}

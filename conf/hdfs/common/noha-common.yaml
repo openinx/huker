@@ -58,6 +58,8 @@ jobs:
       - hadoop.log.file=namenode.log
     main_entry:
       java_class: org.apache.hadoop.hdfs.server.namenode.NameNode
+    hooks:
+      post_bootstrap: {{.ConfRootDir}}/hdfs/common/namenode_post_bootstrap.sh
   datanode:
     super_job: job_common
     jvm_properties:

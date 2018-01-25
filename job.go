@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/qiniu/log"
-	"io"
-	"os"
+	"io/ioutil"
 	"sort"
 	"strconv"
 	"strings"
@@ -151,6 +150,7 @@ type Job struct {
 	classpath     []string
 	mainEntry     *MainEntry
 	configFiles   map[string]ConfigFile
+	hooks         map[string]string
 }
 
 func NewJob(jobName string, jobMap map[interface{}]interface{}) (*Job, error) {
@@ -160,6 +160,7 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (*Job, error) {
 		hosts:       []*Host{},
 		mainEntry:   &MainEntry{},
 		configFiles: make(map[string]ConfigFile),
+		hooks:       make(map[string]string),
 	}
 	var err error
 	if obj, ok := jobMap["super_job"]; ok && obj != nil {
@@ -217,6 +218,19 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (*Job, error) {
 	if jobMap["main_entry"] != nil {
 		if job.mainEntry, err = parseMainEntry(jobMap["main_entry"]); err != nil {
 			return nil, err
+		}
+	}
+
+	if obj, ok := jobMap["hooks"]; ok && obj != nil && IsMapType(obj) {
+		hooksMap := obj.(map[interface{}]interface{})
+		for hookKey, hookPath := range hooksMap {
+			if IsStringType(hookKey) && IsStringType(hookPath) {
+				data, err := ioutil.ReadFile(hookPath.(string))
+				if err != nil {
+					return nil, err
+				}
+				job.hooks[hookKey.(string)] = string(data)
+			}
 		}
 	}
 	return job, nil
@@ -342,18 +356,11 @@ func ParseStringArray(obj interface{}) ([]string, error) {
 		mapObj := obj.(map[interface{}]interface{})
 		if fileObj, ok := mapObj["file"]; ok && fileObj != nil {
 			if IsStringType(fileObj) {
-				fileName := fileObj.(string)
-				// Read local file content.
-				f, err := os.Open(fileName)
+				fileBytes, err := ioutil.ReadFile(fileObj.(string))
 				if err != nil {
-					return nil, fmt.Errorf("Open %s error: %v", fileName, err)
+					return nil, err
 				}
-				defer f.Close()
-				var buf bytes.Buffer
-				if _, err := io.Copy(&buf, f); err != nil {
-					return nil, fmt.Errorf("Read %s error: %v", fileName, err)
-				}
-
+				buf := bytes.NewBuffer(fileBytes)
 				var results []string
 				for buf.Len() > 0 {
 					line, err := buf.ReadString(byte('\n'))
