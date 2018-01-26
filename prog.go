@@ -271,6 +271,7 @@ func (p *Program) hookEnv() []string {
 	env = append(env, "PROGRAM_BIN="+p.Bin)
 	env = append(env, "PROGRAM_ARGS="+strings.Join(p.Args, " "))
 	env = append(env, "PROGRAM_DIR="+p.RootDir)
+	env = append(env, os.Environ()...)
 	return env
 }
 
