@@ -48,6 +48,7 @@ func (h *HukerShell) Shell(c *cli.Context) error {
 
 	agentRootDir := c.String("dir")
 	// TODO need to consider config change (or other host adjustment).
+	p.renderVars(agentRootDir)
 	if err := p.Install(agentRootDir); err != nil {
 		if !strings.Contains(err.Error(), "already exists, cleanup it first please.") {
 			return err
