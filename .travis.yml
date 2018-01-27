@@ -12,17 +12,7 @@ matrix:
     - go: 1.9.x
 
 before_install:
-  - sudo mkdir /tmp/huker
-
-install:
-  - go get github.com/go-playground/overalls
-  - go get github.com/mattn/goveralls
+  - sudo mkdir -p /tmp/huker
 
 script:
-  - overalls -project=github.com/openinx/huker -covermode=count -ignore='.git,_vendor'
-  - goveralls -coverprofile=overalls.coverprofile -service=travis-ci
-  - go test -coverprofile=coverage.txt -covermode=atomic
   - make && make test
-
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
