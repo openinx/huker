@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// The abstract functions for configuration file.
 type ConfigFile interface {
 	mergeWith(c ConfigFile) ConfigFile
 	toString() string
@@ -14,11 +15,13 @@ type ConfigFile interface {
 	getConfigName() string
 }
 
+// Configuration file with .ini, .properties
 type INIConfigFile struct {
 	cfgName   string
 	keyValues []string
 }
 
+// Create a new .ini config files.
 func NewINIConfigFile(cfgName string, keyValues []string) INIConfigFile {
 	return INIConfigFile{
 		cfgName:   cfgName,
@@ -62,11 +65,13 @@ func (c INIConfigFile) getConfigName() string {
 	return c.cfgName
 }
 
+// Configuration file with xml format
 type XMLConfigFile struct {
 	cfgName   string
 	keyValues []string
 }
 
+// Create a new xml config files.
 func NewXMLConfigFile(cfgName string, keyValues []string) XMLConfigFile {
 	return XMLConfigFile{
 		cfgName:   cfgName,
@@ -122,11 +127,13 @@ func (c XMLConfigFile) getConfigName() string {
 	return c.cfgName
 }
 
+// Configuration file with plain format, which means can be any format.
 type PlainConfigFile struct {
 	cfgName string
 	lines   []string
 }
 
+// New a plain configuration file.
 func NewPlainConfigFile(cfgName string, lines []string) PlainConfigFile {
 	return PlainConfigFile{
 		cfgName: cfgName,
@@ -161,6 +168,7 @@ func (c PlainConfigFile) getConfigName() string {
 	return c.cfgName
 }
 
+// Initialize the concrete configuration file by the suffix of cfgName.
 func ParseConfigFile(cfgName string, keyValues []string) (ConfigFile, error) {
 	fname := filepath.Base(cfgName)
 	if strings.HasSuffix(fname, ".cfg") || strings.HasSuffix(fname, ".properties") {
@@ -169,7 +177,6 @@ func ParseConfigFile(cfgName string, keyValues []string) (ConfigFile, error) {
 		return NewXMLConfigFile(cfgName, keyValues), nil
 	} else if !strings.Contains(fname, ".") || strings.HasSuffix(fname, ".txt") {
 		return NewPlainConfigFile(cfgName, keyValues), nil
-	} else {
-		return nil, fmt.Errorf("Unsupported configuration file format. %s", cfgName)
 	}
+	return nil, fmt.Errorf("Unsupported configuration file format. %s", cfgName)
 }

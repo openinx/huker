@@ -18,17 +18,21 @@ import (
 	"time"
 )
 
+// Constant response code.
 const (
 	CODE_OK         = 0
 	CODE_FAIL       = 1
 	MESSAGE_SUCCESS = "success"
 )
 
+// Supervisor is the agent of Huker. In theory, every host will have its own supervisor agent to manage
+// the processes. we can also start multiple supervisor agents on one single host by specific different
+// agent root directory, it's useful for testing.
 type Supervisor struct {
 	rootDir       string
 	port          int
 	dbFile        string
-	programs      *ProgramMap
+	programs      *programMap
 	quit          chan int
 	refreshTicker *time.Ticker
 	srv           *http.Server
@@ -92,7 +96,7 @@ func renderResp(err error) []byte {
 func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
 	s.updateProgram(w, r, func(p *Program) error {
 		// Step.0 check the existence of program.
-		if _, ok := s.programs.Get(p.Name, p.Job, p.TaskId); ok {
+		if _, ok := s.programs.get(p.Name, p.Job, p.TaskId); ok {
 			return fmt.Errorf("Job %s.%s.%d already exists.", p.Name, p.Job, p.TaskId)
 		}
 		// Step.1 Execute prev bootstrap hook
@@ -130,7 +134,7 @@ func (s *Supervisor) updateProgram(w http.ResponseWriter, r *http.Request, handl
 
 	// Defer to update supervisor db file, whether start job success or not.
 	defer func() {
-		if err := s.programs.PutAndDump(prog, s.dbFile); err != nil {
+		if err := s.programs.putAndDump(prog, s.dbFile); err != nil {
 			log.Errorf("Failed to dump supervisor db files: %v", err)
 		}
 	}()
@@ -146,14 +150,14 @@ func (s *Supervisor) handleProgram(w http.ResponseWriter, r *http.Request, handl
 	job := mux.Vars(r)["job"]
 	taskId, _ := strconv.Atoi(mux.Vars(r)["taskId"])
 
-	if prog, ok := s.programs.Get(name, job, taskId); ok {
+	if prog, ok := s.programs.get(name, job, taskId); ok {
 		if err := handleFunc(&prog); err != nil {
 			w.Write(renderResp(err))
 			return
 		}
 
 		// Keep the latest version of program saved in supervisor.
-		w.Write(renderResp(s.programs.PutAndDump(&prog, s.dbFile)))
+		w.Write(renderResp(s.programs.putAndDump(&prog, s.dbFile)))
 	} else {
 		w.Write(renderResp(fmt.Errorf("name: %s, job: %s, taskId: %d not found.", name, job, taskId)))
 	}
@@ -163,7 +167,7 @@ func (s *Supervisor) hShowProgram(w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	job := mux.Vars(r)["job"]
 	taskId, _ := strconv.Atoi(mux.Vars(r)["taskId"])
-	if prog, ok := s.programs.Get(name, job, taskId); ok {
+	if prog, ok := s.programs.get(name, job, taskId); ok {
 		data, err := json.Marshal(prog)
 		if err != nil {
 			w.Write(renderResp(err))
@@ -194,7 +198,7 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 	taskId, _ := strconv.Atoi(mux.Vars(r)["taskId"])
 
 	// step.0 check and clear cache.
-	prog, progFound := s.programs.Get(name, job, taskId)
+	prog, progFound := s.programs.get(name, job, taskId)
 	if progFound {
 		if prog.Status == StatusRunning {
 			w.Write(renderResp(fmt.Errorf("Job %s.%s.%d is still running, stop it first please.",
@@ -205,7 +209,7 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 			w.Write(renderResp(err))
 			return
 		}
-		s.programs.Remove(&prog)
+		s.programs.remove(&prog)
 	}
 
 	// issue#3: when the job does not exist in supervisor cache, still need to cleanup the data. because
@@ -230,7 +234,7 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// step.2 rename the job root dir into .trash
-	targetPath := path.Join(s.rootDir, name, fmt.Sprintf(".trash.%s.%d.%d", job, taskId, int32(time.Now().Unix())))
+	targetPath := path.Join(s.rootDir, name, fmt.Sprintf(".trash.%s.%d.%d", job, taskId, time.Now().Unix()))
 	if err := os.Rename(jobRootDir, targetPath); err != nil {
 		w.Write(renderResp(err))
 		return
@@ -250,7 +254,7 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 func (s *Supervisor) hRollingUpdateProgram(w http.ResponseWriter, r *http.Request) {
 	s.updateProgram(w, r, func(p *Program) error {
 		// Step.0 check the existence of program.
-		if curProg, ok := s.programs.Get(p.Name, p.Job, p.TaskId); !ok {
+		if curProg, ok := s.programs.get(p.Name, p.Job, p.TaskId); !ok {
 			return fmt.Errorf("Bootstrap %s.%s.%d first please.", p.Name, p.Job, p.TaskId)
 		} else {
 			curProg.Stop(s)
@@ -300,7 +304,7 @@ func (s *Supervisor) loadSupervisorDB() error {
 	// step.0 Create if not exist
 	if _, err := os.Stat(s.dbFile); os.IsNotExist(err) {
 		log.Infof("%s does not exist, initialize to be empty program list.", s.dbFile)
-		return s.programs.DumpToFile(s.dbFile)
+		return s.programs.dumpToFile(s.dbFile)
 	}
 
 	// step.1 Load programs from file and unmarshal it.
@@ -315,12 +319,13 @@ func (s *Supervisor) loadSupervisorDB() error {
 	return nil
 }
 
+// Create a new supervisor agent.
 func NewSupervisor(rootDir string, port int, supervisorDB string) (*Supervisor, error) {
 	s := &Supervisor{
 		rootDir:       rootDir,
 		port:          port,
 		dbFile:        supervisorDB,
-		programs:      NewProgramMap(),
+		programs:      newProgramMap(),
 		quit:          make(chan int),
 		refreshTicker: time.NewTicker(1 * time.Second),
 		srv: &http.Server{
@@ -338,7 +343,7 @@ func NewSupervisor(rootDir string, port int, supervisorDB string) (*Supervisor, 
 		for {
 			select {
 			case <-s.refreshTicker.C:
-				if err := s.programs.RefreshAndDump(s.dbFile); err != nil {
+				if err := s.programs.refreshAndDump(s.dbFile); err != nil {
 					log.Errorf("Failed to refresh and dump %s, %s", s.dbFile, err)
 				}
 			case <-s.quit:
@@ -350,6 +355,7 @@ func NewSupervisor(rootDir string, port int, supervisorDB string) (*Supervisor, 
 	return s, nil
 }
 
+// Start the supervisor agent by listen the given HTTP port.
 func (s *Supervisor) Start() error {
 	r := mux.NewRouter()
 	r.HandleFunc("/", s.hIndex)
@@ -365,6 +371,7 @@ func (s *Supervisor) Start() error {
 	return s.srv.ListenAndServe()
 }
 
+// Shutdown the supervisor agent.
 func (s *Supervisor) Stop() error {
 	s.quit <- 1
 	return s.srv.Close()

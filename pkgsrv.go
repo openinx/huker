@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-const HTML_TMPL = `
+const htmlTempl = `
 	<table border="1" bordercolor="#a0c6e5" style="border-collapse:collapse;" align="left">
 		<tr>
 			<td>PackageName</td>
@@ -39,16 +39,16 @@ const HTML_TMPL = `
 	{{ len . }} packages in total.
 	`
 
-type PackageInfo struct {
+type packageInfo struct {
 	PackageName string
-	Version     string `yaml: "version"`
-	Date        string `yaml: "date"`
-	Md5sum      string `yaml: "md5sum"`
-	Size        int64  `yaml: "size"`
-	Link        string `yaml: "link"`
+	Version     string `yaml:"version"`
+	Date        string `yaml:"date"`
+	Md5sum      string `yaml:"md5sum"`
+	Size        int64  `yaml:"size"`
+	Link        string `yaml:"link"`
 }
 
-func (p *PackageInfo) isCorrectPackage(libDir string) (bool, error) {
+func (p *packageInfo) isCorrectPackage(libDir string) (bool, error) {
 	fName, err := p.getAbsPath(libDir)
 	if err != nil {
 		return false, err
@@ -67,11 +67,11 @@ func (p *PackageInfo) isCorrectPackage(libDir string) (bool, error) {
 	return true, nil
 }
 
-func (p *PackageInfo) getAbsPath(libDir string) (string, error) {
+func (p *packageInfo) getAbsPath(libDir string) (string, error) {
 	return filepath.Abs(path.Join(libDir, p.PackageName))
 }
 
-func (p *PackageInfo) sync(libDir string) {
+func (p *packageInfo) sync(libDir string) {
 	if ok, _ := p.isCorrectPackage(libDir); ok {
 		log.Infof("Skip to download package : %s", p.PackageName)
 		return
@@ -93,34 +93,37 @@ func (p *PackageInfo) sync(libDir string) {
 	}
 }
 
-type PackageList []*PackageInfo
+type packageList []*packageInfo
 
-func (p PackageList) Len() int {
+func (p packageList) Len() int {
 	return len(p)
 }
 
-func (p PackageList) Swap(i, j int) {
+func (p packageList) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
 }
 
-func (p PackageList) Less(i, j int) bool {
+func (p packageList) Less(i, j int) bool {
 	return strings.Compare(p[i].PackageName, p[j].PackageName) < 0
 }
 
+// The package server is the package manager of huker, all supervisor agent will send a HTTP request
+// to package server for downloading the specific package.
 type PackageServer struct {
 	port    int
 	pkgRoot string
 	pkgConf string
-	pkgMap  map[string]*PackageInfo
+	pkgMap  map[string]*packageInfo
 	httpSrv *http.Server
 }
 
+// Create a new package server
 func NewPackageServer(port int, pkgRoot, pkgConf string) (*PackageServer, error) {
 	p := &PackageServer{
 		port:    port,
 		pkgRoot: pkgRoot,
 		pkgConf: pkgConf,
-		pkgMap:  make(map[string]*PackageInfo),
+		pkgMap:  make(map[string]*packageInfo),
 		httpSrv: &http.Server{
 			Addr: fmt.Sprintf(":%d", port),
 		},
@@ -149,18 +152,18 @@ func NewPackageServer(port int, pkgRoot, pkgConf string) (*PackageServer, error)
 }
 
 func (p *PackageServer) hIndex(w http.ResponseWriter, r *http.Request) {
-	t, err := template.New("Package Index").Parse(HTML_TMPL)
+	t, err := template.New("Package Index").Parse(htmlTempl)
 	if err != nil {
 		log.Error("Parse template failed: %v", err)
 		return
 	}
 
-	var pkgList []*PackageInfo
+	var pkgList []*packageInfo
 	for _, pkgInfo := range p.pkgMap {
 		pkgList = append(pkgList, pkgInfo)
 	}
 
-	sort.Sort(PackageList(pkgList))
+	sort.Sort(packageList(pkgList))
 
 	err = t.Execute(w, pkgList)
 	if err != nil {
@@ -192,6 +195,7 @@ func (p *PackageServer) sync() {
 	}
 }
 
+// Start the package server by listening the specific HTTP port.
 func (p *PackageServer) Start() error {
 	// Sync package to local lib.
 	p.sync()
@@ -204,6 +208,7 @@ func (p *PackageServer) Start() error {
 	return p.httpSrv.ListenAndServe()
 }
 
+// Shutdown the package server.
 func (p *PackageServer) Stop() error {
 	return p.httpSrv.Close()
 }

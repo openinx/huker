@@ -41,7 +41,7 @@ func TestMergeYamlMap(t *testing.T) {
 
 	actualMap = MergeMap(m1, m2)
 	if !reflect.DeepEqual(m3, actualMap) {
-		t.Errorf("Merge the m1 with m2 failed, expeced: %v, actual: %v", m3, actualMap)
+		t.Errorf("Merge the m1 with m2 failed, expected: %v, actual: %v", m3, actualMap)
 	}
 }
 
@@ -132,14 +132,14 @@ func TestNewServiceConfig(t *testing.T) {
 	}
 
 	expected := []Cluster{
-		Cluster{
+		{
 			baseConfig:    "/home/test.yaml",
 			clusterName:   "tst-cluster",
 			javaHome:      "/usr/bin/java",
 			packageName:   "zookeeper-3.4.11.tar.gz",
 			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
 			jobs: map[string]*Job{
-				"zookeeper": &Job{
+				"zookeeper": {
 					jobName: "zookeeper",
 					//hosts:         []string{"192.168.0.1"},
 					jvmOpts:       []string{"-Xmx4096m"},
@@ -158,14 +158,14 @@ func TestNewServiceConfig(t *testing.T) {
 				},
 			},
 		},
-		Cluster{
+		{
 			baseConfig:    "/home/test.yaml",
 			clusterName:   "tst-cluster",
 			javaHome:      "/usr/bin/java",
 			packageName:   "zookeeper-3.4.11.tar.gz",
 			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
 			jobs: map[string]*Job{
-				"zookeeper": &Job{
+				"zookeeper": {
 					jobName: "zookeeper",
 					//hosts:         []string{"192.168.0.1", "192.168.0.2"},
 					jvmOpts:       []string{"-Xmn1024m"},
@@ -181,14 +181,14 @@ func TestNewServiceConfig(t *testing.T) {
 				},
 			},
 		},
-		Cluster{
+		{
 			baseConfig:    "/home/test.yaml",
 			clusterName:   "tst-cluster",
 			javaHome:      "/usr/bin/java",
 			packageName:   "zookeeper-3.4.11.tar.gz",
 			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
 			jobs: map[string]*Job{
-				"zookeeper": &Job{
+				"zookeeper": {
 					jobName: "zookeeper",
 					//hosts:         []string{"192.168.0.1", "192.168.0.2"},
 					jvmOpts:       []string{"-Xmn1024m", "-Xmx4096m"},

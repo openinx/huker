@@ -44,6 +44,7 @@ func calcFileMD5Sum(fName string) (string, error) {
 	return hex.EncodeToString(hashReader.Sum(nil)), nil
 }
 
+// Download from fileHttpAddr to local file named localFileName.
 func WebGetToLocal(fileHttpAddr string, localFileName string) error {
 	resp, err := http.Get(fileHttpAddr)
 	if err != nil {
@@ -67,6 +68,7 @@ func WebGetToLocal(fileHttpAddr string, localFileName string) error {
 	return nil
 }
 
+// Run a bash command, the env will set be to default the env of current process if pass nil to env.
 func RunCommand(name string, env []string, args ...string) error {
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(name, args...)
@@ -84,6 +86,7 @@ func RunCommand(name string, env []string, args ...string) error {
 	return nil
 }
 
+// Read string value of env for the specific key, use default value if not key found in env.
 func ReadEnvStrValue(key string, defaultVal string) string {
 	val := os.Getenv(key)
 	if val == "" {
@@ -92,6 +95,7 @@ func ReadEnvStrValue(key string, defaultVal string) string {
 	return val
 }
 
+// Read int value of env for the specific key, use default value if not key found in env.
 func ReadEnvIntValue(key string, defaultVal int) int {
 	val := ReadEnvStrValue(key, string(defaultVal))
 	if val == "" {
@@ -104,6 +108,7 @@ func ReadEnvIntValue(key string, defaultVal int) int {
 	}
 }
 
+// True to indicate that the slice contains the s.
 func StringSliceContains(slice []string, s string) bool {
 	for i := range slice {
 		if slice[i] == s {
@@ -113,26 +118,33 @@ func StringSliceContains(slice []string, s string) bool {
 	return false
 }
 
+// True to indicate that x is a string type.
 func IsStringType(x interface{}) bool {
 	return x != nil && reflect.TypeOf(x).Kind() == reflect.String
 }
 
+// True to indicate that x is a int type
 func IsIntegerType(x interface{}) bool {
 	return x != nil && reflect.TypeOf(x).Kind() == reflect.Int
 }
 
+// True to indicate that x is a map type
 func IsMapType(x interface{}) bool {
 	return x != nil && reflect.TypeOf(x).Kind() == reflect.Map
 }
 
+// True to indicate that x is a slice type
 func IsSliceType(x interface{}) bool {
 	return x != nil && reflect.TypeOf(x).Kind() == reflect.Slice
 }
 
+// True to indicate that x is array type
 func IsArrayType(x interface{}) bool {
 	return x != nil && reflect.TypeOf(x).Kind() == reflect.Array
 }
 
+// Merge map m2 to map m1, if a key exist in both map m1 and map m2, then use the value of m1.
+// The returned map is the map m1.
 func MergeMap(m1 map[interface{}]interface{}, m2 map[interface{}]interface{}) map[interface{}]interface{} {
 	if !IsMapType(m2) {
 		return m1

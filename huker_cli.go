@@ -64,7 +64,7 @@ func (h *HukerShell) Shell(c *cli.Context) error {
 	return cmd.Run()
 }
 
-func (h *HukerShell) updateJobWithLatestConfig(c *cli.Context, updateFunc func(*Job, *Host, *SupervisorCli, *Program) error) error {
+func (h *HukerShell) updateJobWithLatestConfig(c *cli.Context, updateFunc func(*Job, *Host, *supervisorCli, *Program) error) error {
 	args, err := h.prevAction(c)
 	if err != nil {
 		return err
@@ -76,7 +76,7 @@ func (h *HukerShell) updateJobWithLatestConfig(c *cli.Context, updateFunc func(*
 		if err != nil {
 			return err
 		}
-		supCli := NewSupervisorCli(host.toHttpAddress())
+		supCli := newSupervisorCli(host.toHttpAddress())
 		p := &Program{
 			Name:       args.cluster.clusterName,
 			Job:        args.jobName,
@@ -95,7 +95,7 @@ func (h *HukerShell) updateJobWithLatestConfig(c *cli.Context, updateFunc func(*
 }
 
 func (h *HukerShell) Bootstrap(c *cli.Context) error {
-	return h.updateJobWithLatestConfig(c, func(job *Job, host *Host, cli *SupervisorCli, p *Program) error {
+	return h.updateJobWithLatestConfig(c, func(job *Job, host *Host, cli *supervisorCli, p *Program) error {
 		if err := cli.bootstrap(p); err != nil {
 			log.Errorf("Bootstrap job %s at %s failed, err: %v", job.jobName, host.toKey(), err)
 		} else {
@@ -112,7 +112,7 @@ func (h *HukerShell) Show(c *cli.Context) error {
 	}
 	job := args.cluster.jobs[args.jobName]
 	for _, host := range job.hosts {
-		supCli := NewSupervisorCli(host.toHttpAddress())
+		supCli := newSupervisorCli(host.toHttpAddress())
 		if p, err := supCli.show(args.clusterName, args.jobName, host.taskId); err != nil {
 			log.Errorf("Show job %s at %s failed, err: %v", args.jobName, host.toKey(), err)
 		} else {
@@ -130,7 +130,7 @@ func (h *HukerShell) Start(c *cli.Context) error {
 
 	job := args.cluster.jobs[args.jobName]
 	for _, host := range job.hosts {
-		supCli := NewSupervisorCli(host.toHttpAddress())
+		supCli := newSupervisorCli(host.toHttpAddress())
 		if err := supCli.start(args.clusterName, args.jobName, host.taskId); err != nil {
 			log.Errorf("Start job %s at %s failed, err: %v", args.jobName, host.toKey(), err)
 		} else {
@@ -148,7 +148,7 @@ func (h *HukerShell) Cleanup(c *cli.Context) error {
 
 	job := args.cluster.jobs[args.jobName]
 	for _, host := range job.hosts {
-		supCli := NewSupervisorCli(host.toHttpAddress())
+		supCli := newSupervisorCli(host.toHttpAddress())
 		if err := supCli.cleanup(args.clusterName, args.jobName, host.taskId); err != nil {
 			log.Errorf("Cleanup job %s at %s failed, err: %v", args.jobName, host.toKey(), err)
 		} else {
@@ -159,7 +159,7 @@ func (h *HukerShell) Cleanup(c *cli.Context) error {
 }
 
 func (h *HukerShell) RollingUpdate(c *cli.Context) error {
-	return h.updateJobWithLatestConfig(c, func(job *Job, host *Host, cli *SupervisorCli, p *Program) error {
+	return h.updateJobWithLatestConfig(c, func(job *Job, host *Host, cli *supervisorCli, p *Program) error {
 		if err := cli.rollingUpdate(p); err != nil {
 			log.Errorf("RollingUpdate job %s at %s failed, err: %v", job.jobName, host.toKey(), err)
 		} else {
@@ -177,7 +177,7 @@ func (h *HukerShell) Restart(c *cli.Context) error {
 
 	job := args.cluster.jobs[args.jobName]
 	for _, host := range job.hosts {
-		supCli := NewSupervisorCli(host.toHttpAddress())
+		supCli := newSupervisorCli(host.toHttpAddress())
 		if err := supCli.restart(args.clusterName, args.jobName, host.taskId); err != nil {
 			log.Errorf("Restart job %s at %s failed, err: %v", args.jobName, host.toKey(), err)
 		} else {
@@ -195,7 +195,7 @@ func (h *HukerShell) Stop(c *cli.Context) error {
 
 	job := args.cluster.jobs[args.jobName]
 	for _, host := range job.hosts {
-		supCli := NewSupervisorCli(host.toHttpAddress())
+		supCli := newSupervisorCli(host.toHttpAddress())
 		if err := supCli.stop(args.clusterName, args.jobName, host.taskId); err != nil {
 			log.Errorf("Stop job %s at %s failed, err: %v", args.jobName, host.toKey(), err)
 		} else {
@@ -205,7 +205,7 @@ func (h *HukerShell) Stop(c *cli.Context) error {
 	return nil
 }
 
-type PrevArgs struct {
+type prevArgs struct {
 	clusterName string
 	project     string
 	jobName     string
@@ -213,7 +213,7 @@ type PrevArgs struct {
 	env         *EnvVariables
 }
 
-func (h *HukerShell) prevAction(c *cli.Context) (*PrevArgs, error) {
+func (h *HukerShell) prevAction(c *cli.Context) (*prevArgs, error) {
 	project := c.String("project")     // TODO project field is required
 	clusterName := c.String("cluster") // TODO cluster field is required
 	jobName := c.String("job")
@@ -247,7 +247,7 @@ func (h *HukerShell) prevAction(c *cli.Context) (*PrevArgs, error) {
 		return nil, fmt.Errorf("Job `%s` does not exist in %s", jobName, clusterCfg)
 	}
 
-	cfg := &PrevArgs{
+	cfg := &prevArgs{
 		clusterName: clusterName,
 		project:     projectPath,
 		jobName:     jobName,

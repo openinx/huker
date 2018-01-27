@@ -5,6 +5,7 @@ import (
 	"text/template"
 )
 
+// The global variables for configuration files.
 type EnvVariables struct {
 	ConfRootDir  string
 	PkgRootDir   string
@@ -16,6 +17,7 @@ type EnvVariables struct {
 
 const TML_NAME = "service.yaml"
 
+// Render those global variables into configuration file.
 func (e *EnvVariables) RenderTemplate(s string) (string, error) {
 	var b bytes.Buffer
 	t, err := template.New(TML_NAME).Parse(s)

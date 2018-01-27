@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 )
 
+// Constant key and value for the environment variables.
 const (
 	HUKER_CONF_DIR                = "HUKER_CONF_DIR"
 	HUKER_CONF_DIR_DEFAULT        = "./conf"

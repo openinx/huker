@@ -53,7 +53,7 @@ func TestReadEnvStrValue(t *testing.T) {
 
 	for index, cs := range case2 {
 		if ReadEnvIntValue(cs.key, cs.defaultValue) != cs.getValue {
-			t.Errorf("case #%d failed, %s != %s", index, ReadEnvIntValue(cs.key, cs.defaultValue), cs.getValue)
+			t.Errorf("case #%d failed, %d != %d", index, ReadEnvIntValue(cs.key, cs.defaultValue), cs.getValue)
 		}
 	}
 }

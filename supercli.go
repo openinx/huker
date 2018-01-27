@@ -9,14 +9,12 @@ import (
 	"net/http"
 )
 
-const ContentTypeJson = "application/json"
-
-type SupervisorCli struct {
+type supervisorCli struct {
 	serverAddr string
 }
 
-func NewSupervisorCli(serverAddr string) *SupervisorCli {
-	return &SupervisorCli{
+func newSupervisorCli(serverAddr string) *supervisorCli {
+	return &supervisorCli{
 		serverAddr: serverAddr,
 	}
 }
@@ -47,7 +45,7 @@ func request(method, url string, body io.Reader) ([]byte, error) {
 		return []byte{}, err0
 	}
 	if body != nil {
-		req.Header.Set("Content-Type", ContentTypeJson)
+		req.Header.Set("Content-Type", "application/json")
 	}
 	cli := http.Client{}
 	resp, err := cli.Do(req)
@@ -58,7 +56,7 @@ func request(method, url string, body io.Reader) ([]byte, error) {
 	return handleResponse(resp)
 }
 
-func (s *SupervisorCli) bootstrap(p *Program) error {
+func (s *supervisorCli) bootstrap(p *Program) error {
 	data, err := json.Marshal(p)
 	if err != nil {
 		return err
@@ -68,7 +66,7 @@ func (s *SupervisorCli) bootstrap(p *Program) error {
 	return err2
 }
 
-func (s *SupervisorCli) show(name, job string, taskId int) (*Program, error) {
+func (s *supervisorCli) show(name, job string, taskId int) (*Program, error) {
 	url := fmt.Sprintf("%s/api/programs/%s/%s/%d", s.serverAddr, name, job, taskId)
 	data, err := request("GET", url, nil)
 	if err != nil {
@@ -81,19 +79,19 @@ func (s *SupervisorCli) show(name, job string, taskId int) (*Program, error) {
 	return p, nil
 }
 
-func (s *SupervisorCli) start(name, job string, taskId int) error {
+func (s *supervisorCli) start(name, job string, taskId int) error {
 	url := fmt.Sprintf("%s/api/programs/%s/%s/%d/start", s.serverAddr, name, job, taskId)
 	_, err := request("PUT", url, nil)
 	return err
 }
 
-func (s *SupervisorCli) cleanup(name, job string, taskId int) error {
+func (s *supervisorCli) cleanup(name, job string, taskId int) error {
 	url := fmt.Sprintf("%s/api/programs/%s/%s/%d", s.serverAddr, name, job, taskId)
 	_, err := request("DELETE", url, nil)
 	return err
 }
 
-func (s *SupervisorCli) rollingUpdate(p *Program) error {
+func (s *supervisorCli) rollingUpdate(p *Program) error {
 	data, err := json.Marshal(p)
 	if err != nil {
 		return err
@@ -103,13 +101,13 @@ func (s *SupervisorCli) rollingUpdate(p *Program) error {
 	return err2
 }
 
-func (s *SupervisorCli) restart(name, job string, taskId int) error {
+func (s *supervisorCli) restart(name, job string, taskId int) error {
 	url := fmt.Sprintf("%s/api/programs/%s/%s/%d/restart", s.serverAddr, name, job, taskId)
 	_, err := request("PUT", url, nil)
 	return err
 }
 
-func (s *SupervisorCli) stop(name, job string, taskId int) error {
+func (s *supervisorCli) stop(name, job string, taskId int) error {
 	url := fmt.Sprintf("%s/api/programs/%s/%s/%d/stop", s.serverAddr, name, job, taskId)
 	_, err := request("PUT", url, nil)
 	return err

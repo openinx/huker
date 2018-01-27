@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 )
 
+// Cluster definition.
 type Cluster struct {
 	baseConfig    string
 	clusterName   string
@@ -26,6 +27,7 @@ func getRequiredField(m map[interface{}]interface{}, key string) (string, error)
 	}
 }
 
+// Initialize a new cluster by the passed yaml configuration files and global variables.
 func NewCluster(yamlConfigs []string, e *EnvVariables) (*Cluster, error) {
 	cfgMap, err := mergeYamlConfigs(yamlConfigs)
 	if err != nil {
@@ -134,7 +136,7 @@ func (c *Cluster) RenderConfigFiles(job *Job, taskId int) (map[string]string, er
 		return nil, fmt.Errorf("Job with name `%s` not exist in cluster %s", job.jobName, c.clusterName)
 	}
 	if _, ok = job.GetHost(taskId); !ok {
-		return nil, fmt.Errorf("TaskId `%s` not exist in job `%s` for cluster `%s`", taskId, job.jobName, c.clusterName)
+		return nil, fmt.Errorf("TaskId `%d` not exist in job `%s` for cluster `%s`", taskId, job.jobName, c.clusterName)
 	}
 
 	cfgMap := make(map[string]string)

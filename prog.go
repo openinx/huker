@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 )
-
+// Directories and status for supervisor agent.
 const (
 	DATA_DIR      = "data"
 	LOG_DIR       = "log"
@@ -31,6 +31,7 @@ func progDirs() []string {
 	return []string{DATA_DIR, LOG_DIR, CONF_DIR, STDOUT_DIR}
 }
 
+// Program is the process entry to manager in supervisor agent. one agent can manage multiple programs.
 type Program struct {
 	Name       string            `json:"name"`
 	Job        string            `json:"job"`
@@ -144,6 +145,7 @@ func (p *Program) renderVars(agentRootDir string) {
 	p.RootDir = p.getJobRootDir(agentRootDir)
 }
 
+// Install the packages and dump the configuration files for the process to start.
 func (p *Program) Install(agentRootDir string) error {
 	jobRootDir := p.getJobRootDir(agentRootDir)
 
@@ -173,6 +175,7 @@ func (p *Program) Install(agentRootDir string) error {
 	return p.dumpConfigFiles(agentRootDir)
 }
 
+// Start the process in daemon.
 // TODO pipe stdout & stderr into pkg_root_dir/stdout directories.
 func (p *Program) Start(s *Supervisor) error {
 	if isProcessOK(p.PID) {
@@ -199,11 +202,11 @@ func (p *Program) Start(s *Supervisor) error {
 		p.Status = StatusRunning
 		p.PID = cmd.Process.Pid
 		return nil
-	} else {
-		return fmt.Errorf("Start job failed.")
 	}
+	return fmt.Errorf("Start job failed.")
 }
 
+// Stop the process.
 func (p *Program) Stop(s *Supervisor) error {
 	process, err := os.FindProcess(p.PID)
 	if err != nil {
@@ -222,6 +225,7 @@ func (p *Program) Stop(s *Supervisor) error {
 	return nil
 }
 
+// Restart the process
 func (p *Program) Restart(s *Supervisor) error {
 	p.Stop(s)
 	if isProcessOK(p.PID) {
@@ -241,6 +245,7 @@ func (p *Program) hookEnv() []string {
 	return env
 }
 
+// Execute hooks script in supervisor agent.
 func (p *Program) ExecHooks(hook string) error {
 	if _, ok := p.Hooks[hook]; !ok {
 		return nil

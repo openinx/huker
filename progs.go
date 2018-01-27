@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-type ProgramMap struct {
+type programMap struct {
 	mux      sync.Mutex
 	programs map[string]Program // Map hash of (cluster, job, taskId) to program instance.
 }
@@ -18,19 +18,19 @@ func programHash(cluster, job string, taskId int) string {
 	return fmt.Sprintf("cluster=%s/job=%s/task_id=%d", cluster, job, taskId)
 }
 
-func NewProgramMap() *ProgramMap {
-	return &ProgramMap{
+func newProgramMap() *programMap {
+	return &programMap{
 		programs: make(map[string]Program),
 	}
 }
 
-func (p *ProgramMap) Get(cluster, job string, taskId int) (Program, bool) {
+func (p *programMap) get(cluster, job string, taskId int) (Program, bool) {
 	key := programHash(cluster, job, taskId)
 	prog, ok := p.programs[key]
 	return prog, ok
 }
 
-func (p *ProgramMap) PutAndDump(prog *Program, fileName string) error {
+func (p *programMap) putAndDump(prog *Program, fileName string) error {
 	p.mux.Lock()
 	defer p.mux.Unlock()
 
@@ -39,10 +39,10 @@ func (p *ProgramMap) PutAndDump(prog *Program, fileName string) error {
 	p.programs[key] = *prog
 
 	// Dump it to file
-	return p.DumpToFile(fileName)
+	return p.dumpToFile(fileName)
 }
 
-func (p *ProgramMap) RefreshAndDump(fileName string) error {
+func (p *programMap) refreshAndDump(fileName string) error {
 	p.mux.Lock()
 	defer p.mux.Unlock()
 
@@ -55,29 +55,25 @@ func (p *ProgramMap) RefreshAndDump(fileName string) error {
 		p.programs[key] = prog
 	}
 
-	return p.DumpToFile(fileName)
+	return p.dumpToFile(fileName)
 }
 
-func (p *ProgramMap) DumpToFile(fileName string) error {
+func (p *programMap) dumpToFile(fileName string) error {
 	// Marshal the map and dump to the file
-	data, err := p.Marshal()
+	data, err := json.Marshal(p.programs)
 	if err != nil {
 		return err
 	}
 	return ioutil.WriteFile(fileName, data, 0644)
 }
 
-func (p *ProgramMap) Remove(prog *Program) {
+func (p *programMap) remove(prog *Program) {
 	p.mux.Lock()
 	p.mux.Unlock()
 	delete(p.programs, programHash(prog.Name, prog.Job, prog.TaskId))
 }
 
-func (p *ProgramMap) Marshal() ([]byte, error) {
-	return json.Marshal(p.programs)
-}
-
-func (p *ProgramMap) toArray() []Program {
+func (p *programMap) toArray() []Program {
 	p.mux.Lock()
 	defer p.mux.Unlock()
 	var progArray []Program

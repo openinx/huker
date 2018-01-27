@@ -17,14 +17,18 @@ const (
 
 type MiniHuker struct {
 	s   *Supervisor
-	cli *SupervisorCli
+	cli *supervisorCli
 	p   *PackageServer
 }
 
 func NewMiniHuker(agentRootDir string) *MiniHuker {
 	// mkdir root dir of agent if not exist.
 	if _, err := os.Stat(agentRootDir); os.IsNotExist(err) {
-		os.MkdirAll(agentRootDir, 0755)
+		if err := os.MkdirAll(agentRootDir, 0755); err != nil {
+			panic(err)
+		}
+	} else if err != nil {
+		panic(err)
 	}
 	supervisor, err := NewSupervisor(agentRootDir, TEST_AGENT_PORT, agentRootDir+"/supervisor.db")
 	if err != nil {
@@ -32,7 +36,7 @@ func NewMiniHuker(agentRootDir string) *MiniHuker {
 	}
 	m := &MiniHuker{
 		s: supervisor,
-		cli: &SupervisorCli{
+		cli: &supervisorCli{
 			serverAddr: fmt.Sprintf("http://127.0.0.1:%d", TEST_AGENT_PORT),
 		},
 	}
@@ -92,7 +96,7 @@ func NewProgram() *Program {
 }
 
 func TestMiniHuker(t *testing.T) {
-	agentRootDir := fmt.Sprintf("/tmp/huker/%d", int32(time.Now().Unix()))
+	agentRootDir := fmt.Sprintf("/tmp/huker/%d", time.Now().Unix())
 	m := NewMiniHuker(agentRootDir)
 
 	m.Start()
@@ -135,7 +139,7 @@ func TestMiniHuker(t *testing.T) {
 }
 
 func TestRollingUpdate(t *testing.T) {
-	agentRootDir := fmt.Sprintf("/tmp/huker/%d", int32(time.Now().Unix()))
+	agentRootDir := fmt.Sprintf("/tmp/huker/%d", time.Now().Unix())
 	m := NewMiniHuker(agentRootDir)
 
 	m.Start()
@@ -148,10 +152,10 @@ func TestRollingUpdate(t *testing.T) {
 
 	// Update config files.
 	configCases := []map[string]string{
-		map[string]string{
+		{
 			"a": "b", "c": "d", "e": "f",
 		},
-		map[string]string{
+		{
 			"a": "bb", "c": "dd", "e": "f",
 		},
 	}
@@ -169,7 +173,7 @@ func TestRollingUpdate(t *testing.T) {
 
 	// Update package
 	pkgCases := [][]string{
-		[]string{"http://127.0.0.1:4321/test-2.6.6.tar.gz", "test-2.6.6.tar.gz", "ddb85c4ba8fe5c1d4ad8a216ae5cda6d"},
+		{"http://127.0.0.1:4321/test-2.6.6.tar.gz", "test-2.6.6.tar.gz", "ddb85c4ba8fe5c1d4ad8a216ae5cda6d"},
 	}
 	for _, cas := range pkgCases {
 		prog.PkgAddress, prog.PkgName, prog.PkgMD5Sum = cas[0], cas[1], cas[2]
