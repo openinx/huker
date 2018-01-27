@@ -12,7 +12,7 @@ matrix:
     - go: 1.9.x
 
 before_install:
-  - sudo mkdir -p /tmp/huker
+  - mkdir -p /tmp/huker
 
 script:
   - make && make test
