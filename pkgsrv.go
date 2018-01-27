@@ -1,6 +1,7 @@
 package huker
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/gorilla/mux"
@@ -209,6 +210,6 @@ func (p *PackageServer) Start() error {
 }
 
 // Shutdown the package server.
-func (p *PackageServer) Stop() error {
-	return p.httpSrv.Close()
+func (p *PackageServer) Shutdown() error {
+	return p.httpSrv.Shutdown(context.Background())
 }

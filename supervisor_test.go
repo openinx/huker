@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 )
@@ -19,6 +20,7 @@ type MiniHuker struct {
 	s   *Supervisor
 	cli *supervisorCli
 	p   *PackageServer
+	wg  sync.WaitGroup
 }
 
 func NewMiniHuker(agentRootDir string) *MiniHuker {
@@ -47,6 +49,7 @@ func NewMiniHuker(agentRootDir string) *MiniHuker {
 		panic(err)
 	}
 	m.p = p
+	m.wg.Add(2)
 
 	return m
 }
@@ -54,6 +57,7 @@ func NewMiniHuker(agentRootDir string) *MiniHuker {
 func (m *MiniHuker) Start() {
 	// Start supervisor server
 	go func() {
+		defer m.wg.Done()
 		if err := m.s.Start(); err != nil {
 			log.Error(err)
 		}
@@ -61,6 +65,7 @@ func (m *MiniHuker) Start() {
 
 	// Start package server
 	go func() {
+		defer m.wg.Done()
 		if err := m.p.Start(); err != nil {
 			log.Error(err)
 		}
@@ -71,12 +76,13 @@ func (m *MiniHuker) Start() {
 }
 
 func (m *MiniHuker) Stop() {
-	if err := m.s.Stop(); err != nil {
+	if err := m.s.Shutdown(); err != nil {
 		log.Error(err)
 	}
-	if err := m.p.Stop(); err != nil {
+	if err := m.p.Shutdown(); err != nil {
 		log.Error(err)
 	}
+	m.wg.Wait()
 }
 
 func NewProgram() *Program {

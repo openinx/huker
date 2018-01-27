@@ -70,7 +70,7 @@ func match2(c *Cluster, input string) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			input = strings.Replace(input, matchPatten, fmt.Sprintf("%d", valInt +incr), 1)
+			input = strings.Replace(input, matchPatten, fmt.Sprintf("%d", valInt+incr), 1)
 		} else {
 			return "", fmt.Errorf("Attribute %s not exist. %s", key, matchPatten)
 		}
@@ -176,7 +176,7 @@ func match6(c *Cluster, taskId int, input string) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			input = strings.Replace(input, matchPatten, fmt.Sprintf("%d", valInt +incr), 1)
+			input = strings.Replace(input, matchPatten, fmt.Sprintf("%d", valInt+incr), 1)
 		} else {
 			return "", fmt.Errorf("Attribute %s not exist. %s", key, matchPatten)
 		}

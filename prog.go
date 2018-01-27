@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 )
+
 // Directories and status for supervisor agent.
 const (
 	DATA_DIR      = "data"

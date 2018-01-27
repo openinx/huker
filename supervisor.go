@@ -2,6 +2,7 @@ package huker
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -372,7 +373,7 @@ func (s *Supervisor) Start() error {
 }
 
 // Shutdown the supervisor agent.
-func (s *Supervisor) Stop() error {
+func (s *Supervisor) Shutdown() error {
 	s.quit <- 1
-	return s.srv.Close()
+	return s.srv.Shutdown(context.Background())
 }
