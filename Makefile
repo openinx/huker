@@ -1,4 +1,4 @@
-all: godep build test
+all: godep build
 
 godep:
 	go get github.com/go-yaml/yaml
@@ -15,7 +15,7 @@ test:
 	go get github.com/mattn/goveralls
 	overalls -project=github.com/openinx/huker -covermode=count -ignore='.git,_vendor'
 
-travis-test: build test
+travis-test: test
 	goveralls -coverprofile=overalls.coverprofile -service=travis-ci
 
 clean:

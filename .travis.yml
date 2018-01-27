@@ -15,4 +15,4 @@ before_install:
   - mkdir -p /tmp/huker
 
 script:
-  - make && make test
+  - make && make travis-test
