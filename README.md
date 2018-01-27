@@ -1,3 +1,9 @@
+# Huker
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/openinx/huker?style=flat-square)](https://goreportcard.com/report/github.com/openinx/huker)
+[![Build Status Travis](https://img.shields.io/travis/openinx/huker.svg?style=flat-square&&branch=master)](https://travis-ci.org/openinx/huker)
+[![Coverage Status](https://coveralls.io/repos/github/openinx/huker/badge.svg?branch=master)](https://coveralls.io/github/openinx/huker?branch=master)
+
 # Build Huker
 
 ```shell
