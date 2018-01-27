@@ -1,11 +1,9 @@
 package huker
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"os"
+	"io/ioutil"
 	"sort"
 	"strings"
 	"sync"
@@ -61,20 +59,12 @@ func (p *ProgramMap) RefreshAndDump(fileName string) error {
 }
 
 func (p *ProgramMap) DumpToFile(fileName string) error {
-	// Open file, create it if not exist.
-	f, createErr := os.Create(fileName)
-	if createErr != nil {
-		return createErr
-	}
-	defer f.Close()
-
 	// Marshal the map and dump to the file
 	data, err := p.Marshal()
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(f, bytes.NewBuffer(data))
-	return err
+	return ioutil.WriteFile(fileName, data, 0644)
 }
 
 func (p *ProgramMap) Remove(prog *Program) {

@@ -263,8 +263,8 @@ func (s *Supervisor) hRollingUpdateProgram(w http.ResponseWriter, r *http.Reques
 		if err := p.updatePackage(s.rootDir); err != nil {
 			return err
 		}
-		// Step.3 Update config files.
-		if err := p.updateConfigFiles(s.rootDir); err != nil {
+		// Step.3 Dump config files.
+		if err := p.dumpConfigFiles(s.rootDir); err != nil {
 			return err
 		}
 		// Step.4 Execute post hook

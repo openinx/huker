@@ -1,13 +1,19 @@
 package huker
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"github.com/qiniu/log"
 	"io"
+	"io/ioutil"
+	"net/http"
 	"os"
+	"os/exec"
 	"reflect"
 	"strconv"
+	"strings"
 	"syscall"
 )
 
@@ -36,6 +42,46 @@ func calcFileMD5Sum(fName string) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(hashReader.Sum(nil)), nil
+}
+
+func WebGetToLocal(fileHttpAddr string, localFileName string) error {
+	resp, err := http.Get(fileHttpAddr)
+	if err != nil {
+		log.Errorf("Downloading file failed. file: %s, err: %s", fileHttpAddr, err.Error())
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		log.Errorf("Downloading file failed. file: %s, err: %s", fileHttpAddr, resp.Status)
+		data, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("%s", string(data))
+	}
+	out, err := os.Create(localFileName)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	if _, err := io.Copy(out, resp.Body); err != nil {
+		return err
+	}
+	return nil
+}
+
+func RunCommand(name string, env []string, args ...string) error {
+	var stdout, stderr bytes.Buffer
+	cmd := exec.Command(name, args...)
+	fullCmd := fmt.Sprintf("%s %s", name, strings.Join(args, " "))
+	if env != nil {
+		cmd.Env = env
+		log.Infof("[cmd: %s], Environment variables:\n%s", fullCmd, strings.Join(cmd.Env, "\n"))
+	}
+	cmd.Stdout, cmd.Stderr = &stdout, &stderr
+	if err := cmd.Run(); err != nil {
+		log.Errorf("Run command failed. [cmd: %s], [stdout: %s], [stderr: %s]",
+			fullCmd, stdout.String(), stderr.String())
+		return err
+	}
+	return nil
 }
 
 func ReadEnvStrValue(key string, defaultVal string) string {

@@ -6,7 +6,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/qiniu/log"
 	"html/template"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -77,23 +76,15 @@ func (p *PackageInfo) sync(libDir string) {
 		log.Infof("Skip to download package : %s", p.PackageName)
 		return
 	}
-	resp, err := http.Get(p.Link)
+	abspath, err := p.getAbsPath(libDir)
 	if err != nil {
-		log.Errorf("Downloading package failed. package : %s, err: %s", p.Link, err.Error())
+		log.Errorf("%v", err)
 		return
 	}
-	defer resp.Body.Close()
-
-	var fName string
-	fName, err = p.getAbsPath(libDir)
-	out, err := os.Create(fName)
-	if err != nil {
-		log.Errorf("Create package file error: %v", err)
+	if err := WebGetToLocal(p.Link, abspath); err != nil {
+		log.Errorf("%v", err)
 		return
 	}
-	defer out.Close()
-	io.Copy(out, resp.Body)
-
 	// Final check
 	if ok, err := p.isCorrectPackage(libDir); ok {
 		log.Infof("Download package success: %s", p.Link)

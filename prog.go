@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/qiniu/log"
-	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -59,7 +57,7 @@ func (p *Program) updatePackage(agentRootDir string) error {
 	libsDir := path.Join(agentRootDir, LIBRARY_DIR)
 	tmpPackageDir := path.Join(libsDir, fmt.Sprintf("%s.tmp", p.PkgMD5Sum))
 	md5sumPackageDir := path.Join(libsDir, p.PkgMD5Sum)
-	// Step.0 Create <agent-root-dir>/packages/<md5sum>.tmp directory if not exists.
+	// Step.0 Create <agent-root-dir>/.packages/<md5sum>.tmp directory if not exists.
 	if _, err := os.Stat(md5sumPackageDir); os.IsNotExist(err) {
 		if _, err := os.Stat(tmpPackageDir); err == nil {
 			if err := os.RemoveAll(tmpPackageDir); err != nil {
@@ -72,27 +70,11 @@ func (p *Program) updatePackage(agentRootDir string) error {
 
 		// step.1 Download the package
 		pkgFilePath := path.Join(tmpPackageDir, p.PkgName)
-		resp, err := http.Get(p.PkgAddress)
-		if err != nil {
-			log.Errorf("Downloading package failed. package : %s, err: %s", p.PkgAddress, err.Error())
+		if err := WebGetToLocal(p.PkgAddress, pkgFilePath); err != nil {
 			return err
 		}
-		defer resp.Body.Close()
-		if resp.StatusCode >= 400 {
-			log.Errorf("Downloading package failed. package : %s, err: %s", p.PkgAddress, resp.Status)
-			data, _ := ioutil.ReadAll(resp.Body)
-			return fmt.Errorf("%s", string(data))
-		}
-		out, err := os.Create(pkgFilePath)
-		if err != nil {
-			log.Errorf("Create package file error: %v", err)
-			return err
-		}
-		defer out.Close()
-		io.Copy(out, resp.Body)
 
 		// step.2 Verify md5 checksum
-		// TODO reuse those codes with pkgsrv.go
 		md5sum, md5Err := calcFileMD5Sum(pkgFilePath)
 		if md5Err != nil {
 			log.Errorf("Calculate the md5 checksum of file %s failed, cause: %v", pkgFilePath, md5Err)
@@ -103,13 +85,7 @@ func (p *Program) updatePackage(agentRootDir string) error {
 		}
 
 		// step.3 Extract package
-		tarCmd := []string{"tar", "xzvf", pkgFilePath, "-C", tmpPackageDir}
-		cmd := exec.Command(tarCmd[0], tarCmd[1:]...)
-		var stdout, stderr bytes.Buffer
-		cmd.Stdout, cmd.Stderr = &stdout, &stderr
-		if err := cmd.Run(); err != nil {
-			log.Errorf("exec cmd failed. [cmd: %s], [stdout: %s], [stderr: %s]",
-				strings.Join(tarCmd, " "), stdout.String(), stderr.String())
+		if err := RunCommand("tar", nil, "xzvf", pkgFilePath, "-C", tmpPackageDir); err != nil {
 			return err
 		}
 		if err := os.Rename(tmpPackageDir, md5sumPackageDir); err != nil {
@@ -135,20 +111,15 @@ func (p *Program) updatePackage(agentRootDir string) error {
 	return fmt.Errorf("Sub-directory under %s does not exist.", md5sumPackageDir)
 }
 
-func (p *Program) updateConfigFiles(agentRootDir string) error {
+func (p *Program) dumpConfigFiles(agentRootDir string) error {
 	for fname, content := range p.Configs {
 		// When fname is /tmp/huker/agent01/myid case, we should write directly.
-		cfgPath := fname
-		if !strings.Contains(fname, "/") {
-			cfgPath = path.Join(p.getJobRootDir(agentRootDir), CONF_DIR, fname)
+		if filepath.Base(fname) == fname {
+			fname = path.Join(p.getJobRootDir(agentRootDir), CONF_DIR, fname)
 		}
-		out, err := os.Create(cfgPath)
-		if err != nil {
-			log.Errorf("save configuration file error: %v", err)
+		if err := ioutil.WriteFile(fname, []byte(content), 0644); err != nil {
 			return err
 		}
-		defer out.Close()
-		io.Copy(out, bytes.NewBufferString(content))
 	}
 	return nil
 }
@@ -199,7 +170,7 @@ func (p *Program) Install(agentRootDir string) error {
 	}
 
 	// step.3 Dump configuration files
-	return p.updateConfigFiles(agentRootDir)
+	return p.dumpConfigFiles(agentRootDir)
 }
 
 // TODO pipe stdout & stderr into pkg_root_dir/stdout directories.
@@ -213,17 +184,11 @@ func (p *Program) Start(s *Supervisor) error {
 		Setsid: true,
 		Pgid:   0,
 	}
-	stdout.Reset()
-	stderr.Reset()
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 
 	go func() {
-		if err := cmd.Start(); err != nil {
-			log.Errorf("Start job failed. [cmd: %s %s], [stdout: %s], [stderr: %s], err: %v",
-				p.Bin, strings.Join(p.Args, " "), stdout.String(), stderr.String(), err)
-		}
-		if err := cmd.Wait(); err != nil {
-			log.Errorf("Wait job failed. [cmd: %s %s], [stdout: %s], [stderr: %s], err: %v",
+		if err := cmd.Run(); err != nil {
+			log.Errorf("Run job failed. [cmd: %s %s], [stdout: %s], [stderr: %s], err: %v",
 				p.Bin, strings.Join(p.Args, " "), stdout.String(), stderr.String(), err)
 		}
 	}()
@@ -260,7 +225,6 @@ func (p *Program) Stop(s *Supervisor) error {
 func (p *Program) Restart(s *Supervisor) error {
 	p.Stop(s)
 	if isProcessOK(p.PID) {
-		// TODO check process status
 		return fmt.Errorf("Failed to stop the process %d, still running.", p.PID)
 	}
 	return p.Start(s)
@@ -271,6 +235,8 @@ func (p *Program) hookEnv() []string {
 	env = append(env, "PROGRAM_BIN="+p.Bin)
 	env = append(env, "PROGRAM_ARGS="+strings.Join(p.Args, " "))
 	env = append(env, "PROGRAM_DIR="+p.RootDir)
+	env = append(env, "PROGRAM_JOB_NAME="+p.Name)
+	env = append(env, "PROGRAM_TASK_ID="+strconv.Itoa(p.TaskId))
 	env = append(env, os.Environ()...)
 	return env
 }
@@ -288,19 +254,9 @@ func (p *Program) ExecHooks(hook string) error {
 		return err
 	}
 	hookFile := path.Join(hooksDir, hook)
-	if err := ioutil.WriteFile(hookFile, []byte(p.Hooks[hook]), 0744); err != nil {
+	if err := ioutil.WriteFile(hookFile, []byte(p.Hooks[hook]), 0755); err != nil {
 		return err
 	}
 	// Execute the hooked bash script.
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("/bin/bash", hookFile)
-	cmd.Env = p.hookEnv()
-	cmd.Stdout, cmd.Stderr = &stdout, &stderr
-	log.Infof("Hook %s, Environment variables:\n%s", hook, strings.Join(cmd.Env, "\n"))
-	if err := cmd.Run(); err != nil {
-		log.Errorf("Execute hook failed. [cmd: /bin/bash %s], [stdout: %s], [stderr: %s]",
-			hookFile, stdout.String(), stderr.String())
-		return err
-	}
-	return nil
+	return RunCommand(hookFile, p.hookEnv(), []string{}...)
 }
