@@ -3,6 +3,7 @@ package huker
 import (
 	"fmt"
 	"github.com/qiniu/log"
+	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
@@ -17,13 +18,14 @@ const (
 )
 
 type MiniHuker struct {
-	s   *Supervisor
-	cli *supervisorCli
-	p   *PackageServer
-	wg  sync.WaitGroup
+	supervisor  *Supervisor
+	superClient *supervisorCli
+	pkgServer   *PackageServer
+	wg          sync.WaitGroup
 }
 
-func NewMiniHuker(agentRootDir string) *MiniHuker {
+func NewMiniHuker() *MiniHuker {
+	agentRootDir := fmt.Sprintf("/tmp/huker/%d", time.Now().UnixNano())
 	// mkdir root dir of agent if not exist.
 	if _, err := os.Stat(agentRootDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(agentRootDir, 0755); err != nil {
@@ -37,8 +39,8 @@ func NewMiniHuker(agentRootDir string) *MiniHuker {
 		panic(err)
 	}
 	m := &MiniHuker{
-		s: supervisor,
-		cli: &supervisorCli{
+		supervisor: supervisor,
+		superClient: &supervisorCli{
 			serverAddr: fmt.Sprintf("http://127.0.0.1:%d", TEST_AGENT_PORT),
 		},
 	}
@@ -48,7 +50,7 @@ func NewMiniHuker(agentRootDir string) *MiniHuker {
 	if err != nil {
 		panic(err)
 	}
-	m.p = p
+	m.pkgServer = p
 	m.wg.Add(2)
 
 	return m
@@ -58,7 +60,7 @@ func (m *MiniHuker) Start() {
 	// Start supervisor server
 	go func() {
 		defer m.wg.Done()
-		if err := m.s.Start(); err != nil {
+		if err := m.supervisor.Start(); err != nil {
 			log.Error(err)
 		}
 	}()
@@ -66,7 +68,7 @@ func (m *MiniHuker) Start() {
 	// Start package server
 	go func() {
 		defer m.wg.Done()
-		if err := m.p.Start(); err != nil {
+		if err := m.pkgServer.Start(); err != nil {
 			log.Error(err)
 		}
 	}()
@@ -76,10 +78,10 @@ func (m *MiniHuker) Start() {
 }
 
 func (m *MiniHuker) Stop() {
-	if err := m.s.Shutdown(); err != nil {
+	if err := m.supervisor.Shutdown(); err != nil {
 		log.Error(err)
 	}
-	if err := m.p.Shutdown(); err != nil {
+	if err := m.pkgServer.Shutdown(); err != nil {
 		log.Error(err)
 	}
 	m.wg.Wait()
@@ -98,61 +100,60 @@ func NewProgram() *Program {
 		PkgAddress: fmt.Sprintf("http://127.0.0.1:%d/test.tar.gz", TEST_PKG_SRV_PORT),
 		PkgName:    "test.tar.gz",
 		PkgMD5Sum:  "f77f526dcfbdbfb2dd942b6628f4c0ab",
+		Hooks:      make(map[string]string),
 	}
 }
 
 func TestMiniHuker(t *testing.T) {
-	agentRootDir := fmt.Sprintf("/tmp/huker/%d", time.Now().Unix())
-	m := NewMiniHuker(agentRootDir)
+	m := NewMiniHuker()
 
 	m.Start()
 	defer m.Stop()
 
 	prog := NewProgram()
-	if err := m.cli.bootstrap(prog); err != nil {
+	if err := m.superClient.bootstrap(prog); err != nil {
 		t.Fatalf("bootstrap failed: %v", err)
 	}
 
-	if p, err := m.cli.show(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if p, err := m.superClient.show(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("show process failed: %v", err)
 	} else if p.Status != StatusRunning {
 		t.Fatalf("process is not running, cause: %v", err)
-	} else if p.RootDir != path.Join(agentRootDir, p.Name, fmt.Sprintf("%s.%d", p.Job, p.TaskId)) {
+	} else if p.RootDir != path.Join(m.supervisor.rootDir, p.Name, fmt.Sprintf("%s.%d", p.Job, p.TaskId)) {
 		t.Fatalf("root directory of program mismatch. rootDir: %s", p.RootDir)
 	}
 
-	if err := m.cli.stop(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient.stop(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("stop process failed: %v", err)
 	}
 
-	if err := m.cli.restart(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient.restart(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("restart process failed: %v", err)
 	}
 
-	if p, err := m.cli.show(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if p, err := m.superClient.show(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("show process failed: %v", err)
 	} else if p.Status != StatusRunning {
 		t.Fatalf("process is not running, cause: %v", err)
 	}
 
-	if err := m.cli.stop(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient.stop(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("stop process failed: %v", err)
 	}
 
-	if err := m.cli.cleanup(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient.cleanup(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("cleanup program failed: %v", err)
 	}
 }
 
 func TestRollingUpdate(t *testing.T) {
-	agentRootDir := fmt.Sprintf("/tmp/huker/%d", time.Now().Unix())
-	m := NewMiniHuker(agentRootDir)
+	m := NewMiniHuker()
 
 	m.Start()
 	defer m.Stop()
 
 	prog := NewProgram()
-	if err := m.cli.bootstrap(prog); err != nil {
+	if err := m.superClient.bootstrap(prog); err != nil {
 		t.Fatalf("bootstrap failed: %v", err)
 	}
 
@@ -167,10 +168,10 @@ func TestRollingUpdate(t *testing.T) {
 	}
 	for _, cas := range configCases {
 		prog.Configs = cas
-		if err := m.cli.rollingUpdate(prog); err != nil {
+		if err := m.superClient.rollingUpdate(prog); err != nil {
 			t.Fatalf("RollingUpdate failed [config case]: %v", err)
 		}
-		if p, err := m.cli.show(prog.Name, prog.Job, prog.TaskId); err != nil {
+		if p, err := m.superClient.show(prog.Name, prog.Job, prog.TaskId); err != nil {
 			t.Fatalf("Show process failed: %v", err)
 		} else if !reflect.DeepEqual(cas, p.Configs) {
 			t.Errorf("Config files mismatch %v != %v", cas, p.Configs)
@@ -183,10 +184,10 @@ func TestRollingUpdate(t *testing.T) {
 	}
 	for _, cas := range pkgCases {
 		prog.PkgAddress, prog.PkgName, prog.PkgMD5Sum = cas[0], cas[1], cas[2]
-		if err := m.cli.rollingUpdate(prog); err != nil {
+		if err := m.superClient.rollingUpdate(prog); err != nil {
 			t.Fatalf("RollingUpdate failed [package case]: %v", err)
 		}
-		if p, err := m.cli.show(prog.Name, prog.Job, prog.TaskId); err != nil {
+		if p, err := m.superClient.show(prog.Name, prog.Job, prog.TaskId); err != nil {
 			t.Fatalf("Show process failed: %v", err)
 		} else if !reflect.DeepEqual(p.Configs, p.Configs) {
 			t.Errorf("Config files mismatch %v != %v", p.Configs, prog.Configs)
@@ -199,7 +200,68 @@ func TestRollingUpdate(t *testing.T) {
 		}
 	}
 
-	if err := m.cli.stop(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient.stop(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("Stop process failed: %v", err)
+	}
+}
+
+const hookScript = `#!/bin/bash
+file=$SUPERVISOR_ROOT_DIR/.hooks/$PROGRAM_NAME/$PROGRAM_JOB_NAME.$PROGRAM_TASK_ID/%s.sh
+echo $SUPERVISOR_ROOT_DIR > $file
+echo $PROGRAM_BIN >> $file
+echo $PROGRAM_ARGS >> $file
+echo $PROGRAM_DIR >> $file
+echo $PROGRAM_NAME >> $file
+echo $PROGRAM_JOB_NAME >> $file
+echo $PROGRAM_TASK_ID >> $file
+`
+
+func TestHooks(t *testing.T) {
+	m := NewMiniHuker()
+	m.Start()
+	defer m.Stop()
+
+	expected := fmt.Sprintf("%s\npython\n-m SimpleHTTPServer\n%s/tst-py/http-server.4.100\ntst-py\nhttp-server.4\n100\n", m.supervisor.rootDir, m.supervisor.rootDir)
+
+	prog := NewProgram()
+	hookNames := []string{"pre_bootstrap", "post_bootstrap", "pre_start", "post_start",
+		"pre_rolling_update", "post_rolling_update", "pre_stop", "post_stop", "pre_restart", "post_restart"}
+	for _, hookName := range hookNames {
+		prog.Hooks[hookName] = fmt.Sprintf(hookScript, hookName)
+	}
+
+	if err := m.superClient.bootstrap(prog); err != nil {
+		t.Fatalf("%v", err)
+	}
+	if err := m.superClient.stop(prog.Name, prog.Job, prog.TaskId); err != nil {
+		t.Fatalf("%v", err)
+	}
+	if err := m.superClient.start(prog.Name, prog.Job, prog.TaskId); err != nil {
+		t.Fatalf("%v", err)
+	}
+	if err := m.superClient.restart(prog.Name, prog.Job, prog.TaskId); err != nil {
+		t.Fatalf("%v", err)
+	}
+	// Config change for rolling update
+	prog.Configs = map[string]string{
+		"a": "b", "c": "d", "e": "f",
+	}
+	if err := m.superClient.rollingUpdate(prog); err != nil {
+		t.Fatalf("%v", err)
+	}
+	if err := m.superClient.stop(prog.Name, prog.Job, prog.TaskId); err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	for _, hookName := range hookNames {
+		testHookFile := path.Join(m.supervisor.rootDir, HOOKS_DIR, prog.Name,
+			fmt.Sprintf("%s.%d", prog.Job, prog.TaskId), hookName+".sh")
+		data, err := ioutil.ReadFile(testHookFile)
+		if err != nil {
+			t.Fatalf("Failed to read %s, err: %v", testHookFile, err)
+		}
+		if expected != string(data) {
+			t.Errorf("test hook file content mismatch: [%q] != [%q]", expected, string(data))
+		}
 	}
 }

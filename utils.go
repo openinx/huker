@@ -75,10 +75,10 @@ func RunCommand(name string, env []string, args ...string) error {
 	fullCmd := fmt.Sprintf("%s %s", name, strings.Join(args, " "))
 	if env != nil {
 		cmd.Env = env
-		log.Infof("[cmd: %s], Environment variables:\n%s", fullCmd, strings.Join(cmd.Env, "\n"))
 	}
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	if err := cmd.Run(); err != nil {
+		log.Errorf("Environment variables:\n%s", strings.Join(cmd.Env, "\n"))
 		log.Errorf("Run command failed. [cmd: %s], [stdout: %s], [stderr: %s]",
 			fullCmd, stdout.String(), stderr.String())
 		return err

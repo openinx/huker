@@ -23,7 +23,7 @@ const (
 	CONF_DIR      = "conf"
 	LIBRARY_DIR   = ".packages"
 	STDOUT_DIR    = "stdout"
-	HOOKS_DIR     = "hooks"
+	HOOKS_DIR     = ".hooks"
 	StatusRunning = "Running"
 	StatusStopped = "Stopped"
 )
@@ -237,10 +237,12 @@ func (p *Program) Restart(s *Supervisor) error {
 
 func (p *Program) hookEnv() []string {
 	var env []string
+	env = append(env, "SUPERVISOR_ROOT_DIR="+path.Dir(path.Dir(p.RootDir)))
 	env = append(env, "PROGRAM_BIN="+p.Bin)
 	env = append(env, "PROGRAM_ARGS="+strings.Join(p.Args, " "))
 	env = append(env, "PROGRAM_DIR="+p.RootDir)
-	env = append(env, "PROGRAM_JOB_NAME="+p.Name)
+	env = append(env, "PROGRAM_NAME="+p.Name)
+	env = append(env, "PROGRAM_JOB_NAME="+p.Job)
 	env = append(env, "PROGRAM_TASK_ID="+strconv.Itoa(p.TaskId))
 	env = append(env, os.Environ()...)
 	return env
@@ -251,12 +253,14 @@ func (p *Program) ExecHooks(hook string) error {
 	if _, ok := p.Hooks[hook]; !ok {
 		return nil
 	}
-	hooksDir := path.Join(p.RootDir, HOOKS_DIR)
+	log.Infof("Execute hook: %s", hook)
+	// <agent-root-dir>/.hooks/<cluster>/<job>.<taskId>
+	hooksDir := path.Join(path.Dir(path.Dir(p.RootDir)), HOOKS_DIR, p.Name, fmt.Sprintf("%s.%d", p.Job, p.TaskId))
 	if _, err := os.Stat(hooksDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(hooksDir, 0755); err != nil {
 			return err
 		}
-	} else {
+	} else if err != nil {
 		return err
 	}
 	hookFile := path.Join(hooksDir, hook)
