@@ -1,0 +1,7 @@
+jobs:
+  httpserver:
+    config:
+      test.cfg:
+        - hello=world
+    main_entry:
+      extra_args: -m SimpleHTTPServer 30120

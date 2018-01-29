@@ -1,0 +1,12 @@
+base: {{.ConfRootDir}}/pyserver/common.yaml
+
+cluster:
+  cluster_name: py_test
+  java_home: python
+  package_name: test.tar.gz
+  package_md5sum: f77f526dcfbdbfb2dd942b6628f4c0ab
+
+jobs:
+  httpserver:
+    hosts:
+      - 127.0.0.1:9743/id=0/base_port=30120

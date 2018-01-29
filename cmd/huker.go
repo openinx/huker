@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/openinx/huker"
 	"github.com/qiniu/log"
 	"github.com/urfave/cli"
@@ -8,48 +9,62 @@ import (
 	"path/filepath"
 )
 
-// Constant key and value for the environment variables.
-const (
-	HUKER_CONF_DIR                = "HUKER_CONF_DIR"
-	HUKER_CONF_DIR_DEFAULT        = "./conf"
-	HUKER_PKG_HTTP_SERVER         = "HUKER_PKG_HTTP_SERVER"
-	HUKER_PKG_HTTP_SERVER_DEFAULT = "http://127.0.0.1:4000"
-)
+func logConsole(action string, job string, results []huker.TaskResult) {
+	if results != nil {
+		for i := range results {
+			if results[i].Err != nil {
+				log.Errorf("%s job %s at %s -> Failed, %v", action, job, results[i].Host.ToKey(), results[i].Err)
+			} else if results[i].Prog != nil {
+				log.Infof("%s job %s at %s -> %s", action, job, results[i].Host.ToKey(), results[i].Prog.Status)
+			} else {
+				log.Infof("%s job %s at %s -> Success", action, job, results[i].Host.ToKey())
+			}
+		}
+	} else {
+		log.Warnf("%s job %s -> No task found.", action, job)
+	}
+}
+
+func handleShellAction(action string, c *cli.Context) error {
+	h, err := huker.NewDefaultHukerJob()
+	if err != nil {
+		return err
+	}
+
+	var results []huker.TaskResult
+	switch action {
+	case "Install":
+		results, err = h.Install(c.String("project"), c.String("cluster"), c.String("job"), c.Int("task"))
+	case "Bootstrap":
+		results, err = h.Bootstrap(c.String("project"), c.String("cluster"), c.String("job"), c.Int("task"))
+	case "Start":
+		results, err = h.Start(c.String("project"), c.String("cluster"), c.String("job"), c.Int("task"))
+	case "Stop":
+		results, err = h.Stop(c.String("project"), c.String("cluster"), c.String("job"), c.Int("task"))
+	case "Show":
+		results, err = h.Show(c.String("project"), c.String("cluster"), c.String("job"), c.Int("task"))
+	case "Restart":
+		results, err = h.Restart(c.String("project"), c.String("cluster"), c.String("job"), c.Int("task"))
+	case "RollingUpdate":
+		results, err = h.RollingUpdate(c.String("project"), c.String("cluster"), c.String("job"), c.Int("task"))
+	case "Cleanup":
+		results, err = h.Cleanup(c.String("project"), c.String("cluster"), c.String("job"), c.Int("task"))
+	default:
+		return fmt.Errorf("Unsupported action: %s", action)
+	}
+	if err != nil {
+		return err
+	} else {
+		logConsole(action, c.String("job"), results)
+		return nil
+	}
+}
 
 func main() {
 
 	app := cli.NewApp()
 
-	cfgRootDir := huker.ReadEnvStrValue(HUKER_CONF_DIR, HUKER_CONF_DIR_DEFAULT)
-	pkgServerAddress := huker.ReadEnvStrValue(HUKER_PKG_HTTP_SERVER, HUKER_PKG_HTTP_SERVER_DEFAULT)
-
-	hShell := huker.NewHukerShell(cfgRootDir, pkgServerAddress)
-
 	app.Commands = []cli.Command{
-		{
-			Name:  "shell",
-			Usage: "Start an interactive shell terminal, and execute command in local",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "project",
-					Usage: "project name, such as hdfs, yarn, zookeeper, hbase, etc",
-				},
-				cli.StringFlag{
-					Name:  "cluster",
-					Usage: "cluster name",
-				},
-				cli.StringFlag{
-					Name:  "job",
-					Usage: "job name of the project, for hbase, the job will be master, regionserver, canary etc.",
-				},
-				cli.StringFlag{
-					Name:  "dir, d",
-					Value: "/tmp/huker-packages",
-					Usage: "Directory to store packages downloding from package manager server",
-				},
-			},
-			Action: hShell.Shell,
-		},
 		{
 			Name:  "bootstrap",
 			Usage: "Bootstrap a cluster of specific project, or jobs, or tasks",
@@ -66,13 +81,16 @@ func main() {
 					Name:  "job",
 					Usage: "job name of the project, for hbase, the job will be master, regionserver, canary etc.",
 				},
-				cli.StringFlag{
+				cli.IntFlag{
 					Name:   "task",
+					Value:  -1,
 					Hidden: true,
 					Usage:  "task id of given service and job, type: integer",
 				},
 			},
-			Action: hShell.Bootstrap,
+			Action: func(c *cli.Context) error {
+				return handleShellAction("Bootstrap", c)
+			},
 		},
 		{
 			Name:  "show",
@@ -90,13 +108,16 @@ func main() {
 					Name:  "job",
 					Usage: "job name",
 				},
-				cli.StringFlag{
+				cli.IntFlag{
 					Name:   "task",
+					Value:  -1,
 					Hidden: true,
 					Usage:  "task id of given service and job",
 				},
 			},
-			Action: hShell.Show,
+			Action: func(c *cli.Context) error {
+				return handleShellAction("Show", c)
+			},
 		},
 		{
 			Name:  "start",
@@ -114,13 +135,16 @@ func main() {
 					Name:  "job",
 					Usage: "job name",
 				},
-				cli.StringFlag{
+				cli.IntFlag{
 					Name:   "task",
+					Value:  -1,
 					Hidden: true,
 					Usage:  "task id of given service and job",
 				},
 			},
-			Action: hShell.Start,
+			Action: func(c *cli.Context) error {
+				return handleShellAction("Start", c)
+			},
 		},
 		{
 			Name:  "cleanup",
@@ -138,13 +162,16 @@ func main() {
 					Name:  "job",
 					Usage: "job name",
 				},
-				cli.StringFlag{
+				cli.IntFlag{
 					Name:   "task",
+					Value:  -1,
 					Hidden: true,
 					Usage:  "task id of given service and job",
 				},
 			},
-			Action: hShell.Cleanup,
+			Action: func(c *cli.Context) error {
+				return handleShellAction("Cleanup", c)
+			},
 		},
 		{
 			Name:  "rolling_update",
@@ -162,13 +189,16 @@ func main() {
 					Name:  "job",
 					Usage: "job name",
 				},
-				cli.StringFlag{
+				cli.IntFlag{
 					Name:   "task",
+					Value:  -1,
 					Hidden: true,
 					Usage:  "task id of given service and job",
 				},
 			},
-			Action: hShell.RollingUpdate,
+			Action: func(c *cli.Context) error {
+				return handleShellAction("RollingUpdate", c)
+			},
 		},
 		{
 			Name:  "restart",
@@ -186,13 +216,16 @@ func main() {
 					Name:  "job",
 					Usage: "job name",
 				},
-				cli.StringFlag{
+				cli.IntFlag{
 					Name:   "task",
+					Value:  -1,
 					Hidden: true,
 					Usage:  "task id of given service and job",
 				},
 			},
-			Action: hShell.Restart,
+			Action: func(c *cli.Context) error {
+				return handleShellAction("Restart", c)
+			},
 		},
 		{
 			Name:  "stop",
@@ -210,13 +243,16 @@ func main() {
 					Name:  "job",
 					Usage: "job name",
 				},
-				cli.StringFlag{
+				cli.IntFlag{
 					Name:   "task",
+					Value:  -1,
 					Hidden: true,
 					Usage:  "task id of given service and job",
 				},
 			},
-			Action: hShell.Stop,
+			Action: func(c *cli.Context) error {
+				return handleShellAction("Stop", c)
+			},
 		},
 		{
 			Name:  "start-agent",

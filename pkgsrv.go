@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 )
 
 const htmlTempl = `
@@ -72,7 +73,8 @@ func (p *packageInfo) getAbsPath(libDir string) (string, error) {
 	return filepath.Abs(path.Join(libDir, p.PackageName))
 }
 
-func (p *packageInfo) sync(libDir string) {
+func (p *packageInfo) sync(libDir string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	if ok, _ := p.isCorrectPackage(libDir); ok {
 		log.Infof("Skip to download package : %s", p.PackageName)
 		return
@@ -189,11 +191,15 @@ func (p *PackageServer) hDownload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *PackageServer) sync() {
+	wg := &sync.WaitGroup{}
+	wg.Add(len(p.pkgMap))
 	for _, pkgInfo := range p.pkgMap {
 		if pkgInfo != nil {
-			go pkgInfo.sync(p.pkgRoot)
+			go pkgInfo.sync(p.pkgRoot, wg)
 		}
 	}
+	wg.Wait()
+	log.Infof("Finished to sync the release packages.")
 }
 
 // Start the package server by listening the specific HTTP port.

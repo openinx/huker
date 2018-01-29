@@ -190,6 +190,7 @@ func (p *Program) Start(s *Supervisor) error {
 	}
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 
+	log.Infof("Start to run command : [%s %s]", p.Bin, strings.Join(p.Args, " "))
 	go func() {
 		if err := cmd.Run(); err != nil {
 			log.Errorf("Run job failed. [cmd: %s %s], [stdout: %s], [stderr: %s], err: %v",

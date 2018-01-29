@@ -31,7 +31,7 @@ func parseMainEntry(s interface{}) (*MainEntry, error) {
 		if !IsStringType(obj) {
 			return nil, fmt.Errorf("Invalid main entry, java_class is not a string. %v", s)
 		}
-		mainEntry.javaClass = obj.(string)
+		mainEntry.javaClass = strings.Trim(obj.(string), " ")
 	}
 	if obj, ok := meMap["extra_args"]; ok && obj != nil {
 		if !IsStringType(obj) {
@@ -44,7 +44,9 @@ func parseMainEntry(s interface{}) (*MainEntry, error) {
 
 func (m *MainEntry) toShell() []string {
 	var buf []string
-	buf = append(buf, m.javaClass)
+	if len(m.javaClass) > 0 {
+		buf = append(buf, m.javaClass)
+	}
 	// TODO need to consider tab ?
 	for _, arg := range strings.Split(m.extraArgs, " ") {
 		if len(arg) > 0 {
@@ -121,7 +123,7 @@ func (h *Host) toHttpAddress() string {
 	return fmt.Sprintf("http://%s:%d", h.hostname, h.supervisorPort)
 }
 
-func (h *Host) toKey() string {
+func (h *Host) ToKey() string {
 	return fmt.Sprintf("%s:%d/id=%d", h.hostname, h.supervisorPort, h.taskId)
 }
 
@@ -258,8 +260,10 @@ func (job *Job) toShell() []string {
 			classpath = append(classpath, cp)
 		}
 	}
-	buf = append(buf, "-cp")
-	buf = append(buf, strings.Join(classpath, ":"))
+	if len(classpath) > 0 {
+		buf = append(buf, "-cp")
+		buf = append(buf, strings.Join(classpath, ":"))
+	}
 
 	for _, s := range job.mainEntry.toShell() {
 		buf = append(buf, s)
