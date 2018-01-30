@@ -127,7 +127,7 @@ func (j *ConfigFileHukerJob) updateJob(project, cluster, job string, taskId int,
 }
 
 func (j *ConfigFileHukerJob) Install(project, cluster, job string, taskId int) ([]TaskResult, error) {
-    // TODO will implement this in #13
+	// TODO will implement this in #13
 	return nil, nil
 }
 
@@ -176,24 +176,24 @@ func (j *ConfigFileHukerJob) lookupJob(project, cluster, job string, taskId int,
 		if taskId < 0 || taskId == host.taskId {
 			supCli := newSupervisorCli(host.toHttpAddress())
 			var err error
-            if action == "Show" {
-                prog, err := supCli.show(cluster, job, host.taskId)
-                taskResults = append(taskResults, NewTaskResult(host, prog, err))
-                continue
-            }
-            if action == "Start" {
-                err = supCli.start(cluster, job, host.taskId)
-            } else if action == "Stop" {
-                err = supCli.stop(cluster, job, host.taskId)
-            } else if action == "Restart" {
-                err = supCli.restart(cluster, job, host.taskId)
-            } else if action == "Cleanup" {
-                err = supCli.cleanup(cluster, job, host.taskId)
-            } else {
-                return nil, fmt.Errorf("Unexpected action: %s", action)
-            }
-            taskResults = append(taskResults, NewTaskResult(host, nil, err))
-        }
+			if action == "Show" {
+				prog, err := supCli.show(cluster, job, host.taskId)
+				taskResults = append(taskResults, NewTaskResult(host, prog, err))
+				continue
+			}
+			if action == "Start" {
+				err = supCli.start(cluster, job, host.taskId)
+			} else if action == "Stop" {
+				err = supCli.stop(cluster, job, host.taskId)
+			} else if action == "Restart" {
+				err = supCli.restart(cluster, job, host.taskId)
+			} else if action == "Cleanup" {
+				err = supCli.cleanup(cluster, job, host.taskId)
+			} else {
+				return nil, fmt.Errorf("Unexpected action: %s", action)
+			}
+			taskResults = append(taskResults, NewTaskResult(host, nil, err))
+		}
 	}
 	return taskResults, nil
 }
