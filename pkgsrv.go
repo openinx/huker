@@ -57,8 +57,6 @@ func (p *packageInfo) isCorrectPackage(libDir string) (bool, error) {
 	}
 	if stat, err := os.Stat(fName); err != nil {
 		return false, err
-	} else if os.IsNotExist(err) {
-		return false, fmt.Errorf("Package %s not found.", fName)
 	} else if stat.Size() != p.Size {
 		return false, fmt.Errorf("Package size mismatch, %s, %d != %d", fName, stat.Size(), p.Size)
 	} else if realCheckSum, err2 := calcFileMD5Sum(fName); err2 != nil {
@@ -132,11 +130,7 @@ func NewPackageServer(port int, pkgRoot, pkgConf string) (*PackageServer, error)
 		},
 	}
 
-	f, fErr := os.Open(p.pkgConf)
-	if fErr != nil {
-		return nil, fErr
-	}
-	data, err := ioutil.ReadAll(f)
+	data, err := ioutil.ReadFile(p.pkgConf)
 	if err != nil {
 		return nil, err
 	}
@@ -185,6 +179,7 @@ func (p *PackageServer) hDownload(w http.ResponseWriter, r *http.Request) {
 	if _, err := pkg.isCorrectPackage(p.pkgRoot); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(fmt.Sprintf("check package %s error: %v", pkgName, err)))
+		return
 	}
 	fName, _ := pkg.getAbsPath(p.pkgRoot)
 	http.ServeFile(w, r, fName)
