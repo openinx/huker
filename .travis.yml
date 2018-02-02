@@ -14,5 +14,10 @@ matrix:
 before_install:
   - mkdir -p /tmp/huker
 
+install:
+  - export PATH=$PATH:$GOPATH/bin
+  - go get github.com/tools/godep
+  - godep restore
+
 script:
   - make && make travis-test

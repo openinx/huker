@@ -1,10 +1,4 @@
-all: godep build
-
-godep:
-	go get github.com/go-yaml/yaml
-	go get github.com/qiniu/log
-	go get github.com/urfave/cli
-	go get github.com/gorilla/mux
+all: build
 
 build:
 	find . -type f -name '*.go' | xargs gofmt -s -w
@@ -13,7 +7,7 @@ build:
 test:
 	go get github.com/go-playground/overalls
 	go get github.com/mattn/goveralls
-	overalls -project=github.com/openinx/huker -covermode=count -ignore='.git,_vendor'
+	overalls -project=github.com/openinx/huker -covermode=count -ignore='.git,vendor'
 
 travis-test: test
 	goveralls -coverprofile=overalls.coverprofile -service=travis-ci
