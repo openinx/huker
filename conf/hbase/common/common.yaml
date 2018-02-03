@@ -26,6 +26,7 @@ jobs:
         - hbase.zookeeper.quorum=%{dependencies.0.zkServer.server_list}
         - hbase.security.authentication=simple
         - hbase.security.authorization=false
+        - hbase.table.sanity.checks=false
       log4j.properties:
         file: {{.ConfRootDir}}/hbase/common/log4j.properties
     classpath:

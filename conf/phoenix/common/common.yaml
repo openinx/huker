@@ -1,0 +1,38 @@
+jobs:
+  job_common:
+    jvm_opts:
+      - -XX:+DisableExplicitGC
+      - -XX:+HeapDumpOnOutOfMemoryError
+      - -XX:HeapDumpPath={{.PkgStdoutDir}}
+      - -XX:+PrintGCApplicationStoppedTime
+      - -XX:+UseConcMarkSweepGC
+      - -XX:+UseMembar
+      - -verbose:gc
+      - -XX:+PrintGCDetails
+      - -XX:+PrintHeapAtGC
+      - -XX:+PrintGCDateStamps
+      - -Xloggc:{{.PkgStdoutDir}}/phoenix_gc.log
+      - -Dproc_phoenixserver
+    jvm_properties:
+      - java.net.preferIPv4Stack=true
+      - jute.maxbuffer=10240000
+      - psql.root.logger=INFO,DRFA
+      - psql.log.dir={{.PkgLogDir}}
+      - psql.log.file=queryserver.log
+      - log4j.configuration=file:{{.PkgConfDir}}/log4j.properties
+    config:
+      hbase-site.xml:
+        - hbase.cluster.distributed=true
+        - hbase.zookeeper.quorum=%{dependencies.0.zkServer.server_list}
+      log4j.properties:
+        file: {{.ConfRootDir}}/phoenix/common/log4j.properties
+    classpath:
+      - {{.PkgConfDir}}
+      - {{.PkgRootDir}}/*
+  queryserver:
+    super_job: job_common
+    config:
+      hbase-site.xml:
+        - phoenix.queryserver.http.port=%{queryserver.x.base_port}
+    main_entry:
+      java_class: org.apache.phoenix.queryserver.server.QueryServer

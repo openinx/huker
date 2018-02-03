@@ -1,0 +1,18 @@
+base: {{.ConfRootDir}}/phoenix/common/common.yaml
+
+cluster:
+  cluster_name: test-phoenix
+  java_home: java
+  package_name: apache-phoenix-4.13.1-HBase-1.2-bin.tar.gz
+  package_md5sum: e78fd41708aaa8d286ed2dcde0a5b645
+  dependencies:
+    - {{.ConfRootDir}}/zookeeper/test-zk.yaml
+
+jobs:
+  queryserver:
+    config:
+      hbase-site.xml:
+        - hbase.zookeeper.quorum=127.0.0.1:10010
+    hosts:
+      - 127.0.0.1:9001/id=0/base_port=40100
+      - 127.0.0.1:9001/id=1/base_port=40200

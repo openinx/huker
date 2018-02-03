@@ -35,3 +35,11 @@ spark-2.2.1-bin-hadoop2.6.tgz:
   md5sum: 7774419f0fb7c28d93c24aefb19a014c
   size: 198936027
   link: http://mirrors.hust.edu.cn/apache/spark/spark-2.2.1/spark-2.2.1-bin-hadoop2.6.tgz
+
+# phoenix package
+apache-phoenix-4.13.1-HBase-1.2-bin.tar.gz:
+  version: phoenix-4.13.1-HBase-1.2
+  date: 2018-02-03 02:44
+  md5sum: e78fd41708aaa8d286ed2dcde0a5b645
+  size: 344934688
+  link: http://mirrors.hust.edu.cn/apache/phoenix/apache-phoenix-4.13.1-HBase-1.2/bin/apache-phoenix-4.13.1-HBase-1.2-bin.tar.gz
