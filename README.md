@@ -37,19 +37,13 @@ After all release packages have been synced to your localhost successfully , Let
 #### Step.1 Bootstrap a zookeeper cluster with 3 node.
 
 ```
-$ ./bin/huker bootstrap --project zookeeper --cluster test-zk --job zkServer
-```
-
-Login zookeeper shell
-
-```
-$ ./bin/huker shell --project zookeeper --cluster test-zk --job zkCli
+$ ./bin/huker bootstrap zookeeper test-zk zkServer
 ```
 
 You can show your zkServer job status by:
 
 ```
-$ ./bin/huker show --project zookeeper --cluster test-zk --job zkServer
+$ ./bin/huker show zookeeper test-zk zkServer
 ```
 
 Besides, you can find all your jobs by typing http://127.0.0.1:9001 in your browser.
@@ -57,20 +51,20 @@ Besides, you can find all your jobs by typing http://127.0.0.1:9001 in your brow
 #### Step.2 Bootstrap a HDFS cluster with 1 namenode and 4 datanode.
 
 ```
-$ ./bin/huker bootstrap --project hdfs --cluster test-hdfs --job namenode
-$ ./bin/huker bootstrap --project hdfs --cluster test-hdfs --job datanode
+$ ./bin/huker bootstrap hdfs test-hdfs namenode
+$ ./bin/huker bootstrap hdfs test-hdfs datanode
 ```
 
 #### Step.3 Bootstrap a Yarn cluster with 1 resource manager and 1 node manager
 
 ```
-$ ./bin/huker bootstrap --project yarn --cluster test-yarn --job resourcemanager
-$ ./bin/huker bootstrap --project yarn --cluster test-yarn --job nodemanager
+$ ./bin/huker bootstrap yarn test-yarn resourcemanager
+$ ./bin/huker bootstrap yarn test-yarn nodemanager
 ```
 
 #### Step.4 Bootstrap a HBase cluster based on previous test-zk cluster and test-hdfs cluster.
 
 ```
-$ ./bin/huker bootstrap --project hbase --cluster test-hbase --job master
-$ ./bin/huker bootstrap --project hbase --cluster test-hbase --job regionserver
+$ ./bin/huker bootstrap hbase test-hbase master
+$ ./bin/huker bootstrap hbase test-hbase regionserver
 ```
