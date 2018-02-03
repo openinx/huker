@@ -4,6 +4,7 @@
 /lib
 /.idea/
 /logs
+*.log
 *.iws
 *.swp
 *.swo
