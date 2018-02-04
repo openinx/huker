@@ -211,6 +211,13 @@ func main() {
 				printUsageAndExit()
 			}
 		}
+
+		if _, err := os.Stat(pkgRoot); err != nil {
+			if os.IsNotExist(err) {
+				log.Errorf("The %s directory does not exist, please create the directory firstly.", pkgRoot)
+				os.Exit(1)
+			}
+		}
 		if index < len(os.Args) {
 			fmt.Printf("Unexpected arguments: %v\n", os.Args[index:])
 			printUsageAndExit()

@@ -4,6 +4,11 @@
 [![Build Status Travis](https://img.shields.io/travis/openinx/huker.svg?style=flat-square&&branch=master)](https://travis-ci.org/openinx/huker)
 [![Coverage Status](https://coveralls.io/repos/github/openinx/huker/badge.svg?branch=master)](https://coveralls.io/github/openinx/huker?branch=master)
 
+# Requirements
+
+Golang 1.8+
+Java 1.8.0_51
+
 # Build Huker
 
 ```shell
