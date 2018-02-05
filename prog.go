@@ -143,6 +143,10 @@ func (p *Program) renderVars(agentRootDir string) {
 		arg = strings.Replace(arg, "$TaskId", strconv.Itoa(p.TaskId), -1)
 		p.Args[idx] = arg
 	}
+
+	p.Bin = strings.Replace(p.Bin, "$AgentRootDir", agentRootDir, -1)
+	p.Bin = strings.Replace(p.Bin, "$TaskId", strconv.Itoa(p.TaskId), -1)
+
 	p.RootDir = p.getJobRootDir(agentRootDir)
 }
 
