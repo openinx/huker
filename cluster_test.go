@@ -100,7 +100,7 @@ func TestNewServiceConfig(t *testing.T) {
     base: /home/test.yaml
     cluster:
       cluster_name: tst-cluster
-      java_home: /usr/bin/java
+      main_process: /usr/bin/java
       package_name: zookeeper-3.4.11.tar.gz
       package_md5sum: 55aec6196ed9fa4c451cb5ae4a1f42d8
     jobs:
@@ -135,7 +135,7 @@ func TestNewServiceConfig(t *testing.T) {
 		{
 			baseConfig:    "/home/test.yaml",
 			clusterName:   "tst-cluster",
-			javaHome:      "/usr/bin/java",
+			mainProcess:   "/usr/bin/java",
 			packageName:   "zookeeper-3.4.11.tar.gz",
 			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
 			jobs: map[string]*Job{
@@ -161,7 +161,7 @@ func TestNewServiceConfig(t *testing.T) {
 		{
 			baseConfig:    "/home/test.yaml",
 			clusterName:   "tst-cluster",
-			javaHome:      "/usr/bin/java",
+			mainProcess:   "/usr/bin/java",
 			packageName:   "zookeeper-3.4.11.tar.gz",
 			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
 			jobs: map[string]*Job{
@@ -184,7 +184,7 @@ func TestNewServiceConfig(t *testing.T) {
 		{
 			baseConfig:    "/home/test.yaml",
 			clusterName:   "tst-cluster",
-			javaHome:      "/usr/bin/java",
+			mainProcess:   "/usr/bin/java",
 			packageName:   "zookeeper-3.4.11.tar.gz",
 			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
 			jobs: map[string]*Job{
@@ -219,8 +219,8 @@ func TestNewServiceConfig(t *testing.T) {
 			if s.clusterName != expected[i].clusterName {
 				t.Errorf("test case #%d failed, cluster_name mismatch", i)
 			}
-			if s.javaHome != expected[i].javaHome {
-				t.Errorf("test case #%d failed, java_home mismatch", i)
+			if s.mainProcess != expected[i].mainProcess {
+				t.Errorf("test case #%d failed, main_process mismatch", i)
 			}
 			if s.packageName != expected[i].packageName {
 				t.Errorf("test case #%d failed, package_name mismatch", i)
@@ -248,7 +248,7 @@ func TestToShell(t *testing.T) {
     base: /home/test.yaml
     cluster:
       cluster_name: tst-cluster
-      java_home: /usr/bin/java
+      main_process: /usr/bin/java
       package_name: zookeeper-3.4.11.tar.gz
       package_md5sum: 55aec6196ed9fa4c451cb5ae4a1f42d8
     jobs:

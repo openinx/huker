@@ -2,7 +2,7 @@ base: {{.ConfRootDir}}/zookeeper/common/common.yaml
 
 cluster:
   cluster_name: test-zk
-  java_home: java
+  main_process: java
   package_name: zookeeper-3.4.11.tar.gz
   package_md5sum: 55aec6196ed9fa4c451cb5ae4a1f42d8
 

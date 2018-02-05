@@ -2,7 +2,7 @@ base: {{.ConfRootDir}}/pyserver/common.yaml
 
 cluster:
   cluster_name: py_test
-  java_home: python
+  main_process: python
   package_name: test.tar.gz
   package_md5sum: f77f526dcfbdbfb2dd942b6628f4c0ab
 

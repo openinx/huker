@@ -10,7 +10,7 @@ import (
 type Cluster struct {
 	baseConfig    string
 	clusterName   string
-	javaHome      string
+	mainProcess   string
 	packageName   string
 	packageMd5sum string
 	jobs          map[string]*Job
@@ -57,7 +57,7 @@ func NewCluster(yamlConfigs []string, e *EnvVariables) (*Cluster, error) {
 	if c.clusterName, err = getRequiredField(clusterMap, "cluster_name"); err != nil {
 		return nil, err
 	}
-	if c.javaHome, err = getRequiredField(clusterMap, "java_home"); err != nil {
+	if c.mainProcess, err = getRequiredField(clusterMap, "main_process"); err != nil {
 		return nil, err
 	}
 	if c.packageName, err = getRequiredField(clusterMap, "package_name"); err != nil {
@@ -122,7 +122,7 @@ func (s *Cluster) toShell(jobKey string) []string {
 		return []string{}
 	}
 	var buf []string
-	buf = append(buf, s.javaHome)
+	buf = append(buf, s.mainProcess)
 	for _, arg := range s.jobs[jobKey].toShell() {
 		buf = append(buf, arg)
 	}
