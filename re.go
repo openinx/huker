@@ -7,17 +7,27 @@ import (
 	"strings"
 )
 
+const (
+	patternClusterName            = "%{cluster\\.name}"
+	patternJobAttribute           = "%{([a-zA-Z0-9_]+)\\.([0-9]+)\\.([a-zA-Z0-9_]+)}"
+	patternJobAttributeNumber     = "%{([a-zA-Z0-9_]+)\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\+([0-9]+)}"
+	patternDependenciesServerList = "%{dependencies\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\.server_list}"
+	patternJobServerList          = "%{([a-zA-Z0-9_]+)\\.server_list}"
+	patternVarJobAttribute        = "%{([a-zA-Z0-9_]+)\\.x\\.([a-zA-Z0-9_]+)}"
+	patternVarJobAttributeNumber  = "%{([a-zA-Z0-9_]+)\\.x\\.([a-zA-Z0-9_]+)\\+([0-9]+)}"
+)
+
 type matchFunc func(c *Cluster, input string) (string, error)
 
 // format %{cluster.name}
 func match0(c *Cluster, input string) (string, error) {
-	re := regexp.MustCompile("%{cluster.name}")
+	re := regexp.MustCompile(patternClusterName)
 	return re.ReplaceAllString(input, c.clusterName), nil
 }
 
 // format %{namenode.0.host}
 func match1(c *Cluster, input string) (string, error) {
-	re := regexp.MustCompile("%{([a-zA-Z_]+).([0-9]+).([a-zA-Z_]+)}")
+	re := regexp.MustCompile(patternJobAttribute)
 	matches := re.FindAllStringSubmatch(input, -1)
 	for _, match := range matches {
 		match = match[1:]
@@ -46,7 +56,7 @@ func match1(c *Cluster, input string) (string, error) {
 
 // format %{name.0.base_port+1}
 func match2(c *Cluster, input string) (string, error) {
-	re := regexp.MustCompile("%{([a-zA-Z_]+).([0-9]+).([a-zA-Z_]+)\\+([0-9]+)}")
+	re := regexp.MustCompile(patternJobAttributeNumber)
 	matches := re.FindAllStringSubmatch(input, -1)
 	for _, match := range matches {
 		match = match[1:]
@@ -80,7 +90,7 @@ func match2(c *Cluster, input string) (string, error) {
 
 // format %{dependencies.0.zkServer.server_list}
 func match3(c *Cluster, input string) (string, error) {
-	re := regexp.MustCompile(`%{dependencies.([0-9]+).([a-zA-Z_]+).server_list}`)
+	re := regexp.MustCompile(patternDependenciesServerList)
 	matches := re.FindAllStringSubmatch(input, -1)
 	for _, match := range matches {
 		match = match[1:]
@@ -106,7 +116,7 @@ func match3(c *Cluster, input string) (string, error) {
 
 // format %{journalnode.server_list}
 func match4(c *Cluster, input string) (string, error) {
-	re := regexp.MustCompile(`%{([a-zA-Z_]+).server_list}`)
+	re := regexp.MustCompile(patternJobServerList)
 	matches := re.FindAllStringSubmatch(input, -1)
 	for _, match := range matches {
 		match = match[1:]
@@ -130,7 +140,7 @@ type matchHostFunc func(c *Cluster, taskId int, input string) (string, error)
 // format %{namenode.x.base_port}
 // TODO BUG: the taskId may not match with the job.
 func match5(c *Cluster, taskId int, input string) (string, error) {
-	re := regexp.MustCompile("%{([a-zA-Z_]+).x.([a-zA-Z_]+)}")
+	re := regexp.MustCompile(patternVarJobAttribute)
 	matches := re.FindAllStringSubmatch(input, -1)
 	for _, match := range matches {
 		match = match[1:]
@@ -156,7 +166,7 @@ func match5(c *Cluster, taskId int, input string) (string, error) {
 // format %{namenode.x.base_port+1}
 // TODO BUG: the taskId may not match with the job.
 func match6(c *Cluster, taskId int, input string) (string, error) {
-	re := regexp.MustCompile("%{([a-zA-Z_]+).x.([a-zA-Z_]+)\\+([0-9]+)}")
+	re := regexp.MustCompile(patternVarJobAttributeNumber)
 	matches := re.FindAllStringSubmatch(input, -1)
 	for _, match := range matches {
 		match = match[1:]
