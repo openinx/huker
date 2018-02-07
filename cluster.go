@@ -129,16 +129,18 @@ func (s *Cluster) toShell(jobKey string) []string {
 	return buf
 }
 
-// If taskId < 0 , will skip to the HostRender
-func (c *Cluster) RenderConfigFiles(job *Job, taskId int) (map[string]string, error) {
+// If skipHostRender is true , will skip to render the HostRender
+func (c *Cluster) RenderConfigFiles(job *Job, taskId int, skipHostRender bool) (map[string]string, error) {
 	var ok bool
 	// var host *Host
 	if job, ok = c.jobs[job.jobName]; !ok {
 		return nil, fmt.Errorf("Job with name `%s` not exist in cluster %s", job.jobName, c.clusterName)
 	}
 
-	if _, ok = job.GetHost(taskId); !ok {
-		return nil, fmt.Errorf("TaskId `%d` not exist in job `%s` for cluster `%s`", taskId, job.jobName, c.clusterName)
+	if !skipHostRender {
+		if _, ok = job.GetHost(taskId); !ok {
+			return nil, fmt.Errorf("TaskId `%d` not exist in job `%s` for cluster `%s`", taskId, job.jobName, c.clusterName)
+		}
 	}
 
 	cfgMap := make(map[string]string)
@@ -147,9 +149,11 @@ func (c *Cluster) RenderConfigFiles(job *Job, taskId int) (map[string]string, er
 		if err != nil {
 			return nil, err
 		}
-		newCfg, err = HostRender(c, taskId, newCfg)
-		if err != nil {
-			return nil, err
+		if !skipHostRender {
+			newCfg, err = HostRender(c, taskId, newCfg)
+			if err != nil {
+				return nil, err
+			}
 		}
 		cfgMap[fname] = newCfg
 	}

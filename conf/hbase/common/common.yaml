@@ -55,3 +55,15 @@ jobs:
     main_entry:
       java_class: org.apache.hadoop.hbase.regionserver.HRegionServer
       extra_args: start
+  # Shell command job, not service job.
+  shell:
+    super_job: job_common
+    jvm_opts:
+      - -Dproc_shell
+    jvm_properties:
+      - hbase.ruby.sources={{.PkgRootDir}}/lib/ruby
+      - hbase.root.logger=INFO,console
+      - hbase.security.logger=INFO,console
+    main_entry:
+      java_class: org.jruby.Main
+      extra_args: -X+O {{.PkgRootDir}}/bin/hirb.rb

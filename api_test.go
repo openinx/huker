@@ -36,6 +36,13 @@ func TestHukerJob(t *testing.T) {
 			t.Errorf("Bootstrap task %s failed, %v", results[i].Host.ToKey(), results[i].Err)
 		}
 	}
+	// Test Shell twice. initialize package the first time, skip when second time.
+	for i := 0; i < 2; i++ {
+		err = hukerJob.Shell(project, cluster, "shell", []string{})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 	// Test Show
 	results, err = hukerJob.Show(project, cluster, job, -1)
 	if err != nil {

@@ -10,3 +10,6 @@ jobs:
   httpserver:
     hosts:
       - 127.0.0.1:9743/id=0/base_port=30120
+  shell:
+    main_entry:
+      extra_args: -c "print('hello-world')"

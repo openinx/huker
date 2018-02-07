@@ -36,3 +36,13 @@ jobs:
         - phoenix.queryserver.http.port=%{queryserver.x.base_port}
     main_entry:
       java_class: org.apache.phoenix.queryserver.server.QueryServer
+
+  # Shell command job, not service job.
+  sqlline:
+    super_job: job_common
+    main_entry:
+      java_class: sqlline.SqlLine
+  sqlline_thin:
+    super_job: job_common
+    main_entry:
+      java_class: org.apache.phoenix.queryserver.client.SqllineWrapper

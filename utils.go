@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
+	"path"
 	"reflect"
 	"strconv"
 	"strings"
@@ -194,4 +196,13 @@ func MergeMap(m1 map[interface{}]interface{}, m2 map[interface{}]interface{}) ma
 	}
 
 	return m1
+}
+
+// Directory is used for huker shell.
+func LocalHukerDir() string {
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	return path.Join(usr.HomeDir, ".huker")
 }

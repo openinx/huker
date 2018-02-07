@@ -73,7 +73,9 @@ jobs:
         - dfs.datanode.ipc.address=0.0.0.0:%{datanode.x.base_port+2}
     main_entry:
       java_class: org.apache.hadoop.hdfs.server.datanode.DataNode
-  shell:
+
+  # Shell command job, not service job.
+  dfs:
     super_job: job_common
     main_entry:
       java_class: org.apache.hadoop.fs.FsShell

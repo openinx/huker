@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/qiniu/log"
 	"os"
+	"os/exec"
 	"path"
+	"strings"
 )
 
 // Constant key and value for the environment variables.
@@ -13,6 +15,7 @@ const (
 	HUKER_CONF_DIR_DEFAULT        = "./conf"
 	HUKER_PKG_HTTP_SERVER         = "HUKER_PKG_HTTP_SERVER"
 	HUKER_PKG_HTTP_SERVER_DEFAULT = "http://127.0.0.1:4000"
+	defaultLocalTaskId            = 0
 )
 
 type TaskResult struct {
@@ -27,6 +30,7 @@ func NewTaskResult(host *Host, prog *Program, err error) TaskResult {
 
 type HukerJob interface {
 	Install(project, cluster, job string, taskId int) ([]TaskResult, error)
+	Shell(project, cluster, job string, extraArgs []string) error
 	Bootstrap(project, cluster, job string, taskId int) ([]TaskResult, error)
 	Start(project, cluster, job string, taskId int) ([]TaskResult, error)
 	Stop(project, cluster, job string, taskId int) ([]TaskResult, error)
@@ -101,9 +105,9 @@ func (j *ConfigFileHukerJob) updateJob(project, cluster, job string, taskId int,
 	var taskResults []TaskResult
 	for _, host := range jobPtr.hosts {
 		if taskId < 0 || taskId == host.taskId {
-			cfgMap, err := c.RenderConfigFiles(jobPtr, host.taskId)
+			cfgMap, err := c.RenderConfigFiles(jobPtr, host.taskId, false)
 			if err != nil {
-				log.Errorf("Failed to render config file, project: %s, cluster:%s, job:%s, taskId:%s",
+				log.Errorf("Failed to render config file, project: %s, cluster:%s, job:%s, taskId:%d",
 					project, cluster, job, host.taskId)
 				return nil, err
 			}
@@ -129,6 +133,52 @@ func (j *ConfigFileHukerJob) updateJob(project, cluster, job string, taskId int,
 func (j *ConfigFileHukerJob) Install(project, cluster, job string, taskId int) ([]TaskResult, error) {
 	// TODO will implement this in #13
 	return nil, nil
+}
+
+func (j *ConfigFileHukerJob) Shell(project, cluster, job string, extraArgs []string) error {
+	c, err := j.newCluster(project, cluster, job)
+	if err != nil {
+		return err
+	}
+	jobPtr := c.jobs[job]
+	cfgMap, err := c.RenderConfigFiles(jobPtr, defaultLocalTaskId, true)
+	if err != nil {
+		log.Errorf("Failed to render config file, project: %s, cluster:%s, job:%s, taskId:%d",
+			project, cluster, job, defaultLocalTaskId)
+		return err
+	}
+	prog := &Program{
+		Name:       c.clusterName,
+		Job:        job,
+		TaskId:     defaultLocalTaskId,
+		Bin:        c.mainProcess,
+		Args:       jobPtr.toShell(),
+		Configs:    cfgMap,
+		PkgAddress: j.pkgServerAddress + "/" + c.packageName,
+		PkgName:    c.packageName,
+		PkgMD5Sum:  c.packageMd5sum,
+		Hooks:      jobPtr.hooks,
+	}
+	agentRootDir := LocalHukerDir()
+	prog.renderVars(agentRootDir)
+	if err := prog.Install(agentRootDir); err != nil {
+		if !strings.Contains(err.Error(), "already exists, cleanup it first please.") {
+			return err
+		} else {
+			if err := prog.updatePackage(agentRootDir); err != nil {
+				return err
+			}
+			if err := prog.dumpConfigFiles(agentRootDir); err != nil {
+				return err
+			}
+		}
+	}
+	// Start the command.
+	args := append(prog.Args, extraArgs...)
+	cmd := exec.Command(prog.Bin, args...)
+	cmd.Stderr, cmd.Stdout, cmd.Stdin = os.Stderr, os.Stdout, os.Stdin
+	log.Debugf("%s %s", prog.Bin, strings.Join(args, " "))
+	return cmd.Run()
 }
 
 func (j *ConfigFileHukerJob) Bootstrap(project, cluster, job string, taskId int) ([]TaskResult, error) {

@@ -51,8 +51,7 @@ func handleClusterAction(action string, project, cluster, job string, taskId int
 	case "cleanup":
 		results, err = h.Cleanup(project, cluster, job, taskId)
 	case "shell":
-		// TODO implement this parts.
-		return fmt.Errorf("project: %s, cluster: %s, job: %s, taskId: %d, extra_args: %v", project, cluster, job, taskId, extraArgs)
+		return h.Shell(project, cluster, job, extraArgs)
 	default:
 		return fmt.Errorf("Unsupported command: %s", action)
 	}
@@ -113,7 +112,6 @@ func handleAction(command string, args []string) {
 }
 
 func main() {
-
 	if len(os.Args) < 2 {
 		printUsageAndExit()
 	}

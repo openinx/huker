@@ -102,7 +102,10 @@ func (p *Program) updatePackage(agentRootDir string) error {
 	}
 	for _, f := range files {
 		if f.IsDir() {
-			linkPkgDir := path.Join(p.getJobRootDir(agentRootDir), PKG_DIR)
+			linkPkgDir, err := filepath.Abs(path.Join(p.getJobRootDir(agentRootDir), PKG_DIR))
+			if err != nil {
+				return err
+			}
 			pkgDir := path.Join(md5sumPackageDir, f.Name())
 			if _, err := os.Stat(linkPkgDir); err == nil {
 				os.RemoveAll(linkPkgDir)

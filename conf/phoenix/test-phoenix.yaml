@@ -16,3 +16,29 @@ jobs:
     hosts:
       - 127.0.0.1:9001/id=0/base_port=40100
       - 127.0.0.1:9001/id=1/base_port=40200
+
+  # Shell command job, not service job.
+  sqlline:
+    main_entry:
+      extra_args:
+        -d org.apache.phoenix.jdbc.PhoenixDriver
+        -n none
+        -p none
+        --color=true
+        --fastConnect=false
+        --verbose=true
+        --incremental=false
+        --isolation=TRANSACTION_READ_COMMITTED
+        -u jdbc:phoenix:127.0.0.1:10010
+  sqlline_thin:
+    main_entry:
+      extra_args:
+        -d org.apache.phoenix.queryserver.client.Driver
+        -u jdbc:phoenix:thin:url=http://127.0.0.1:40100;serialization=PROTOBUF
+        -n none
+        -p none
+        --color=true
+        --fastConnect=false
+        --verbose=true
+        --incremental=false
+        --isolation=TRANSACTION_READ_COMMITTED
