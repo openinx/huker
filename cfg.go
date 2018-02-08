@@ -52,7 +52,7 @@ func (c INIConfigFile) toString() string {
 func (c INIConfigFile) toKeyValue() map[string]string {
 	ret := make(map[string]string)
 	for i := range c.keyValues {
-		parts := strings.Split(c.keyValues[i], "=")
+		parts := strings.SplitN(c.keyValues[i], "=", 2)
 		if len(parts) != 2 {
 			panic(fmt.Sprintf("Invalid key value pair, key or value not found. %s", c.keyValues[i]))
 		}
@@ -114,7 +114,7 @@ func (c XMLConfigFile) toString() string {
 func (c XMLConfigFile) toKeyValue() map[string]string {
 	ret := make(map[string]string)
 	for i := range c.keyValues {
-		parts := strings.Split(c.keyValues[i], "=")
+		parts := strings.SplitN(c.keyValues[i], "=", 2)
 		if len(parts) != 2 {
 			panic(fmt.Sprintf("Invalid key value pair, key or value not found. %s", c.keyValues[i]))
 		}

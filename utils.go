@@ -78,9 +78,9 @@ func RunCommand(name string, env []string, args ...string) error {
 	if env != nil {
 		cmd.Env = env
 	}
+	log.Debugf("Environment variables:\n%s", strings.Join(cmd.Env, "\n"))
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	if err := cmd.Run(); err != nil {
-		log.Errorf("Environment variables:\n%s", strings.Join(cmd.Env, "\n"))
 		log.Errorf("Run command failed. [cmd: %s], [stdout: %s], [stderr: %s]",
 			fullCmd, stdout.String(), stderr.String())
 		return err

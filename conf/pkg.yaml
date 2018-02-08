@@ -43,3 +43,11 @@ apache-phoenix-4.13.1-HBase-1.2-bin.tar.gz:
   md5sum: e78fd41708aaa8d286ed2dcde0a5b645
   size: 344934688
   link: http://mirrors.hust.edu.cn/apache/phoenix/apache-phoenix-4.13.1-HBase-1.2/bin/apache-phoenix-4.13.1-HBase-1.2-bin.tar.gz
+
+# phoenix package
+apache-hive-2.3.2-bin.tar.gz:
+  version: hive-2.3.2
+  date: 2018-02-04 15:18
+  md5sum: 8f3abedb3fba28769afcea1445c64231
+  size: 231740978
+  link: http://mirror.bit.edu.cn/apache/hive/stable-2/apache-hive-2.3.2-bin.tar.gz

@@ -28,6 +28,8 @@ jobs:
       core-site.xml:
         - fs.defaultFS=hdfs://%{cluster.name}
         - io.file.buffer.size=131072
+        - hadoop.proxyuser.openinx.groups=*
+        - hadoop.proxyuser.openinx.hosts=*
       hdfs-site.xml:
         - dfs.blocksize=268435456
         - dfs.replication=1

@@ -1,0 +1,59 @@
+jobs:
+  job_common:
+    jvm_opts:
+      - -XX:+DisableExplicitGC
+      - -XX:+HeapDumpOnOutOfMemoryError
+      - -XX:HeapDumpPath={{.PkgStdoutDir}}
+      - -XX:+PrintGCApplicationStoppedTime
+      - -XX:+UseConcMarkSweepGC
+      - -XX:+UseMembar
+      - -verbose:gc
+      - -XX:+PrintGCDetails
+      - -XX:+PrintHeapAtGC
+      - -XX:+PrintGCDateStamps
+      - -Xloggc:{{.PkgStdoutDir}}/hive_gc.log
+    jvm_properties:
+      - java.net.preferIPv4Stack=true
+      - jute.maxbuffer=10240000
+      - log4j.configurationFile={{.PkgConfDir}}/log4j.properties
+      - hive.log.dir={{.PkgLogDir}}
+      - hive.log.file=hive.log
+      - hive.log.level=INFO
+      - hive.root.logger=DRFA
+      - hive.perflogger.log.level=INFO
+      - java.io.tmpdir=/tmp
+      - user.name=hive
+    config:
+      core-site.xml:
+        - hadoop.proxyuser.hive.groups=*
+        - hadoop.proxyuser.hive.hosts=*
+      log4j.properties:
+        file: {{.ConfRootDir}}/hive/common/log4j.properties
+    classpath:
+      - {{.PkgConfDir}}
+      - {{.PkgRootDir}}/lib/*
+      - {{.PkgRootDir}}/jdbc/*
+      - $AgentRootDir/.packages/967c24f3c15fcdd058f34923e92ce8ac/hadoop-2.6.5/lib/native/*
+      - $AgentRootDir/.packages/967c24f3c15fcdd058f34923e92ce8ac/hadoop-2.6.5/share/hadoop/common/*
+      - $AgentRootDir/.packages/967c24f3c15fcdd058f34923e92ce8ac/hadoop-2.6.5/share/hadoop/common/lib/*
+      - $AgentRootDir/.packages/967c24f3c15fcdd058f34923e92ce8ac/hadoop-2.6.5/share/hadoop/mapreduce/*
+      - $AgentRootDir/.packages/967c24f3c15fcdd058f34923e92ce8ac/hadoop-2.6.5/share/hadoop/mapreduce/lib/*
+      - $AgentRootDir/.packages/967c24f3c15fcdd058f34923e92ce8ac/hadoop-2.6.5/share/hadoop/yarn/*
+      - $AgentRootDir/.packages/967c24f3c15fcdd058f34923e92ce8ac/hadoop-2.6.5/share/hadoop/yarn/lib/*
+      - $AgentRootDir/.packages/967c24f3c15fcdd058f34923e92ce8ac/hadoop-2.6.5/share/hadoop/hdfs/*
+      - $AgentRootDir/.packages/967c24f3c15fcdd058f34923e92ce8ac/hadoop-2.6.5/share/hadoop/hdfs/lib/*
+  hiveserver2:
+    super_job: job_common
+    config:
+      hive-site.xml:
+        - hive.server2.thrift.port=%{hiveserver2.x.base_port}
+        - hive.server2.webui.port=%{hiveserver2.x.base_port+1}
+        - javax.jdo.option.ConnectionURL=jdbc:derby:;databaseName={{.PkgDataDir}}/metastore_db;create=true
+    main_entry:
+      java_class: org.apache.hive.service.server.HiveServer2
+    hooks:
+      post_bootstrap: {{.ConfRootDir}}/hive/common/hiveserver2_post_bootstrap.sh
+  beeline:
+    super_job: job_common
+    main_entry:
+      java_class: org.apache.hive.beeline.BeeLine
