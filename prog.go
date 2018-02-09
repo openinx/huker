@@ -1,7 +1,6 @@
 package huker
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/qiniu/log"
 	"io/ioutil"
@@ -189,19 +188,22 @@ func (p *Program) Start(s *Supervisor) error {
 	if isProcessOK(p.PID) {
 		return fmt.Errorf("Process %d is already running.", p.PID)
 	}
-	var stdout, stderr bytes.Buffer
+	f, err := os.Create(path.Join(p.getJobRootDir(s.rootDir), STDOUT_DIR, "stdout"))
+	if err != nil {
+		return err
+	}
 	cmd := exec.Command(p.Bin, p.Args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setsid: true,
 		Pgid:   0,
 	}
-	cmd.Stdout, cmd.Stderr = &stdout, &stderr
+	cmd.Stdout, cmd.Stderr = f, f
 
-	log.Infof("Start to run command : [%s %s]", p.Bin, strings.Join(p.Args, " "))
+	log.Debugf("Start to run command : [%s %s]", p.Bin, strings.Join(p.Args, " "))
 	go func() {
+		defer f.Close()
 		if err := cmd.Run(); err != nil {
-			log.Errorf("Run job failed. [cmd: %s %s], [stdout: %s], [stderr: %s], err: %v",
-				p.Bin, strings.Join(p.Args, " "), stdout.String(), stderr.String(), err)
+			log.Errorf("Run job failed. [cmd: %s %s], err: %v", p.Bin, strings.Join(p.Args, " "), err)
 		}
 	}()
 	time.Sleep(time.Second * 1)
