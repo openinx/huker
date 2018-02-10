@@ -5,12 +5,10 @@ cluster:
   main_process: java
   package_name: apache-hive-2.3.2-bin.tar.gz
   package_md5sum: 8f3abedb3fba28769afcea1445c64231
-
+  dependencies:
+    - {{.ConfRootDir}}/hdfs/test-hdfs.yaml
 jobs:
   hiveserver2:
-    config:
-      hive-site.xml:
-        - hive.metastore.warehouse.dir=hdfs://127.0.0.1:20100/user/hive/warehouse
     hosts:
       - 127.0.0.1:9001/id=0/base_port=50100
       - 127.0.0.1:9001/id=1/base_port=50200

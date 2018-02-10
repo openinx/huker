@@ -8,13 +8,15 @@ import (
 )
 
 const (
-	patternClusterName            = "%{cluster\\.name}"
-	patternJobAttribute           = "%{([a-zA-Z0-9_]+)\\.([0-9]+)\\.([a-zA-Z0-9_]+)}"
-	patternJobAttributeNumber     = "%{([a-zA-Z0-9_]+)\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\+([0-9]+)}"
-	patternDependenciesServerList = "%{dependencies\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\.server_list}"
-	patternJobServerList          = "%{([a-zA-Z0-9_]+)\\.server_list}"
-	patternVarJobAttribute        = "%{([a-zA-Z0-9_]+)\\.x\\.([a-zA-Z0-9_]+)}"
-	patternVarJobAttributeNumber  = "%{([a-zA-Z0-9_]+)\\.x\\.([a-zA-Z0-9_]+)\\+([0-9]+)}"
+	patternClusterName                    = "%{cluster\\.name}"
+	patternJobAttribute                   = "%{([a-zA-Z0-9_]+)\\.([0-9]+)\\.([a-zA-Z0-9_]+)}"
+	patternJobAttributeNumber             = "%{([a-zA-Z0-9_]+)\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\+([0-9]+)}"
+	patternDependenciesServerList         = "%{dependencies\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\.server_list}"
+	patternDependenciesJobAttribute       = "%{dependencies\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\.([0-9]+)\\.([a-zA-Z0-9_]+)}"
+	patternDependenciesJobAttributeNumber = "%{dependencies\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\+([0-9]+)}"
+	patternJobServerList                  = "%{([a-zA-Z0-9_]+)\\.server_list}"
+	patternVarJobAttribute                = "%{([a-zA-Z0-9_]+)\\.x\\.([a-zA-Z0-9_]+)}"
+	patternVarJobAttributeNumber          = "%{([a-zA-Z0-9_]+)\\.x\\.([a-zA-Z0-9_]+)\\+([0-9]+)}"
 )
 
 type matchFunc func(c *Cluster, input string) (string, error)
@@ -194,12 +196,85 @@ func match6(c *Cluster, taskId int, input string) (string, error) {
 	return input, nil
 }
 
+// format %{dependencies.0.zkServer.0.host}
+func match7(c *Cluster, input string) (string, error) {
+	re := regexp.MustCompile(patternDependenciesJobAttribute)
+	matches := re.FindAllStringSubmatch(input, -1)
+	for _, match := range matches {
+		match = match[1:]
+		clusterIndexStr, jobName, taskIdStr, key := match[0], match[1], match[2], match[3]
+		matchPattern := fmt.Sprintf("%%{dependencies.%s.%s.%s.%s}", clusterIndexStr, jobName, taskIdStr, key)
+		clusterIndex, _ := strconv.Atoi(clusterIndexStr)
+		if clusterIndex >= len(c.dependencies) {
+			return "", fmt.Errorf("Cluster index exceeded. %s", matchPattern)
+		}
+		dep := c.dependencies[clusterIndex]
+		job, ok := dep.jobs[jobName]
+		if !ok {
+			return "", fmt.Errorf("Job %s does not exist in cluster: %s", jobName, dep.clusterName)
+		}
+		taskId, err := strconv.Atoi(taskIdStr)
+		if err != nil {
+			return "", fmt.Errorf("TaskId shoud be integer. %s", matchPattern)
+		}
+		host, ok := job.GetHost(taskId)
+		if !ok {
+			return "", fmt.Errorf("Task not found. %s", matchPattern)
+		}
+		if val, ok := host.attributes[key]; ok {
+			input = strings.Replace(input, matchPattern, val, 1)
+		} else {
+			return "", fmt.Errorf("Attribute %s not exist. %s", key, matchPattern)
+		}
+	}
+	return input, nil
+}
+
+// format %{dependencies.0.zkServer.0.base_port+1}
+func match8(c *Cluster, input string) (string, error) {
+	re := regexp.MustCompile(patternDependenciesJobAttributeNumber)
+	matches := re.FindAllStringSubmatch(input, -1)
+	for _, match := range matches {
+		match = match[1:]
+		clusterIndexStr, jobName, taskIdStr, key, incrStr := match[0], match[1], match[2], match[3], match[4]
+		matchPattern := fmt.Sprintf("%%{dependencies.%s.%s.%s.%s+%s}", clusterIndexStr, jobName, taskIdStr, key, incrStr)
+		clusterIndex, _ := strconv.Atoi(clusterIndexStr)
+		if clusterIndex >= len(c.dependencies) {
+			return "", fmt.Errorf("Cluster index exceeded. %s", matchPattern)
+		}
+		dep := c.dependencies[clusterIndex]
+		job, ok := dep.jobs[jobName]
+		if !ok {
+			return "", fmt.Errorf("Job %s does not exist in cluster: %s", jobName, dep.clusterName)
+		}
+		taskId, err := strconv.Atoi(taskIdStr)
+		if err != nil {
+			return "", fmt.Errorf("TaskId shoud be integer, %s", matchPattern)
+		}
+		host, ok := job.GetHost(taskId)
+		if !ok {
+			return "", fmt.Errorf("Task not found. %s", matchPattern)
+		}
+		if val, ok := host.attributes[key]; ok {
+			incr, _ := strconv.Atoi(incrStr)
+			valInt, err := strconv.Atoi(val)
+			if err != nil {
+				return "", err
+			}
+			input = strings.Replace(input, matchPattern, fmt.Sprintf("%d", valInt+incr), 1)
+		} else {
+			return "", fmt.Errorf("Attribute %s not exist. %s", key, matchPattern)
+		}
+	}
+	return input, nil
+}
+
 // Render the %{<job>.<index>.<attribute>} and %{dependencies.<index>.<job>.server_list} of input string
 // to value for the global cluster.
 func GlobalRender(c *Cluster, input string) (string, error) {
 	var err error
 	for _, matchFun := range []matchFunc{
-		match0, match1, match2, match3, match4,
+		match0, match1, match2, match3, match4, match7, match8,
 	} {
 		input, err = matchFun(c, input)
 		if err != nil {

@@ -7,6 +7,7 @@ cluster:
   package_md5sum: e2b28a6a0bb1699f853bd9ad9a813b2c
   dependencies:
     - {{.ConfRootDir}}/zookeeper/test-zk.yaml
+    - {{.ConfRootDir}}/hdfs/test-hdfs.yaml
 
 jobs:
   master:

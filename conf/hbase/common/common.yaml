@@ -18,11 +18,11 @@ jobs:
       - jute.maxbuffer=10240000
       - hbase.log.dir={{.PkgLogDir}}
       - hbase.home.dir={{.PkgRootDir}}
-      - hbase.root.logger=DEBUG,RFA
+      - hbase.root.logger=INFO,RFA
     config:
       hbase-site.xml:
         - hbase.cluster.distributed=true
-        - hbase.rootdir=hdfs://127.0.0.1:20100/hbase
+        - hbase.rootdir=hdfs://%{dependencies.1.namenode.0.host}:%{dependencies.1.namenode.0.base_port}/hbase
         - hbase.zookeeper.quorum=%{dependencies.0.zkServer.server_list}
         - hbase.security.authentication=simple
         - hbase.security.authorization=false

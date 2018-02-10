@@ -10,9 +10,6 @@ cluster:
 
 jobs:
   queryserver:
-    config:
-      hbase-site.xml:
-        - hbase.zookeeper.quorum=127.0.0.1:10010
     hosts:
       - 127.0.0.1:9001/id=0/base_port=40100
       - 127.0.0.1:9001/id=1/base_port=40200

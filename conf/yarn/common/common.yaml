@@ -26,7 +26,7 @@ jobs:
       - hdfs.audit.logger=INFO,NullAppender
     config:
       core-site.xml:
-        - fs.defaultFS=hdfs://127.0.0.1:20100
+        - fs.defaultFS=hdfs://%{dependencies.0.namenode.0.host}:%{dependencies.0.namenode.0.base_port}
         - io.file.buffer.size=131072
       mapred-site.xml:
         - mapreduce.framework.name=yarn

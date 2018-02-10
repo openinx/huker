@@ -93,6 +93,16 @@ func TestRender(t *testing.T) {
 		{"key=%{test_job.1.base_port+100}", true, "key=8101"},
 		{"key=%{test_job.2.base_port+100}", false, ""},
 		{"key=%{dependencies.0.test_job.server_list}", true, "key=www.example.com:7001,www.example.com:8001"},
+		{"key=%{dependencies.0.test_job.0.host}:%{dependencies.0.test_job.0.base_port}", true, "key=www.example.com:7001"},
+		{"key=%{dependencies.1.test_job.0.host}", false, ""},
+		{"key=%{dependencies.0.invalid_job.0.host}", false, ""},
+		{"key=%{dependencies.0.test_job.2.host}", false, ""},
+		{"key=%{dependencies.0.test_job.0.invalid_host}", false, ""},
+		{"key=%{dependencies.0.test_job.0.host}:%{dependencies.0.test_job.0.base_port+100}", true, "key=www.example.com:7101"},
+		{"key=%{dependencies.1.test_job.0.base_port+1}", false, ""},
+		{"key=%{dependencies.0.invalid_job.0.base_port+1}", false, ""},
+		{"key=%{dependencies.0.test_job.2.base_port+1}", false, ""},
+		{"key=%{dependencies.0.test_job.0.invalid_port+1}", false, ""},
 		{"key=%{test_job.server_list}", true, "key=www.example.com:7001,www.example.com:8001"},
 	}
 

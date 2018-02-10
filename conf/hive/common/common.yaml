@@ -49,6 +49,7 @@ jobs:
         - hive.server2.thrift.port=%{hiveserver2.x.base_port}
         - hive.server2.webui.port=%{hiveserver2.x.base_port+1}
         - javax.jdo.option.ConnectionURL=jdbc:derby:;databaseName={{.PkgDataDir}}/metastore_db;create=true
+        - hive.metastore.warehouse.dir=hdfs://%{dependencies.0.namenode.0.host}:%{dependencies.0.namenode.0.base_port}/user/hive/warehouse
     main_entry:
       java_class: org.apache.hive.service.server.HiveServer2
     hooks:
