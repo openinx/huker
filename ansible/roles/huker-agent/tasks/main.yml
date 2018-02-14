@@ -1,0 +1,6 @@
+---
+- name: Copy huker-agent script
+  template: src=huker-agent.sh dest={{ huker_install_dir }}/huker-agent.sh mode=766
+
+- name: Start Huker Agent
+  command: "{{ huker_install_dir }}/huker-agent.sh"

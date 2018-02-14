@@ -4,6 +4,7 @@
 /lib
 /.idea/
 /logs
+/release
 *.log
 *.iws
 *.swp

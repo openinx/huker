@@ -1,3 +1,5 @@
+HUKER_VERSION := huker-1.0.0
+
 all: build
 
 build:
@@ -12,7 +14,12 @@ test:
 travis-test: test
 	goveralls -coverprofile=overalls.coverprofile -service=travis-ci
 
+release: build
+	@rm -rf release
+	@mkdir -p release/$(HUKER_VERSION)
+	@cp -R bin conf ansible release/$(HUKER_VERSION)
+	@cd release; tar czvf $(HUKER_VERSION).tar.gz $(HUKER_VERSION) >/dev/null 2>&1
+	@echo "Huker release package: release/$(HUKER_VERSION).tar.gz"
+
 clean:
-	rm -rf bin/*
-	rm -rf log/*
-	rm -rf *.coverprofile
+	rm -rf bin/* log/* release/* *.coverprofile

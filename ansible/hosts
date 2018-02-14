@@ -1,0 +1,8 @@
+[huker-pkg-manager]
+localhost
+
+[huker-agent]
+localhost
+
+[oracle-jdk8]
+localhost

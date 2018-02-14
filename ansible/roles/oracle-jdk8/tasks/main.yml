@@ -1,0 +1,9 @@
+---
+- name: Copy oracle-jdk8 package
+  copy: src={{ oracle_jdk_tar_gz }} dest={{ huker_install_dir }}/oracle-jdk8.tar.gz mode=644
+
+- name: Copy oracle-jdk8 script
+  template: src=oracle-jdk8.sh dest={{ huker_install_dir }}/oracle-jdk8.sh mode=755
+
+- name: Install oracle-jdk8
+  command: "{{ huker_install_dir }}/oracle-jdk8.sh"
