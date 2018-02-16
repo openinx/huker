@@ -124,3 +124,31 @@ func TestHukerJob(t *testing.T) {
 		}
 	}
 }
+
+func TestHukerJobList(t *testing.T) {
+	os.Setenv(HUKER_CONF_DIR, "./testdata/conf")
+
+	hukerJob, err := NewDefaultHukerJob()
+	if err != nil {
+		t.Fatal(err)
+	}
+	clusters, errs := hukerJob.List()
+	if errs != nil {
+		t.Fatal(errs)
+	}
+	if len(clusters) != 1 {
+		t.Fatalf("Cluster size should be %d", 1)
+	}
+	c := clusters[0]
+	if c.clusterName != "py_test" {
+		t.Fatalf("cluster name mismatch, %s != %s", c.clusterName, "py_test")
+	}
+	if len(c.jobs) != 2 {
+		t.Fatalf("Jobs of cluster should be %d, instead of %d", 2, len(c.jobs))
+	}
+	for key := range c.jobs {
+		if key != "httpserver" && key != "shell" {
+			t.Fatalf("Job name of cluster shoud be %s or %s", "httpserver", "shell")
+		}
+	}
+}

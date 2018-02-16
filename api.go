@@ -3,6 +3,7 @@ package huker
 import (
 	"fmt"
 	"github.com/qiniu/log"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -29,6 +30,7 @@ func NewTaskResult(host *Host, prog *Program, err error) TaskResult {
 }
 
 type HukerJob interface {
+	List() ([]*Cluster, error)
 	Install(project, cluster, job string, taskId int) ([]TaskResult, error)
 	Shell(project, cluster, job string, extraArgs []string) error
 	Bootstrap(project, cluster, job string, taskId int) ([]TaskResult, error)
@@ -128,6 +130,33 @@ func (j *ConfigFileHukerJob) updateJob(project, cluster, job string, taskId int,
 		}
 	}
 	return taskResults, nil
+}
+
+func (j *ConfigFileHukerJob) List() ([]*Cluster, error) {
+	files, err := ioutil.ReadDir(j.configRootDir)
+	if err != nil {
+		return nil, err
+	}
+	var clusters []*Cluster
+	for _, f := range files {
+		if f.IsDir() {
+			subFiles, err := ioutil.ReadDir(path.Join(j.configRootDir, f.Name()))
+			if err != nil {
+				return nil, err
+			}
+			for _, subFile := range subFiles {
+				if !subFile.IsDir() {
+					c, err := LoadClusterConfig(path.Join(j.configRootDir, f.Name(), subFile.Name()),
+						&EnvVariables{ConfRootDir: j.configRootDir})
+					if err != nil {
+						return nil, err
+					}
+					clusters = append(clusters, c)
+				}
+			}
+		}
+	}
+	return clusters, nil
 }
 
 func (j *ConfigFileHukerJob) Install(project, cluster, job string, taskId int) ([]TaskResult, error) {
