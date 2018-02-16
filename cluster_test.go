@@ -60,20 +60,20 @@ func assertSliceEquals(a, b []string, key string) error {
 }
 
 func assertJobEquals(a, b *Job) error {
-	if a.jobName != b.jobName {
-		return fmt.Errorf("jobName mismatch, expected: %s, actual: %s", a.jobName, b.jobName)
+	if a.JobName != b.JobName {
+		return fmt.Errorf("jobName mismatch, expected: %s, actual: %s", a.JobName, b.JobName)
 	}
-	if err := assertSliceEquals(a.jvmOpts, b.jvmOpts, "jvm_opts"); err != nil {
+	if err := assertSliceEquals(a.JvmOpts, b.JvmOpts, "jvm_opts"); err != nil {
 		return err
 	}
-	if err := assertSliceEquals(a.jvmProperties, b.jvmProperties, "jvm_properties"); err != nil {
+	if err := assertSliceEquals(a.JvmProperties, b.JvmProperties, "jvm_properties"); err != nil {
 		return err
 	}
-	if err := assertSliceEquals(a.classpath, b.classpath, "classpath"); err != nil {
+	if err := assertSliceEquals(a.Classpath, b.Classpath, "classpath"); err != nil {
 		return err
 	}
-	if err := assertSliceEquals(a.mainEntry.toShell(), b.mainEntry.toShell(), "mainEntry"); err != nil {
-		return fmt.Errorf("%s != %s", a.mainEntry.toShell(), b.mainEntry.toShell())
+	if err := assertSliceEquals(a.MainEntry.toShell(), b.MainEntry.toShell(), "mainEntry"); err != nil {
+		return fmt.Errorf("%s != %s", a.MainEntry.toShell(), b.MainEntry.toShell())
 	}
 	return nil
 }
@@ -99,6 +99,7 @@ func TestNewServiceConfig(t *testing.T) {
 	cfg1 := `
     base: /home/test.yaml
     cluster:
+      project: zookeeper
       cluster_name: tst-cluster
       main_process: /usr/bin/java
       package_name: zookeeper-3.4.11.tar.gz
@@ -133,76 +134,79 @@ func TestNewServiceConfig(t *testing.T) {
 
 	expected := []Cluster{
 		{
-			baseConfig:    "/home/test.yaml",
-			clusterName:   "tst-cluster",
-			mainProcess:   "/usr/bin/java",
-			packageName:   "zookeeper-3.4.11.tar.gz",
-			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
-			jobs: map[string]*Job{
+			BaseConfig:    "/home/test.yaml",
+			Project:       "zookeeper",
+			ClusterName:   "tst-cluster",
+			MainProcess:   "/usr/bin/java",
+			PackageName:   "zookeeper-3.4.11.tar.gz",
+			PackageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
+			Jobs: map[string]*Job{
 				"zookeeper": {
-					jobName: "zookeeper",
+					JobName: "zookeeper",
 					//hosts:         []string{"192.168.0.1"},
-					jvmOpts:       []string{"-Xmx4096m"},
-					jvmProperties: []string{"java.log.dir=."},
-					classpath:     []string{"./*"},
-					configFiles: map[string]ConfigFile{
+					JvmOpts:       []string{"-Xmx4096m"},
+					JvmProperties: []string{"java.log.dir=."},
+					Classpath:     []string{"./*"},
+					ConfigFiles: map[string]ConfigFile{
 						"zoo.cfg": INIConfigFile{
 							cfgName:   "zoo.cfg",
 							keyValues: []string{"data_dir=/home/data", "tick_time=2000"},
 						},
 					},
-					mainEntry: &MainEntry{
-						javaClass: "org.apache.zookeeper.server.quorum.QuorumPeerMain",
-						extraArgs: "conf/zoo_sample.cfg",
+					MainEntry: &MainEntry{
+						JavaClass: "org.apache.zookeeper.server.quorum.QuorumPeerMain",
+						ExtraArgs: "conf/zoo_sample.cfg",
 					},
 				},
 			},
 		},
 		{
-			baseConfig:    "/home/test.yaml",
-			clusterName:   "tst-cluster",
-			mainProcess:   "/usr/bin/java",
-			packageName:   "zookeeper-3.4.11.tar.gz",
-			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
-			jobs: map[string]*Job{
+			BaseConfig:    "/home/test.yaml",
+			Project:       "zookeeper",
+			ClusterName:   "tst-cluster",
+			MainProcess:   "/usr/bin/java",
+			PackageName:   "zookeeper-3.4.11.tar.gz",
+			PackageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
+			Jobs: map[string]*Job{
 				"zookeeper": {
-					jobName: "zookeeper",
+					JobName: "zookeeper",
 					//hosts:         []string{"192.168.0.1", "192.168.0.2"},
-					jvmOpts:       []string{"-Xmn1024m"},
-					jvmProperties: []string{"java.log.file=/home/log/zk.log"},
-					classpath:     []string{},
-					configFiles: map[string]ConfigFile{
+					JvmOpts:       []string{"-Xmn1024m"},
+					JvmProperties: []string{"java.log.file=/home/log/zk.log"},
+					Classpath:     []string{},
+					ConfigFiles: map[string]ConfigFile{
 						"zoo.cfg": INIConfigFile{
 							cfgName:   "zoo.cfg",
 							keyValues: []string{"data_dir=/home/data", "tick_time=2000"},
 						},
 					},
-					mainEntry: &MainEntry{},
+					MainEntry: &MainEntry{},
 				},
 			},
 		},
 		{
-			baseConfig:    "/home/test.yaml",
-			clusterName:   "tst-cluster",
-			mainProcess:   "/usr/bin/java",
-			packageName:   "zookeeper-3.4.11.tar.gz",
-			packageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
-			jobs: map[string]*Job{
+			BaseConfig:    "/home/test.yaml",
+			Project:       "zookeeper",
+			ClusterName:   "tst-cluster",
+			MainProcess:   "/usr/bin/java",
+			PackageName:   "zookeeper-3.4.11.tar.gz",
+			PackageMd5sum: "55aec6196ed9fa4c451cb5ae4a1f42d8",
+			Jobs: map[string]*Job{
 				"zookeeper": {
-					jobName: "zookeeper",
+					JobName: "zookeeper",
 					//hosts:         []string{"192.168.0.1", "192.168.0.2"},
-					jvmOpts:       []string{"-Xmn1024m", "-Xmx4096m"},
-					jvmProperties: []string{"java.log.file=/home/log/zk.log", "java.log.dir=."},
-					classpath:     []string{"./*"},
-					configFiles: map[string]ConfigFile{
+					JvmOpts:       []string{"-Xmn1024m", "-Xmx4096m"},
+					JvmProperties: []string{"java.log.file=/home/log/zk.log", "java.log.dir=."},
+					Classpath:     []string{"./*"},
+					ConfigFiles: map[string]ConfigFile{
 						"zoo.cfg": INIConfigFile{
 							cfgName:   "zoo.cfg",
 							keyValues: []string{"data_dir=/home/data", "tick_time=2000"},
 						},
 					},
-					mainEntry: &MainEntry{
-						javaClass: "org.apache.zookeeper.server.quorum.QuorumPeerMain",
-						extraArgs: "conf/zoo_sample.cfg",
+					MainEntry: &MainEntry{
+						JavaClass: "org.apache.zookeeper.server.quorum.QuorumPeerMain",
+						ExtraArgs: "conf/zoo_sample.cfg",
 					},
 				},
 			},
@@ -213,29 +217,32 @@ func TestNewServiceConfig(t *testing.T) {
 		if s, err := NewCluster(testSet[i], nil); err != nil {
 			t.Errorf("test case #%d failed, cause: %v", i, err)
 		} else {
-			if s.baseConfig != expected[i].baseConfig {
+			if s.BaseConfig != expected[i].BaseConfig {
 				t.Errorf("test case #%d failed, base mismatch", i)
 			}
-			if s.clusterName != expected[i].clusterName {
+			if s.Project != expected[i].Project {
+				t.Errorf("test case #%d failed, project mismatch", i)
+			}
+			if s.ClusterName != expected[i].ClusterName {
 				t.Errorf("test case #%d failed, cluster_name mismatch", i)
 			}
-			if s.mainProcess != expected[i].mainProcess {
+			if s.MainProcess != expected[i].MainProcess {
 				t.Errorf("test case #%d failed, main_process mismatch", i)
 			}
-			if s.packageName != expected[i].packageName {
+			if s.PackageName != expected[i].PackageName {
 				t.Errorf("test case #%d failed, package_name mismatch", i)
 			}
-			if s.packageMd5sum != expected[i].packageMd5sum {
+			if s.PackageMd5sum != expected[i].PackageMd5sum {
 				t.Errorf("test case #%d failed, package_md5sum mismatch", i)
 			}
-			if len(s.jobs) != len(expected[i].jobs) {
+			if len(s.Jobs) != len(expected[i].Jobs) {
 				t.Errorf("test case #%d failed, job size mismatch", i)
 			}
-			for k := range s.jobs {
-				if s.jobs[k].superJob != "" {
+			for k := range s.Jobs {
+				if s.Jobs[k].SuperJob != "" {
 					t.Errorf("test case #%d, superJob should be empty by default.", i)
 				}
-				if err := assertJobEquals(s.jobs[k], expected[i].jobs[k]); err != nil {
+				if err := assertJobEquals(s.Jobs[k], expected[i].Jobs[k]); err != nil {
 					t.Errorf("test case #%d failed, cause: %v", i, err)
 				}
 			}
@@ -247,6 +254,7 @@ func TestToShell(t *testing.T) {
 	cfg := `
     base: /home/test.yaml
     cluster:
+      project: zookeeper
       cluster_name: tst-cluster
       main_process: /usr/bin/java
       package_name: zookeeper-3.4.11.tar.gz

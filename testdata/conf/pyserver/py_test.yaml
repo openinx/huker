@@ -1,6 +1,7 @@
 base: {{.ConfRootDir}}/pyserver/common/common.yaml
 
 cluster:
+  project: PythonHttpserver
   cluster_name: py_test
   main_process: python
   package_name: test.tar.gz

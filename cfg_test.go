@@ -35,14 +35,14 @@ func TestConfigFile(t *testing.T) {
 		if err != nil {
 			t.Errorf("TestCase #%d failed, cause: %v", caseId, err)
 		}
-		if cf.getConfigName() != cas.cfgName {
-			t.Errorf("TestCase #%d failed, `%s` != `%s`", caseId, cf.getConfigName(), cas.cfgName)
+		if cf.GetConfigName() != cas.cfgName {
+			t.Errorf("TestCase #%d failed, `%s` != `%s`", caseId, cf.GetConfigName(), cas.cfgName)
 		}
-		if !reflect.DeepEqual(cf.toKeyValue(), cas.keyValues) {
-			t.Errorf("TestCase #%d failed, `%v` != `%v`", caseId, cf.toKeyValue(), cas.keyValues)
+		if !reflect.DeepEqual(cf.ToKeyValue(), cas.keyValues) {
+			t.Errorf("TestCase #%d failed, `%v` != `%v`", caseId, cf.ToKeyValue(), cas.keyValues)
 		}
-		if cf.toString() != cas.configuration {
-			t.Errorf("TestCase #%d failed, `%s` != `%s`", caseId, cf.toString(), cas.configuration)
+		if cf.ToString() != cas.configuration {
+			t.Errorf("TestCase #%d failed, `%s` != `%s`", caseId, cf.ToString(), cas.configuration)
 		}
 
 	}

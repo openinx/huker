@@ -17,8 +17,8 @@ const (
 )
 
 type MainEntry struct {
-	javaClass string
-	extraArgs string
+	JavaClass string
+	ExtraArgs string
 }
 
 func parseMainEntry(s interface{}) (*MainEntry, error) {
@@ -31,24 +31,24 @@ func parseMainEntry(s interface{}) (*MainEntry, error) {
 		if !IsStringType(obj) {
 			return nil, fmt.Errorf("Invalid main entry, java_class is not a string. %v", s)
 		}
-		mainEntry.javaClass = strings.Trim(obj.(string), " ")
+		mainEntry.JavaClass = strings.Trim(obj.(string), " ")
 	}
 	if obj, ok := meMap["extra_args"]; ok && obj != nil {
 		if !IsStringType(obj) {
 			return nil, fmt.Errorf("Invalid main_entry, extra_args is not a string. %v", s)
 		}
-		mainEntry.extraArgs = meMap["extra_args"].(string)
+		mainEntry.ExtraArgs = meMap["extra_args"].(string)
 	}
 	return mainEntry, nil
 }
 
 func (m *MainEntry) toShell() []string {
 	var buf []string
-	if len(m.javaClass) > 0 {
-		buf = append(buf, m.javaClass)
+	if len(m.JavaClass) > 0 {
+		buf = append(buf, m.JavaClass)
 	}
 	// TODO need to consider tab ?
-	for _, arg := range strings.Split(m.extraArgs, " ") {
+	for _, arg := range strings.Split(m.ExtraArgs, " ") {
 		if len(arg) > 0 {
 			buf = append(buf, arg)
 		}
@@ -57,20 +57,20 @@ func (m *MainEntry) toShell() []string {
 }
 
 type Host struct {
-	hostname       string
-	taskId         int
-	supervisorPort int
-	basePort       int
-	attributes     map[string]string
+	Hostname       string
+	TaskId         int
+	SupervisorPort int
+	BasePort       int
+	Attributes     map[string]string
 }
 
 func NewHost(hostKey string) (*Host, error) {
 	host := &Host{
-		hostname:       "",
-		taskId:         DEFAULT_TASK_ID,
-		supervisorPort: DEFAULT_SUPERVISOR_PORT,
-		basePort:       DEFAULT_BASE_PORT,
-		attributes:     make(map[string]string),
+		Hostname:       "",
+		TaskId:         DEFAULT_TASK_ID,
+		SupervisorPort: DEFAULT_SUPERVISOR_PORT,
+		BasePort:       DEFAULT_BASE_PORT,
+		Attributes:     make(map[string]string),
 	}
 
 	var err error
@@ -82,35 +82,35 @@ func NewHost(hostKey string) (*Host, error) {
 	if len(hostAndPort) != 2 {
 		return nil, fmt.Errorf("Invalid supervisor address: %s . should be format: <hostname>:<port>", splits[0])
 	}
-	host.hostname = hostAndPort[0]
-	host.supervisorPort, err = strconv.Atoi(hostAndPort[1])
+	host.Hostname = hostAndPort[0]
+	host.SupervisorPort, err = strconv.Atoi(hostAndPort[1])
 	if err != nil {
 		return nil, fmt.Errorf("Invalid supervisor address: %s, port should be integer.", splits[0])
 	}
-	host.attributes["host"] = hostAndPort[0]
-	host.attributes["port"] = hostAndPort[1]
+	host.Attributes["host"] = hostAndPort[0]
+	host.Attributes["port"] = hostAndPort[1]
 
 	for _, split := range splits[1:] {
 		keyValues := strings.Split(split, "=")
 		if len(keyValues) != 2 {
 			return nil, fmt.Errorf("Invalid key-value pair: %s . shoud be format like: <key>=<value>.", hostKey)
 		}
-		host.attributes[keyValues[0]] = keyValues[1]
+		host.Attributes[keyValues[0]] = keyValues[1]
 		if keyValues[0] == "id" {
-			host.taskId, err = strconv.Atoi(keyValues[1])
+			host.TaskId, err = strconv.Atoi(keyValues[1])
 			if err != nil {
 				return nil, err
 			}
-			if host.taskId < 0 {
+			if host.TaskId < 0 {
 				return nil, fmt.Errorf("Invalid taskId, shouldn't be negative. %s", hostKey)
 			}
 		}
 		if keyValues[0] == "base_port" {
-			host.basePort, err = strconv.Atoi(keyValues[1])
+			host.BasePort, err = strconv.Atoi(keyValues[1])
 			if err != nil {
 				return nil, err
 			}
-			if host.basePort <= 0 {
+			if host.BasePort <= 0 {
 				return nil, fmt.Errorf("Invalid basePort, should be positive integer. %s", hostKey)
 			}
 		}
@@ -120,11 +120,11 @@ func NewHost(hostKey string) (*Host, error) {
 }
 
 func (h *Host) toHttpAddress() string {
-	return fmt.Sprintf("http://%s:%d", h.hostname, h.supervisorPort)
+	return fmt.Sprintf("http://%s:%d", h.Hostname, h.SupervisorPort)
 }
 
 func (h *Host) ToKey() string {
-	return fmt.Sprintf("%s:%d/id=%d", h.hostname, h.supervisorPort, h.taskId)
+	return fmt.Sprintf("%s:%d/id=%d", h.Hostname, h.SupervisorPort, h.TaskId)
 }
 
 func (h *Host) toConfigMap() map[string]string {
@@ -144,45 +144,45 @@ func mergeConfigFiles(this, other map[string]ConfigFile) map[string]ConfigFile {
 }
 
 type Job struct {
-	jobName       string
-	superJob      string
-	hosts         []*Host
-	jvmOpts       []string
-	jvmProperties []string
-	classpath     []string
-	mainEntry     *MainEntry
-	configFiles   map[string]ConfigFile
-	hooks         map[string]string
+	JobName       string
+	SuperJob      string
+	Hosts         []*Host
+	JvmOpts       []string
+	JvmProperties []string
+	Classpath     []string
+	MainEntry     *MainEntry
+	ConfigFiles   map[string]ConfigFile
+	Hooks         map[string]string
 }
 
 func NewJob(jobName string, jobMap map[interface{}]interface{}) (*Job, error) {
 	job := &Job{
-		jobName:     jobName,
-		superJob:    "", // No super job by default.
-		hosts:       []*Host{},
-		mainEntry:   &MainEntry{},
-		configFiles: make(map[string]ConfigFile),
-		hooks:       make(map[string]string),
+		JobName:     jobName,
+		SuperJob:    "", // No super job by default.
+		Hosts:       []*Host{},
+		MainEntry:   &MainEntry{},
+		ConfigFiles: make(map[string]ConfigFile),
+		Hooks:       make(map[string]string),
 	}
 	var err error
 	if obj, ok := jobMap["super_job"]; ok && obj != nil {
 		if !IsStringType(obj) {
 			return nil, fmt.Errorf("`super_job` field in job `%s` should be a string, now: %v", jobName, obj)
 		}
-		job.superJob = obj.(string)
+		job.SuperJob = obj.(string)
 	}
 	if obj, ok := jobMap["jvm_opts"]; ok && obj != nil {
-		if job.jvmOpts, err = ParseStringArray(obj); err != nil {
+		if job.JvmOpts, err = ParseStringArray(obj); err != nil {
 			return nil, err
 		}
 	}
 	if obj, ok := jobMap["jvm_properties"]; ok && obj != nil {
-		if job.jvmProperties, err = ParseStringArray(obj); err != nil {
+		if job.JvmProperties, err = ParseStringArray(obj); err != nil {
 			return nil, err
 		}
 	}
 	if obj, ok := jobMap["classpath"]; ok && obj != nil {
-		if job.classpath, err = ParseStringArray(obj); err != nil {
+		if job.Classpath, err = ParseStringArray(obj); err != nil {
 			return nil, err
 		}
 	}
@@ -190,9 +190,9 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (*Job, error) {
 		if confFiles, err := parseConfigFileArray(obj); err != nil {
 			return nil, err
 		} else {
-			job.configFiles = make(map[string]ConfigFile)
+			job.ConfigFiles = make(map[string]ConfigFile)
 			for i := range confFiles {
-				job.configFiles[confFiles[i].getConfigName()] = confFiles[i]
+				job.ConfigFiles[confFiles[i].GetConfigName()] = confFiles[i]
 			}
 		}
 	}
@@ -212,13 +212,13 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (*Job, error) {
 		}
 		// Sort by taskId increase.
 		sort.Slice(hosts, func(i, j int) bool {
-			return hosts[i].taskId < hosts[j].taskId
+			return hosts[i].TaskId < hosts[j].TaskId
 		})
-		job.hosts = hosts
+		job.Hosts = hosts
 	}
 
 	if jobMap["main_entry"] != nil {
-		if job.mainEntry, err = parseMainEntry(jobMap["main_entry"]); err != nil {
+		if job.MainEntry, err = parseMainEntry(jobMap["main_entry"]); err != nil {
 			return nil, err
 		}
 	}
@@ -231,7 +231,7 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (*Job, error) {
 				if err != nil {
 					return nil, err
 				}
-				job.hooks[hookKey.(string)] = string(data)
+				job.Hooks[hookKey.(string)] = string(data)
 			}
 		}
 	}
@@ -240,22 +240,22 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (*Job, error) {
 
 func (job *Job) toShell() []string {
 	var buf []string
-	for i := range job.jvmOpts {
-		jvmOpt := strings.TrimSpace(job.jvmOpts[i])
+	for i := range job.JvmOpts {
+		jvmOpt := strings.TrimSpace(job.JvmOpts[i])
 		if len(jvmOpt) > 0 {
 			buf = append(buf, jvmOpt)
 		}
 	}
-	for i := range job.jvmProperties {
-		jvmPro := strings.TrimSpace(job.jvmProperties[i])
+	for i := range job.JvmProperties {
+		jvmPro := strings.TrimSpace(job.JvmProperties[i])
 		if len(jvmPro) > 0 {
 			buf = append(buf, fmt.Sprintf("-D%s", jvmPro))
 		}
 	}
 
 	var classpath []string
-	for i := range job.classpath {
-		cp := strings.TrimSpace(job.classpath[i])
+	for i := range job.Classpath {
+		cp := strings.TrimSpace(job.Classpath[i])
 		if len(cp) > 0 {
 			classpath = append(classpath, cp)
 		}
@@ -265,7 +265,7 @@ func (job *Job) toShell() []string {
 		buf = append(buf, strings.Join(classpath, ":"))
 	}
 
-	for _, s := range job.mainEntry.toShell() {
+	for _, s := range job.MainEntry.toShell() {
 		buf = append(buf, s)
 	}
 	return buf
@@ -273,15 +273,15 @@ func (job *Job) toShell() []string {
 
 func (job *Job) toConfigMap() map[string]string {
 	cfgMap := make(map[string]string)
-	for cfgKey, cfgFile := range job.configFiles {
-		cfgMap[cfgKey] = cfgFile.toString()
+	for cfgKey, cfgFile := range job.ConfigFiles {
+		cfgMap[cfgKey] = cfgFile.ToString()
 	}
 	return cfgMap
 }
 
 func (job *Job) mergeWith(other *Job) (*Job, error) {
-	if job.superJob != other.jobName {
-		return nil, fmt.Errorf("job `%s` is not inherited from job `%s`", job.jobName, other.jobName)
+	if job.SuperJob != other.JobName {
+		return nil, fmt.Errorf("job `%s` is not inherited from job `%s`", job.JobName, other.JobName)
 	}
 
 	// Merge array a with array b. if exist in both a and b, then use item in a.
@@ -295,22 +295,22 @@ func (job *Job) mergeWith(other *Job) (*Job, error) {
 	}
 
 	// merge jvm opts
-	job.jvmOpts = mergeStringArray(job.jvmOpts, other.jvmOpts)
+	job.JvmOpts = mergeStringArray(job.JvmOpts, other.JvmOpts)
 
 	// merge jvm properties.
-	job.jvmProperties = mergeStringArray(job.jvmProperties, other.jvmProperties)
+	job.JvmProperties = mergeStringArray(job.JvmProperties, other.JvmProperties)
 
 	// merge jvm classpath
-	job.classpath = mergeStringArray(job.classpath, other.classpath)
+	job.Classpath = mergeStringArray(job.Classpath, other.Classpath)
 
 	// merge config files
-	job.configFiles = mergeConfigFiles(job.configFiles, other.configFiles)
+	job.ConfigFiles = mergeConfigFiles(job.ConfigFiles, other.ConfigFiles)
 	return job, nil
 }
 
 func (job *Job) GetHost(taskId int) (*Host, bool) {
-	for _, host := range job.hosts {
-		if host.taskId == taskId {
+	for _, host := range job.Hosts {
+		if host.TaskId == taskId {
 			return host, true
 		}
 	}
@@ -352,7 +352,7 @@ func ParseStringArray(obj interface{}) ([]string, error) {
 			} else if IsIntegerType(array[i]) {
 				strings = append(strings, strconv.Itoa(array[i].(int)))
 			} else {
-				return nil, fmt.Errorf("Neither string nor int type. %v", array[i])
+				return nil, fmt.Errorf("Neither string nor int type. %v, origin: %v", array[i], obj)
 			}
 		}
 		return strings, nil

@@ -25,7 +25,6 @@ jobs:
         - hbase.rootdir=hdfs://%{dependencies.1.namenode.0.host}:%{dependencies.1.namenode.0.base_port}/hbase
         - hbase.zookeeper.quorum=%{dependencies.0.zkServer.server_list}
         - hbase.security.authentication=simple
-        - hbase.security.authorization=false
         - hbase.table.sanity.checks=false
       log4j.properties:
         file: {{.ConfRootDir}}/hbase/common/log4j.properties

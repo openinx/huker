@@ -8,13 +8,14 @@ import (
 
 // Cluster definition.
 type Cluster struct {
-	baseConfig    string
-	clusterName   string
-	mainProcess   string
-	packageName   string
-	packageMd5sum string
-	jobs          map[string]*Job
-	dependencies  []*Cluster
+	BaseConfig    string
+	Project       string
+	ClusterName   string
+	MainProcess   string
+	PackageName   string
+	PackageMd5sum string
+	Jobs          map[string]*Job
+	Dependencies  []*Cluster
 }
 
 func getRequiredField(m map[interface{}]interface{}, key string) (string, error) {
@@ -34,7 +35,7 @@ func NewCluster(yamlConfigs []string, e *EnvVariables) (*Cluster, error) {
 		return nil, err
 	}
 	c := &Cluster{
-		jobs: make(map[string]*Job),
+		Jobs: make(map[string]*Job),
 	}
 
 	// Read `base` section.
@@ -42,7 +43,7 @@ func NewCluster(yamlConfigs []string, e *EnvVariables) (*Cluster, error) {
 		if !IsStringType(obj) {
 			return nil, fmt.Errorf("Invalid cluster config, `base` should be a string path. %v", obj)
 		}
-		c.baseConfig = obj.(string)
+		c.BaseConfig = obj.(string)
 	}
 
 	// Read `cluster` section.
@@ -54,16 +55,19 @@ func NewCluster(yamlConfigs []string, e *EnvVariables) (*Cluster, error) {
 	} else {
 		clusterMap = obj.(map[interface{}]interface{})
 	}
-	if c.clusterName, err = getRequiredField(clusterMap, "cluster_name"); err != nil {
+	if c.Project, err = getRequiredField(clusterMap, "project"); err != nil {
 		return nil, err
 	}
-	if c.mainProcess, err = getRequiredField(clusterMap, "main_process"); err != nil {
+	if c.ClusterName, err = getRequiredField(clusterMap, "cluster_name"); err != nil {
 		return nil, err
 	}
-	if c.packageName, err = getRequiredField(clusterMap, "package_name"); err != nil {
+	if c.MainProcess, err = getRequiredField(clusterMap, "main_process"); err != nil {
 		return nil, err
 	}
-	if c.packageMd5sum, err = getRequiredField(clusterMap, "package_md5sum"); err != nil {
+	if c.PackageName, err = getRequiredField(clusterMap, "package_name"); err != nil {
+		return nil, err
+	}
+	if c.PackageMd5sum, err = getRequiredField(clusterMap, "package_md5sum"); err != nil {
 		return nil, err
 	}
 	// Read `dependencies` section.
@@ -74,7 +78,7 @@ func NewCluster(yamlConfigs []string, e *EnvVariables) (*Cluster, error) {
 			if err != nil {
 				return nil, err
 			}
-			c.dependencies = append(c.dependencies, depCluster)
+			c.Dependencies = append(c.Dependencies, depCluster)
 		}
 	}
 
@@ -97,33 +101,33 @@ func NewCluster(yamlConfigs []string, e *EnvVariables) (*Cluster, error) {
 		if job, err := NewJob(jobName.(string), jobMap.(map[interface{}]interface{})); err != nil {
 			return nil, err
 		} else {
-			c.jobs[jobName.(string)] = job
+			c.Jobs[jobName.(string)] = job
 		}
 	}
 
 	// Merge job with its parent job. Be careful that we only allow one layer of inheritance.
 	// The case A -> B -> C is not allowed.
 	newJobs := make(map[string]*Job)
-	for jobName, job := range c.jobs {
-		if parentJob, ok := c.jobs[job.superJob]; ok && parentJob != nil {
+	for jobName, job := range c.Jobs {
+		if parentJob, ok := c.Jobs[job.SuperJob]; ok && parentJob != nil {
 			if job, err = job.mergeWith(parentJob); err != nil {
 				return nil, err
 			}
 		}
 		newJobs[jobName] = job
 	}
-	c.jobs = newJobs
+	c.Jobs = newJobs
 
 	return c, nil
 }
 
 func (s *Cluster) toShell(jobKey string) []string {
-	if _, ok := s.jobs[jobKey]; !ok {
+	if _, ok := s.Jobs[jobKey]; !ok {
 		return []string{}
 	}
 	var buf []string
-	buf = append(buf, s.mainProcess)
-	for _, arg := range s.jobs[jobKey].toShell() {
+	buf = append(buf, s.MainProcess)
+	for _, arg := range s.Jobs[jobKey].toShell() {
 		buf = append(buf, arg)
 	}
 	return buf
@@ -133,19 +137,19 @@ func (s *Cluster) toShell(jobKey string) []string {
 func (c *Cluster) RenderConfigFiles(job *Job, taskId int, skipHostRender bool) (map[string]string, error) {
 	var ok bool
 	// var host *Host
-	if job, ok = c.jobs[job.jobName]; !ok {
-		return nil, fmt.Errorf("Job with name `%s` not exist in cluster %s", job.jobName, c.clusterName)
+	if job, ok = c.Jobs[job.JobName]; !ok {
+		return nil, fmt.Errorf("Job with name `%s` not exist in cluster %s", job.JobName, c.ClusterName)
 	}
 
 	if !skipHostRender {
 		if _, ok = job.GetHost(taskId); !ok {
-			return nil, fmt.Errorf("TaskId `%d` not exist in job `%s` for cluster `%s`", taskId, job.jobName, c.clusterName)
+			return nil, fmt.Errorf("TaskId `%d` not exist in job `%s` for cluster `%s`", taskId, job.JobName, c.ClusterName)
 		}
 	}
 
 	cfgMap := make(map[string]string)
-	for fname, cfg := range job.configFiles {
-		newCfg, err := GlobalRender(c, cfg.toString())
+	for fname, cfg := range job.ConfigFiles {
+		newCfg, err := GlobalRender(c, cfg.ToString())
 		if err != nil {
 			return nil, err
 		}

@@ -89,7 +89,7 @@ func (cfg *ConfigFileHukerJob) newCluster(project, cluster, job string) (*Cluste
 		return nil, fmt.Errorf("Load service configuration failed, err: %v", err)
 	}
 
-	if _, ok := c.jobs[job]; !ok {
+	if _, ok := c.Jobs[job]; !ok {
 		return nil, fmt.Errorf("Job `%s` does not exist in %s", job, clusterCfg)
 	}
 	return c, nil
@@ -103,28 +103,28 @@ func (j *ConfigFileHukerJob) updateJob(project, cluster, job string, taskId int,
 		return nil, err
 	}
 
-	jobPtr := c.jobs[job]
+	jobPtr := c.Jobs[job]
 	var taskResults []TaskResult
-	for _, host := range jobPtr.hosts {
-		if taskId < 0 || taskId == host.taskId {
-			cfgMap, err := c.RenderConfigFiles(jobPtr, host.taskId, false)
+	for _, host := range jobPtr.Hosts {
+		if taskId < 0 || taskId == host.TaskId {
+			cfgMap, err := c.RenderConfigFiles(jobPtr, host.TaskId, false)
 			if err != nil {
 				log.Errorf("Failed to render config file, project: %s, cluster:%s, job:%s, taskId:%d",
-					project, cluster, job, host.taskId)
+					project, cluster, job, host.TaskId)
 				return nil, err
 			}
 			superClient := newSupervisorCli(host.toHttpAddress())
 			prog := &Program{
-				Name:       c.clusterName,
+				Name:       c.ClusterName,
 				Job:        job,
-				TaskId:     host.taskId,
-				Bin:        c.mainProcess,
+				TaskId:     host.TaskId,
+				Bin:        c.MainProcess,
 				Args:       jobPtr.toShell(),
 				Configs:    cfgMap,
-				PkgAddress: j.pkgServerAddress + "/" + c.packageName,
-				PkgName:    c.packageName,
-				PkgMD5Sum:  c.packageMd5sum,
-				Hooks:      jobPtr.hooks,
+				PkgAddress: j.pkgServerAddress + "/" + c.PackageName,
+				PkgName:    c.PackageName,
+				PkgMD5Sum:  c.PackageMd5sum,
+				Hooks:      jobPtr.Hooks,
 			}
 			taskResults = append(taskResults, NewTaskResult(host, nil, update(jobPtr, host, superClient, prog)))
 		}
@@ -147,7 +147,14 @@ func (j *ConfigFileHukerJob) List() ([]*Cluster, error) {
 			for _, subFile := range subFiles {
 				if !subFile.IsDir() {
 					c, err := LoadClusterConfig(path.Join(j.configRootDir, f.Name(), subFile.Name()),
-						&EnvVariables{ConfRootDir: j.configRootDir})
+						&EnvVariables{
+							ConfRootDir:  j.configRootDir,
+							PkgRootDir:   "unknown",
+							PkgConfDir:   "unknown",
+							PkgDataDir:   "unknown",
+							PkgLogDir:    "unknown",
+							PkgStdoutDir: "unknown",
+						})
 					if err != nil {
 						return nil, err
 					}
@@ -169,7 +176,7 @@ func (j *ConfigFileHukerJob) Shell(project, cluster, job string, extraArgs []str
 	if err != nil {
 		return err
 	}
-	jobPtr := c.jobs[job]
+	jobPtr := c.Jobs[job]
 	cfgMap, err := c.RenderConfigFiles(jobPtr, defaultLocalTaskId, true)
 	if err != nil {
 		log.Errorf("Failed to render config file, project: %s, cluster:%s, job:%s, taskId:%d",
@@ -177,16 +184,16 @@ func (j *ConfigFileHukerJob) Shell(project, cluster, job string, extraArgs []str
 		return err
 	}
 	prog := &Program{
-		Name:       c.clusterName,
+		Name:       c.ClusterName,
 		Job:        job,
 		TaskId:     defaultLocalTaskId,
-		Bin:        c.mainProcess,
+		Bin:        c.MainProcess,
 		Args:       jobPtr.toShell(),
 		Configs:    cfgMap,
-		PkgAddress: j.pkgServerAddress + "/" + c.packageName,
-		PkgName:    c.packageName,
-		PkgMD5Sum:  c.packageMd5sum,
-		Hooks:      jobPtr.hooks,
+		PkgAddress: j.pkgServerAddress + "/" + c.PackageName,
+		PkgName:    c.PackageName,
+		PkgMD5Sum:  c.PackageMd5sum,
+		Hooks:      jobPtr.Hooks,
 	}
 	agentRootDir := LocalHukerDir()
 	prog.renderVars(agentRootDir)
@@ -249,25 +256,25 @@ func (j *ConfigFileHukerJob) lookupJob(project, cluster, job string, taskId int,
 	if err != nil {
 		return nil, err
 	}
-	jobPtr := c.jobs[job]
+	jobPtr := c.Jobs[job]
 	var taskResults []TaskResult
-	for _, host := range jobPtr.hosts {
-		if taskId < 0 || taskId == host.taskId {
+	for _, host := range jobPtr.Hosts {
+		if taskId < 0 || taskId == host.TaskId {
 			supCli := newSupervisorCli(host.toHttpAddress())
 			var err error
 			if action == "Show" {
-				prog, err := supCli.show(cluster, job, host.taskId)
+				prog, err := supCli.show(cluster, job, host.TaskId)
 				taskResults = append(taskResults, NewTaskResult(host, prog, err))
 				continue
 			}
 			if action == "Start" {
-				err = supCli.start(cluster, job, host.taskId)
+				err = supCli.start(cluster, job, host.TaskId)
 			} else if action == "Stop" {
-				err = supCli.stop(cluster, job, host.taskId)
+				err = supCli.stop(cluster, job, host.TaskId)
 			} else if action == "Restart" {
-				err = supCli.restart(cluster, job, host.taskId)
+				err = supCli.restart(cluster, job, host.TaskId)
 			} else if action == "Cleanup" {
-				err = supCli.cleanup(cluster, job, host.taskId)
+				err = supCli.cleanup(cluster, job, host.TaskId)
 			} else {
 				return nil, fmt.Errorf("Unexpected action: %s", action)
 			}

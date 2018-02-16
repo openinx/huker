@@ -1,6 +1,7 @@
 base: {{.ConfRootDir}}/yarn/common/common.yaml
 
 cluster:
+  project: yarn
   cluster_name: test-yarn
   main_process: java
   package_name: hadoop-2.6.5.tar.gz

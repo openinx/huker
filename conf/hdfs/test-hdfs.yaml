@@ -1,6 +1,7 @@
 base: {{.ConfRootDir}}/hdfs/common/noha-common.yaml
 
 cluster:
+  project: hdfs
   cluster_name: test-hdfs
   main_process: java
   package_name: hadoop-2.6.5.tar.gz

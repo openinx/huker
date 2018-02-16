@@ -140,13 +140,13 @@ func TestHukerJobList(t *testing.T) {
 		t.Fatalf("Cluster size should be %d", 1)
 	}
 	c := clusters[0]
-	if c.clusterName != "py_test" {
-		t.Fatalf("cluster name mismatch, %s != %s", c.clusterName, "py_test")
+	if c.ClusterName != "py_test" {
+		t.Fatalf("cluster name mismatch, %s != %s", c.ClusterName, "py_test")
 	}
-	if len(c.jobs) != 2 {
-		t.Fatalf("Jobs of cluster should be %d, instead of %d", 2, len(c.jobs))
+	if len(c.Jobs) != 2 {
+		t.Fatalf("Jobs of cluster should be %d, instead of %d", 2, len(c.Jobs))
 	}
-	for key := range c.jobs {
+	for key := range c.Jobs {
 		if key != "httpserver" && key != "shell" {
 			t.Fatalf("Job name of cluster shoud be %s or %s", "httpserver", "shell")
 		}

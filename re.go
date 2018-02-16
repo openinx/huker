@@ -24,7 +24,7 @@ type matchFunc func(c *Cluster, input string) (string, error)
 // format %{cluster.name}
 func match0(c *Cluster, input string) (string, error) {
 	re := regexp.MustCompile(patternClusterName)
-	return re.ReplaceAllString(input, c.clusterName), nil
+	return re.ReplaceAllString(input, c.ClusterName), nil
 }
 
 // format %{namenode.0.host}
@@ -35,19 +35,19 @@ func match1(c *Cluster, input string) (string, error) {
 		match = match[1:]
 		jobName, taskIdStr, key := match[0], match[1], match[2]
 		matchPatten := fmt.Sprintf("%%{%s.%s.%s}", jobName, taskIdStr, key)
-		if _, ok := c.jobs[jobName]; !ok {
+		if _, ok := c.Jobs[jobName]; !ok {
 			return "", fmt.Errorf("Invalid job name. %s", matchPatten)
 		}
 		taskId, err := strconv.Atoi(taskIdStr)
 		if err != nil {
 			return "", fmt.Errorf("TaskId shoud be integer. %s", matchPatten)
 		}
-		job := c.jobs[jobName]
+		job := c.Jobs[jobName]
 		host, ok := job.GetHost(taskId)
 		if !ok {
 			return "", fmt.Errorf("Task not found. %s", matchPatten)
 		}
-		if val, ok := host.attributes[key]; ok {
+		if val, ok := host.Attributes[key]; ok {
 			input = strings.Replace(input, matchPatten, val, 1)
 		} else {
 			return "", fmt.Errorf("Attribute %s not exist. %s", key, matchPatten)
@@ -64,19 +64,19 @@ func match2(c *Cluster, input string) (string, error) {
 		match = match[1:]
 		jobName, taskIdStr, key, incrStr := match[0], match[1], match[2], match[3]
 		matchPatten := fmt.Sprintf("%%{%s.%s.%s+%s}", jobName, taskIdStr, key, incrStr)
-		if _, ok := c.jobs[jobName]; !ok {
+		if _, ok := c.Jobs[jobName]; !ok {
 			return "", fmt.Errorf("Invalid job name. %s", matchPatten)
 		}
 		taskId, err := strconv.Atoi(taskIdStr)
 		if err != nil {
 			return "", fmt.Errorf("TaskId shoud be integer, %s", matchPatten)
 		}
-		job := c.jobs[jobName]
+		job := c.Jobs[jobName]
 		host, ok := job.GetHost(taskId)
 		if !ok {
 			return "", fmt.Errorf("Task not found. %s", matchPatten)
 		}
-		if val, ok := host.attributes[key]; ok {
+		if val, ok := host.Attributes[key]; ok {
 			incr, _ := strconv.Atoi(incrStr)
 			valInt, err := strconv.Atoi(val)
 			if err != nil {
@@ -99,17 +99,17 @@ func match3(c *Cluster, input string) (string, error) {
 		clusterIndexStr, jobName := match[0], match[1]
 		matchPattern := fmt.Sprintf("%%{dependencies.%s.%s.server_list}", clusterIndexStr, jobName)
 		clusterIndex, _ := strconv.Atoi(clusterIndexStr)
-		if clusterIndex >= len(c.dependencies) {
+		if clusterIndex >= len(c.Dependencies) {
 			return "", fmt.Errorf("Cluster index exceeded. %s", matchPattern)
 		}
-		dep := c.dependencies[clusterIndex]
-		job, ok := dep.jobs[jobName]
+		dep := c.Dependencies[clusterIndex]
+		job, ok := dep.Jobs[jobName]
 		if !ok {
-			return "", fmt.Errorf("Job %s does not exist in cluster: %s", jobName, dep.clusterName)
+			return "", fmt.Errorf("Job %s does not exist in cluster: %s", jobName, dep.ClusterName)
 		}
 		var buf []string
-		for _, host := range job.hosts {
-			buf = append(buf, fmt.Sprintf("%s:%d", host.hostname, host.basePort))
+		for _, host := range job.Hosts {
+			buf = append(buf, fmt.Sprintf("%s:%d", host.Hostname, host.BasePort))
 		}
 		input = strings.Replace(input, matchPattern, strings.Join(buf, ","), 1)
 	}
@@ -124,13 +124,13 @@ func match4(c *Cluster, input string) (string, error) {
 		match = match[1:]
 		jobName := match[0]
 		matchPattern := fmt.Sprintf("%%{%s.server_list}", jobName)
-		job, ok := c.jobs[jobName]
+		job, ok := c.Jobs[jobName]
 		if !ok {
-			return "", fmt.Errorf("Job %s does not exist in cluster: %s", jobName, c.clusterName)
+			return "", fmt.Errorf("Job %s does not exist in cluster: %s", jobName, c.ClusterName)
 		}
 		var buf []string
-		for _, host := range job.hosts {
-			buf = append(buf, fmt.Sprintf("%s:%d", host.hostname, host.basePort))
+		for _, host := range job.Hosts {
+			buf = append(buf, fmt.Sprintf("%s:%d", host.Hostname, host.BasePort))
 		}
 		input = strings.Replace(input, matchPattern, strings.Join(buf, ","), 1)
 	}
@@ -148,15 +148,15 @@ func match5(c *Cluster, taskId int, input string) (string, error) {
 		match = match[1:]
 		jobName, key := match[0], match[1]
 		matchPatten := fmt.Sprintf("%%{%s.x.%s}", jobName, key)
-		if _, ok := c.jobs[jobName]; !ok {
+		if _, ok := c.Jobs[jobName]; !ok {
 			return "", fmt.Errorf("Invalid job name. %s", matchPatten)
 		}
-		job := c.jobs[jobName]
+		job := c.Jobs[jobName]
 		host, ok := job.GetHost(taskId)
 		if !ok {
 			return "", fmt.Errorf("Task not found. %s", matchPatten)
 		}
-		if val, ok := host.attributes[key]; ok {
+		if val, ok := host.Attributes[key]; ok {
 			input = strings.Replace(input, matchPatten, val, 1)
 		} else {
 			return "", fmt.Errorf("Attribute %s not exist. %s", key, matchPatten)
@@ -174,15 +174,15 @@ func match6(c *Cluster, taskId int, input string) (string, error) {
 		match = match[1:]
 		jobName, key, incrStr := match[0], match[1], match[2]
 		matchPatten := fmt.Sprintf("%%{%s.x.%s+%s}", jobName, key, incrStr)
-		if _, ok := c.jobs[jobName]; !ok {
+		if _, ok := c.Jobs[jobName]; !ok {
 			return "", fmt.Errorf("Invalid job name. %s", matchPatten)
 		}
-		job := c.jobs[jobName]
+		job := c.Jobs[jobName]
 		host, ok := job.GetHost(taskId)
 		if !ok {
 			return "", fmt.Errorf("Task not found. %s", matchPatten)
 		}
-		if val, ok := host.attributes[key]; ok {
+		if val, ok := host.Attributes[key]; ok {
 			incr, _ := strconv.Atoi(incrStr)
 			valInt, err := strconv.Atoi(val)
 			if err != nil {
@@ -205,13 +205,13 @@ func match7(c *Cluster, input string) (string, error) {
 		clusterIndexStr, jobName, taskIdStr, key := match[0], match[1], match[2], match[3]
 		matchPattern := fmt.Sprintf("%%{dependencies.%s.%s.%s.%s}", clusterIndexStr, jobName, taskIdStr, key)
 		clusterIndex, _ := strconv.Atoi(clusterIndexStr)
-		if clusterIndex >= len(c.dependencies) {
+		if clusterIndex >= len(c.Dependencies) {
 			return "", fmt.Errorf("Cluster index exceeded. %s", matchPattern)
 		}
-		dep := c.dependencies[clusterIndex]
-		job, ok := dep.jobs[jobName]
+		dep := c.Dependencies[clusterIndex]
+		job, ok := dep.Jobs[jobName]
 		if !ok {
-			return "", fmt.Errorf("Job %s does not exist in cluster: %s", jobName, dep.clusterName)
+			return "", fmt.Errorf("Job %s does not exist in cluster: %s", jobName, dep.ClusterName)
 		}
 		taskId, err := strconv.Atoi(taskIdStr)
 		if err != nil {
@@ -219,9 +219,9 @@ func match7(c *Cluster, input string) (string, error) {
 		}
 		host, ok := job.GetHost(taskId)
 		if !ok {
-			return "", fmt.Errorf("Task not found. %s", matchPattern)
+			return "", fmt.Errorf("Task not found. %s, taskId: %d, job: %v", matchPattern, taskId, job)
 		}
-		if val, ok := host.attributes[key]; ok {
+		if val, ok := host.Attributes[key]; ok {
 			input = strings.Replace(input, matchPattern, val, 1)
 		} else {
 			return "", fmt.Errorf("Attribute %s not exist. %s", key, matchPattern)
@@ -239,13 +239,13 @@ func match8(c *Cluster, input string) (string, error) {
 		clusterIndexStr, jobName, taskIdStr, key, incrStr := match[0], match[1], match[2], match[3], match[4]
 		matchPattern := fmt.Sprintf("%%{dependencies.%s.%s.%s.%s+%s}", clusterIndexStr, jobName, taskIdStr, key, incrStr)
 		clusterIndex, _ := strconv.Atoi(clusterIndexStr)
-		if clusterIndex >= len(c.dependencies) {
+		if clusterIndex >= len(c.Dependencies) {
 			return "", fmt.Errorf("Cluster index exceeded. %s", matchPattern)
 		}
-		dep := c.dependencies[clusterIndex]
-		job, ok := dep.jobs[jobName]
+		dep := c.Dependencies[clusterIndex]
+		job, ok := dep.Jobs[jobName]
 		if !ok {
-			return "", fmt.Errorf("Job %s does not exist in cluster: %s", jobName, dep.clusterName)
+			return "", fmt.Errorf("Job %s does not exist in cluster: %s", jobName, dep.ClusterName)
 		}
 		taskId, err := strconv.Atoi(taskIdStr)
 		if err != nil {
@@ -255,7 +255,7 @@ func match8(c *Cluster, input string) (string, error) {
 		if !ok {
 			return "", fmt.Errorf("Task not found. %s", matchPattern)
 		}
-		if val, ok := host.attributes[key]; ok {
+		if val, ok := host.Attributes[key]; ok {
 			incr, _ := strconv.Atoi(incrStr)
 			valInt, err := strconv.Atoi(val)
 			if err != nil {

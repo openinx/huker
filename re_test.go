@@ -41,38 +41,38 @@ func TestRender(t *testing.T) {
 	host0, _ := NewHost("www.example.com:9001/base_port=7001/id=0")
 	host1, _ := NewHost("www.example.com:9001/base_port=8001/id=1")
 	root := &Cluster{
-		clusterName: "root",
-		jobs: map[string]*Job{
+		ClusterName: "root",
+		Jobs: map[string]*Job{
 			"test_job": {
-				jobName:       "test_job",
-				superJob:      "test_super_job",
-				hosts:         []*Host{host0, host1},
-				jvmOpts:       []string{},
-				jvmProperties: []string{},
-				classpath:     []string{},
-				mainEntry:     &MainEntry{},
-				configFiles:   make(map[string]ConfigFile),
-				hooks:         make(map[string]string),
+				JobName:       "test_job",
+				SuperJob:      "test_super_job",
+				Hosts:         []*Host{host0, host1},
+				JvmOpts:       []string{},
+				JvmProperties: []string{},
+				Classpath:     []string{},
+				MainEntry:     &MainEntry{},
+				ConfigFiles:   make(map[string]ConfigFile),
+				Hooks:         make(map[string]string),
 			},
 		},
-		dependencies: []*Cluster{},
+		Dependencies: []*Cluster{},
 	}
 	c := &Cluster{
-		clusterName: "test",
-		jobs: map[string]*Job{
+		ClusterName: "test",
+		Jobs: map[string]*Job{
 			"test_job": {
-				jobName:       "test_job",
-				superJob:      "test_super_job",
-				hosts:         []*Host{host0, host1},
-				jvmOpts:       []string{},
-				jvmProperties: []string{},
-				classpath:     []string{},
-				mainEntry:     &MainEntry{},
-				configFiles:   make(map[string]ConfigFile),
-				hooks:         make(map[string]string),
+				JobName:       "test_job",
+				SuperJob:      "test_super_job",
+				Hosts:         []*Host{host0, host1},
+				JvmOpts:       []string{},
+				JvmProperties: []string{},
+				Classpath:     []string{},
+				MainEntry:     &MainEntry{},
+				ConfigFiles:   make(map[string]ConfigFile),
+				Hooks:         make(map[string]string),
 			},
 		},
-		dependencies: []*Cluster{root},
+		Dependencies: []*Cluster{root},
 	}
 	var testCases = []struct {
 		input   string

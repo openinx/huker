@@ -1,6 +1,7 @@
 base: {{.ConfRootDir}}/hbase/common/common.yaml
 
 cluster:
+  project: hbase
   cluster_name: test-hbase
   main_process: java
   package_name: hbase-1.2.6-bin.tar.gz

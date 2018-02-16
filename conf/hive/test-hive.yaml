@@ -1,6 +1,7 @@
 base: {{.ConfRootDir}}/hive/common/common.yaml
 
 cluster:
+  project: hive
   cluster_name: test-hive
   main_process: java
   package_name: apache-hive-2.3.2-bin.tar.gz

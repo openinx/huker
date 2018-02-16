@@ -10,9 +10,9 @@ import (
 // The abstract functions for configuration file.
 type ConfigFile interface {
 	mergeWith(c ConfigFile) ConfigFile
-	toString() string
-	toKeyValue() map[string]string
-	getConfigName() string
+	ToString() string
+	ToKeyValue() map[string]string
+	GetConfigName() string
 }
 
 // Configuration file with .ini, .properties
@@ -30,8 +30,8 @@ func NewINIConfigFile(cfgName string, keyValues []string) INIConfigFile {
 }
 
 func (c INIConfigFile) mergeWith(other ConfigFile) ConfigFile {
-	cMap := c.toKeyValue()
-	oMap := other.toKeyValue()
+	cMap := c.ToKeyValue()
+	oMap := other.ToKeyValue()
 	// If key exist in both cMap and oMap, then use value of cMap.
 	for key, val := range cMap {
 		oMap[key] = val
@@ -45,11 +45,11 @@ func (c INIConfigFile) mergeWith(other ConfigFile) ConfigFile {
 	return c
 }
 
-func (c INIConfigFile) toString() string {
+func (c INIConfigFile) ToString() string {
 	return strings.Join(c.keyValues, "\n")
 }
 
-func (c INIConfigFile) toKeyValue() map[string]string {
+func (c INIConfigFile) ToKeyValue() map[string]string {
 	ret := make(map[string]string)
 	for i := range c.keyValues {
 		parts := strings.SplitN(c.keyValues[i], "=", 2)
@@ -61,7 +61,7 @@ func (c INIConfigFile) toKeyValue() map[string]string {
 	return ret
 }
 
-func (c INIConfigFile) getConfigName() string {
+func (c INIConfigFile) GetConfigName() string {
 	return c.cfgName
 }
 
@@ -80,8 +80,8 @@ func NewXMLConfigFile(cfgName string, keyValues []string) XMLConfigFile {
 }
 
 func (c XMLConfigFile) mergeWith(other ConfigFile) ConfigFile {
-	cMap := c.toKeyValue()
-	oMap := other.toKeyValue()
+	cMap := c.ToKeyValue()
+	oMap := other.ToKeyValue()
 	// If key exist in both cMap and oMap, the use value of cMap.
 	for key, val := range cMap {
 		oMap[key] = val
@@ -95,11 +95,11 @@ func (c XMLConfigFile) mergeWith(other ConfigFile) ConfigFile {
 	return c
 }
 
-func (c XMLConfigFile) toString() string {
+func (c XMLConfigFile) ToString() string {
 	var buf []string
 	buf = append(buf, "<configuration>")
 
-	kvMap := c.toKeyValue()
+	kvMap := c.ToKeyValue()
 	for key := range kvMap {
 		buf = append(buf, "  <property>")
 		buf = append(buf, fmt.Sprintf("    <name>%s</name>", key))
@@ -111,7 +111,7 @@ func (c XMLConfigFile) toString() string {
 	return strings.Join(buf, "\n")
 }
 
-func (c XMLConfigFile) toKeyValue() map[string]string {
+func (c XMLConfigFile) ToKeyValue() map[string]string {
 	ret := make(map[string]string)
 	for i := range c.keyValues {
 		parts := strings.SplitN(c.keyValues[i], "=", 2)
@@ -123,7 +123,7 @@ func (c XMLConfigFile) toKeyValue() map[string]string {
 	return ret
 }
 
-func (c XMLConfigFile) getConfigName() string {
+func (c XMLConfigFile) GetConfigName() string {
 	return c.cfgName
 }
 
@@ -142,13 +142,13 @@ func NewPlainConfigFile(cfgName string, lines []string) PlainConfigFile {
 }
 
 func (c PlainConfigFile) mergeWith(other ConfigFile) ConfigFile {
-	for _, line := range other.toKeyValue() {
+	for _, line := range other.ToKeyValue() {
 		c.lines = append(c.lines, line)
 	}
 	return c
 }
 
-func (c PlainConfigFile) toString() string {
+func (c PlainConfigFile) ToString() string {
 	var buf []string
 	for _, line := range c.lines {
 		buf = append(buf, line)
@@ -156,7 +156,7 @@ func (c PlainConfigFile) toString() string {
 	return strings.Join(buf, "\n")
 }
 
-func (c PlainConfigFile) toKeyValue() map[string]string {
+func (c PlainConfigFile) ToKeyValue() map[string]string {
 	ret := make(map[string]string)
 	for i, line := range c.lines {
 		ret[strconv.Itoa(i)] = line
@@ -164,7 +164,7 @@ func (c PlainConfigFile) toKeyValue() map[string]string {
 	return ret
 }
 
-func (c PlainConfigFile) getConfigName() string {
+func (c PlainConfigFile) GetConfigName() string {
 	return c.cfgName
 }
 

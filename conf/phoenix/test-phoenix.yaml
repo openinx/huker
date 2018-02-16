@@ -1,6 +1,7 @@
 base: {{.ConfRootDir}}/phoenix/common/common.yaml
 
 cluster:
+  project: phoenix
   cluster_name: test-phoenix
   main_process: java
   package_name: apache-phoenix-4.13.1-HBase-1.2-bin.tar.gz
