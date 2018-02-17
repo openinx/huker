@@ -119,7 +119,7 @@ func NewHost(hostKey string) (*Host, error) {
 	return host, nil
 }
 
-func (h *Host) toHttpAddress() string {
+func (h *Host) ToHttpAddress() string {
 	return fmt.Sprintf("http://%s:%d", h.Hostname, h.SupervisorPort)
 }
 

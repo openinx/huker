@@ -95,7 +95,7 @@ func (cfg *ConfigFileHukerJob) newCluster(project, cluster, job string) (*Cluste
 	return c, nil
 }
 
-type updateFunc func(*Job, *Host, *supervisorCli, *Program) error
+type updateFunc func(*Job, *Host, *SupervisorCli, *Program) error
 
 func (j *ConfigFileHukerJob) updateJob(project, cluster, job string, taskId int, update updateFunc) ([]TaskResult, error) {
 	c, err := j.newCluster(project, cluster, job)
@@ -113,7 +113,7 @@ func (j *ConfigFileHukerJob) updateJob(project, cluster, job string, taskId int,
 					project, cluster, job, host.TaskId)
 				return nil, err
 			}
-			superClient := newSupervisorCli(host.toHttpAddress())
+			superClient := NewSupervisorCli(host.ToHttpAddress())
 			prog := &Program{
 				Name:       c.ClusterName,
 				Job:        job,
@@ -219,8 +219,8 @@ func (j *ConfigFileHukerJob) Shell(project, cluster, job string, extraArgs []str
 
 func (j *ConfigFileHukerJob) Bootstrap(project, cluster, job string, taskId int) ([]TaskResult, error) {
 	return j.updateJob(project, cluster, job, taskId,
-		func(jobPtr *Job, host *Host, s *supervisorCli, prog *Program) error {
-			return s.bootstrap(prog)
+		func(jobPtr *Job, host *Host, s *SupervisorCli, prog *Program) error {
+			return s.Bootstrap(prog)
 		})
 }
 
@@ -242,8 +242,8 @@ func (j *ConfigFileHukerJob) Restart(project, cluster, job string, taskId int) (
 
 func (j *ConfigFileHukerJob) RollingUpdate(project, cluster, job string, taskId int) ([]TaskResult, error) {
 	return j.updateJob(project, cluster, job, taskId,
-		func(jobPtr *Job, host *Host, s *supervisorCli, prog *Program) error {
-			return s.rollingUpdate(prog)
+		func(jobPtr *Job, host *Host, s *SupervisorCli, prog *Program) error {
+			return s.RollingUpdate(prog)
 		})
 }
 
@@ -260,21 +260,21 @@ func (j *ConfigFileHukerJob) lookupJob(project, cluster, job string, taskId int,
 	var taskResults []TaskResult
 	for _, host := range jobPtr.Hosts {
 		if taskId < 0 || taskId == host.TaskId {
-			supCli := newSupervisorCli(host.toHttpAddress())
+			supCli := NewSupervisorCli(host.ToHttpAddress())
 			var err error
 			if action == "Show" {
-				prog, err := supCli.show(cluster, job, host.TaskId)
+				prog, err := supCli.Show(cluster, job, host.TaskId)
 				taskResults = append(taskResults, NewTaskResult(host, prog, err))
 				continue
 			}
 			if action == "Start" {
-				err = supCli.start(cluster, job, host.TaskId)
+				err = supCli.Start(cluster, job, host.TaskId)
 			} else if action == "Stop" {
-				err = supCli.stop(cluster, job, host.TaskId)
+				err = supCli.Stop(cluster, job, host.TaskId)
 			} else if action == "Restart" {
-				err = supCli.restart(cluster, job, host.TaskId)
+				err = supCli.Restart(cluster, job, host.TaskId)
 			} else if action == "Cleanup" {
-				err = supCli.cleanup(cluster, job, host.TaskId)
+				err = supCli.Cleanup(cluster, job, host.TaskId)
 			} else {
 				return nil, fmt.Errorf("Unexpected action: %s", action)
 			}

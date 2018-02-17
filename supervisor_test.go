@@ -21,7 +21,7 @@ const (
 type MiniHuker struct {
 	supervisorSize int
 	supervisor     []*Supervisor
-	superClient    []*supervisorCli
+	superClient    []*SupervisorCli
 	pkgServer      *PackageServer
 	wg             *sync.WaitGroup
 }
@@ -37,7 +37,7 @@ func NewMiniHuker(supervisorSize int) *MiniHuker {
 		panic(err)
 	}
 	var supervisors []*Supervisor
-	var superClients []*supervisorCli
+	var superClients []*SupervisorCli
 	for i := 0; i < supervisorSize; i++ {
 		supervisor, err := NewSupervisor(agentRootDir, TEST_AGENT_PORT+i, agentRootDir+"/supervisor.db"+strconv.Itoa(i))
 		if err != nil {
@@ -45,7 +45,7 @@ func NewMiniHuker(supervisorSize int) *MiniHuker {
 		}
 		supervisors = append(supervisors, supervisor)
 
-		superClient := &supervisorCli{
+		superClient := &SupervisorCli{
 			serverAddr: fmt.Sprintf("http://127.0.0.1:%d", TEST_AGENT_PORT+i),
 		}
 		superClients = append(superClients, superClient)
@@ -129,11 +129,11 @@ func TestMiniHuker(t *testing.T) {
 	defer m.Stop()
 
 	prog := NewProgram()
-	if err := m.superClient[0].bootstrap(prog); err != nil {
+	if err := m.superClient[0].Bootstrap(prog); err != nil {
 		t.Fatalf("bootstrap failed: %v", err)
 	}
 
-	if p, err := m.superClient[0].show(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if p, err := m.superClient[0].Show(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("show process failed: %v", err)
 	} else if p.Status != StatusRunning {
 		t.Fatalf("process is not running, cause: %v", err)
@@ -141,25 +141,25 @@ func TestMiniHuker(t *testing.T) {
 		t.Fatalf("root directory of program mismatch. rootDir: %s", p.RootDir)
 	}
 
-	if err := m.superClient[0].stop(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient[0].Stop(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("stop process failed: %v", err)
 	}
 
-	if err := m.superClient[0].restart(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient[0].Restart(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("restart process failed: %v", err)
 	}
 
-	if p, err := m.superClient[0].show(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if p, err := m.superClient[0].Show(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("show process failed: %v", err)
 	} else if p.Status != StatusRunning {
 		t.Fatalf("process is not running, cause: %v", err)
 	}
 
-	if err := m.superClient[0].stop(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient[0].Stop(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("stop process failed: %v", err)
 	}
 
-	if err := m.superClient[0].cleanup(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient[0].Cleanup(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("cleanup program failed: %v", err)
 	}
 }
@@ -171,7 +171,7 @@ func TestRollingUpdate(t *testing.T) {
 	defer m.Stop()
 
 	prog := NewProgram()
-	if err := m.superClient[0].bootstrap(prog); err != nil {
+	if err := m.superClient[0].Bootstrap(prog); err != nil {
 		t.Fatalf("bootstrap failed: %v", err)
 	}
 
@@ -186,10 +186,10 @@ func TestRollingUpdate(t *testing.T) {
 	}
 	for _, cas := range configCases {
 		prog.Configs = cas
-		if err := m.superClient[0].rollingUpdate(prog); err != nil {
+		if err := m.superClient[0].RollingUpdate(prog); err != nil {
 			t.Fatalf("RollingUpdate failed [config case]: %v", err)
 		}
-		if p, err := m.superClient[0].show(prog.Name, prog.Job, prog.TaskId); err != nil {
+		if p, err := m.superClient[0].Show(prog.Name, prog.Job, prog.TaskId); err != nil {
 			t.Fatalf("Show process failed: %v", err)
 		} else if !reflect.DeepEqual(cas, p.Configs) {
 			t.Errorf("Config files mismatch %v != %v", cas, p.Configs)
@@ -202,10 +202,10 @@ func TestRollingUpdate(t *testing.T) {
 	}
 	for _, cas := range pkgCases {
 		prog.PkgAddress, prog.PkgName, prog.PkgMD5Sum = cas[0], cas[1], cas[2]
-		if err := m.superClient[0].rollingUpdate(prog); err != nil {
+		if err := m.superClient[0].RollingUpdate(prog); err != nil {
 			t.Fatalf("RollingUpdate failed [package case]: %v", err)
 		}
-		if p, err := m.superClient[0].show(prog.Name, prog.Job, prog.TaskId); err != nil {
+		if p, err := m.superClient[0].Show(prog.Name, prog.Job, prog.TaskId); err != nil {
 			t.Fatalf("Show process failed: %v", err)
 		} else if !reflect.DeepEqual(p.Configs, p.Configs) {
 			t.Errorf("Config files mismatch %v != %v", p.Configs, prog.Configs)
@@ -218,7 +218,7 @@ func TestRollingUpdate(t *testing.T) {
 		}
 	}
 
-	if err := m.superClient[0].stop(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient[0].Stop(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("Stop process failed: %v", err)
 	}
 }
@@ -248,26 +248,26 @@ func TestHooks(t *testing.T) {
 		prog.Hooks[hookName] = fmt.Sprintf(hookScript, hookName)
 	}
 
-	if err := m.superClient[0].bootstrap(prog); err != nil {
+	if err := m.superClient[0].Bootstrap(prog); err != nil {
 		t.Fatalf("%v", err)
 	}
-	if err := m.superClient[0].stop(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient[0].Stop(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("%v", err)
 	}
-	if err := m.superClient[0].start(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient[0].Start(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("%v", err)
 	}
-	if err := m.superClient[0].restart(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient[0].Restart(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("%v", err)
 	}
 	// Config change for rolling update
 	prog.Configs = map[string]string{
 		"a": "b", "c": "d", "e": "f",
 	}
-	if err := m.superClient[0].rollingUpdate(prog); err != nil {
+	if err := m.superClient[0].RollingUpdate(prog); err != nil {
 		t.Fatalf("%v", err)
 	}
-	if err := m.superClient[0].stop(prog.Name, prog.Job, prog.TaskId); err != nil {
+	if err := m.superClient[0].Stop(prog.Name, prog.Job, prog.TaskId); err != nil {
 		t.Fatalf("%v", err)
 	}
 
@@ -281,5 +281,68 @@ func TestHooks(t *testing.T) {
 		if expected != string(data) {
 			t.Errorf("test hook file content mismatch: [%q] != [%q]", expected, string(data))
 		}
+	}
+}
+
+func TestListTasks(t *testing.T) {
+	m := NewMiniHuker(1)
+	m.Start()
+	defer m.Stop()
+
+	prog := NewProgram()
+	if err := m.superClient[0].Bootstrap(prog); err != nil {
+		t.Fatalf("%v", err)
+	}
+	programs, err := m.superClient[0].ListTasks()
+	if err != nil {
+		t.Fatalf("List task failed: %v", err)
+	}
+	if len(programs) != 1 {
+		t.Fatalf("Size of programs should be 1")
+	}
+	newProg, err := m.superClient[0].GetTask(prog.Name, prog.Job, prog.TaskId)
+	if err != nil {
+		t.Fatalf("Get task failed: %v", err)
+	}
+	if newProg.Name != prog.Name {
+		t.Fatalf("Name mismatch, %s != %s", newProg.Name, prog.Name)
+	}
+	if newProg.Job != prog.Job {
+		t.Fatalf("Job mismatch, %s != %s", newProg.Job, prog.Job)
+	}
+	if newProg.TaskId != prog.TaskId {
+		t.Fatalf("TaskId mismatch, %d != %d", newProg.TaskId, prog.TaskId)
+	}
+	if newProg.Bin != prog.Bin {
+		t.Fatalf("Bin mismatch, %s != %s", newProg.Bin, prog.Bin)
+	}
+	if !reflect.DeepEqual(newProg.Args, prog.Args) {
+		t.Fatalf("Args mismatch, %v != %v", newProg.Args, prog.Args)
+	}
+	if !reflect.DeepEqual(newProg.Configs, prog.Configs) {
+		t.Fatalf("Configs mismatch, %v != %v", newProg.Configs, prog.Configs)
+
+	}
+	if newProg.PkgAddress != prog.PkgAddress {
+		t.Fatalf("PkgAddress mismatch, %s != %s", newProg.PkgAddress, prog.PkgAddress)
+	}
+	if newProg.PkgName != prog.PkgName {
+		t.Fatalf("PkgName mismatch, %s != %s", newProg.PkgName, prog.PkgName)
+	}
+	if newProg.PkgMD5Sum != prog.PkgMD5Sum {
+		t.Fatalf("PkgMD5Sum mismatch, %s != %s", newProg.PkgMD5Sum, prog.PkgMD5Sum)
+	}
+	if newProg.Status != StatusRunning {
+		t.Fatalf("Status mismatch, %s != %s", newProg.Status, StatusRunning)
+	}
+	if _, err := os.Stat(newProg.RootDir); err != nil {
+		t.Fatalf("Stat RootDir failed, %s, err: %v", newProg.RootDir, err)
+	}
+	if !reflect.DeepEqual(newProg.Hooks, prog.Hooks) {
+		t.Fatalf("Hooks mismatch, %v != %v", newProg.Hooks, prog.Hooks)
+	}
+	// Stop the job
+	if err := m.superClient[0].Stop(prog.Name, prog.Job, prog.TaskId); err != nil {
+		t.Fatalf("%v", err)
 	}
 }
