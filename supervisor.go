@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -37,6 +38,7 @@ type Supervisor struct {
 	quit          chan int
 	refreshTicker *time.Ticker
 	srv           *http.Server
+	taskMux       sync.Mutex
 }
 
 func (s *Supervisor) hIndex(w http.ResponseWriter, r *http.Request) {
@@ -95,6 +97,8 @@ func renderResp(err error) []byte {
 }
 
 func (s *Supervisor) hBootstrapProgram(w http.ResponseWriter, r *http.Request) {
+	s.taskMux.Lock()
+	defer s.taskMux.Unlock()
 	s.updateProgram(w, r, func(p *Program) error {
 		// Step.0 check the existence of program.
 		if _, ok := s.programs.get(p.Name, p.Job, p.TaskId); ok {
@@ -181,6 +185,8 @@ func (s *Supervisor) hShowProgram(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Supervisor) hStartProgram(w http.ResponseWriter, r *http.Request) {
+	s.taskMux.Lock()
+	defer s.taskMux.Unlock()
 	s.handleProgram(w, r, func(p *Program) error {
 		if err := p.ExecHooks("pre_start"); err != nil {
 			return err
@@ -194,6 +200,8 @@ func (s *Supervisor) hStartProgram(w http.ResponseWriter, r *http.Request) {
 
 // Be Careful: Forbidden to let user delete the root.
 func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
+	s.taskMux.Lock()
+	defer s.taskMux.Unlock()
 	name := mux.Vars(r)["name"]
 	job := mux.Vars(r)["job"]
 	taskId, _ := strconv.Atoi(mux.Vars(r)["taskId"])
@@ -253,6 +261,8 @@ func (s *Supervisor) hCleanupProgram(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Supervisor) hRollingUpdateProgram(w http.ResponseWriter, r *http.Request) {
+	s.taskMux.Lock()
+	defer s.taskMux.Unlock()
 	s.updateProgram(w, r, func(p *Program) error {
 		// Step.0 check the existence of program.
 		if curProg, ok := s.programs.get(p.Name, p.Job, p.TaskId); !ok {
@@ -278,6 +288,8 @@ func (s *Supervisor) hRollingUpdateProgram(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *Supervisor) hRestartProgram(w http.ResponseWriter, r *http.Request) {
+	s.taskMux.Lock()
+	defer s.taskMux.Unlock()
 	s.handleProgram(w, r, func(p *Program) error {
 		if err := p.ExecHooks("pre_restart"); err != nil {
 			return err
@@ -290,6 +302,8 @@ func (s *Supervisor) hRestartProgram(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Supervisor) hStopProgram(w http.ResponseWriter, r *http.Request) {
+	s.taskMux.Lock()
+	defer s.taskMux.Unlock()
 	s.handleProgram(w, r, func(p *Program) error {
 		if err := p.ExecHooks("pre_stop"); err != nil {
 			return err

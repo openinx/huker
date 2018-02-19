@@ -111,7 +111,7 @@ func NewProgram() *Program {
 		Job:    "http-server.4",
 		TaskId: 100,
 		Bin:    "python",
-		Args:   []string{"-m", "SimpleHTTPServer"},
+		Args:   []string{"-m", "SimpleHTTPServer", "8452"},
 		Configs: map[string]string{
 			"a": "b", "c": "d",
 		},
@@ -239,7 +239,7 @@ func TestHooks(t *testing.T) {
 	m.Start()
 	defer m.Stop()
 
-	expected := fmt.Sprintf("%s\npython\n-m SimpleHTTPServer\n%s/tst-py/http-server.4.100\ntst-py\nhttp-server.4\n100\n", m.supervisor[0].rootDir, m.supervisor[0].rootDir)
+	expected := fmt.Sprintf("%s\npython\n-m SimpleHTTPServer 8452\n%s/tst-py/http-server.4.100\ntst-py\nhttp-server.4\n100\n", m.supervisor[0].rootDir, m.supervisor[0].rootDir)
 
 	prog := NewProgram()
 	hookNames := []string{"pre_bootstrap", "post_bootstrap", "pre_start", "post_start",

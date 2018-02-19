@@ -32,8 +32,8 @@ func TestHost(t *testing.T) {
 			if err != nil {
 				t.Errorf("Case#%d failed, key: %s, err: %v", idx, testCases[idx].hostKey, err)
 			}
-			if cas.httpAddress != host.toHttpAddress() {
-				t.Errorf("Case#%d failed, %s != %s", idx, cas.httpAddress, host.toHttpAddress())
+			if cas.httpAddress != host.ToHttpAddress() {
+				t.Errorf("Case#%d failed, %s != %s", idx, cas.httpAddress, host.ToHttpAddress())
 			}
 			if cas.key != host.ToKey() {
 				t.Errorf("Case#%d failed, %s != %s", idx, cas.key, host.ToKey())
