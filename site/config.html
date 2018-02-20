@@ -1,0 +1,44 @@
+{{ define "Content" }}
+
+{{ $JobName := .Job }}
+{{ $TaskId := .TaskId }}
+{{ with .cluster }}
+<h5 class="page-header">
+    / <a href="/list/{{ .Project }}">{{ .Project }}</a> / <a href="/detail/{{ .Project }}/{{ .ClusterName }}">{{ .ClusterName }}</a> / {{ $JobName }} / {{ $TaskId }}
+</h5>
+{{ end }}
+
+
+<div>
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" role="tablist">
+        {{ range $configName, $configContent := .config }}
+        {{ if eq checkIsFirst 1 }}
+        <li role="presentation" class="active">
+        {{ else }}
+        <li role="presentation">
+        {{ end }}
+            <a href="#{{ transToId $configName }}" aria-controls="{{ transToId $configName }}" role="tab" data-toggle="tab">{{ $configName }}</a>
+        </li>
+        {{ end }}
+    </ul>
+    <br/>
+
+    <div class="tab-content">
+        {{ if eq reset 0 }}{{ end }}
+        {{ range $configName, $configContent := .config }}
+        <!--{{ $configContent }}-->
+        {{ if eq checkIsFirst 1 }}
+        <div role="tabpanel" class="tab-pane active" id="{{ transToId $configName }}">
+        {{ else }}
+        <div role="tabpanel" class="tab-pane" id="{{ transToId $configName }}">
+        {{ end }}
+            <textarea style="width: 800px;height: 800px" disabled>{{ $configContent }}</textarea>
+        </div>
+        {{ end }}
+    </div>
+    <br/>
+
+</div>
+
+{{ end }}

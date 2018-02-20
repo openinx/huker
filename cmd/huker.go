@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/openinx/huker"
+	"github.com/openinx/huker/pkg/dashboard"
 	"github.com/qiniu/log"
 	"os"
 	"path/filepath"
@@ -86,6 +87,8 @@ func printUsageAndExit() {
 	fmt.Println("    --dir,-d          Libaray directory of huker package manager for downloading package (default: ./lib)")
 	fmt.Println("    --port,-p         Port of http server to listen (default: 4000)")
 	fmt.Println("    --conf,-c         Configuration file of huker package manager (default: ./conf/pkg.yaml)")
+	fmt.Println("  start-dashboard     Start huker dashboard")
+	fmt.Println("    --port,-p         Port of huker dashboard to listen (default: 8001)")
 	os.Exit(1)
 }
 
@@ -225,6 +228,32 @@ func main() {
 			return
 		} else if err := pkgSrv.Start(); err != nil {
 			log.Stack(err)
+			return
+		}
+	} else if command == "start-dashboard" {
+		port := 8001
+		for ; index+1 < len(os.Args); index += 2 {
+			if os.Args[index] == "-p" || os.Args[index] == "--port" {
+				newPort, err := strconv.Atoi(os.Args[index+1])
+				if err != nil {
+					fmt.Printf("port shoud be int, not %s\n", os.Args[index+1])
+					printUsageAndExit()
+				}
+				port = newPort
+			} else {
+				fmt.Printf("Unexpected arguments: %v\n", os.Args[index:])
+				printUsageAndExit()
+			}
+		}
+		if index < len(os.Args) {
+			fmt.Printf("Unexpected arguments: %v\n", os.Args[index:])
+			printUsageAndExit()
+		}
+		if dashboard, err := pkg.NewDashboard(port); err != nil {
+			log.Error(err.Error())
+			return
+		} else if dashboard.Start(); err != nil {
+			log.Error(err.Error())
 			return
 		}
 	} else {

@@ -1,0 +1,85 @@
+{{ define "Content" }}
+
+{{ with .cluster }}
+<h5 class="page-header">/ <a href="/list/{{ .Project }}">{{ .Project }}</a> / <a href="/detail/{{ .Project }}/{{ .ClusterName }}">{{ .ClusterName }}</a></h5>
+<input value="{{ .Project }}" id="hiddenProject" type="hidden">
+<input value="{{ .ClusterName }}" id="hiddenCluster" type="hidden">
+{{ end }}
+
+<div class="btn-group">
+    <a href="javascript:void(0)" class="btn btn-success" role="button" id="bootstrapBtn">Boostrap</a>
+</div>
+<div class="btn-group">
+    <a href="javascript:void(0)" class="btn btn-success" role="button" id="startBtn">Start</a>
+</div>
+<div class="btn-group">
+    <a href="javascript:void(0)" class="btn btn-success" role="button" id="stopBtn">Stop</a>
+</div>
+<div class="btn-group">
+    <a href="javascript:void(0)" class="btn btn-success" role="button" id="restartBtn">Restart</a>
+</div>
+<div class="btn-group">
+    <a href="javascript:void(0)" class="btn btn-success" role="button" id="rollingUpdateBtn">RollingUpdate</a>
+</div>
+<div class="btn-group">
+    <a href="javascript:void(0)" class="btn btn-success" role="button" id="cleanupBtn">Cleanup</a>
+</div>
+<br/><br/>
+
+{{ with .cluster }}
+        {{ $localProject := .Project }}
+        {{ $localClusterName := .ClusterName }}
+        {{ range $key, $job := .Jobs }}
+            {{ with $job }}
+                {{ if not (eq .JobName "job_common") }}
+                <div class="panel panel-info">
+                    <!-- Default panel contents -->
+                    <div class="panel-heading">Job: {{ .JobName }}</div>
+                    <!-- Table -->
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th><input name="selectAll" type="checkbox" onClick="toggle(this,'{{ .JobName }}Checkbox')"></th>
+                            <th>Task Id</th>
+                            <th>Huker Agent</th>
+                            <th>Base Port</th>
+                            <th>Status</th>
+                            <th>Config Files</th>
+                            <th>Task Web Address</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{ $localJobName := .JobName }}
+                        {{ range .Hosts }}
+                            <tr>
+                                <td><input type="checkbox" name="{{ $localJobName }}Checkbox" value="{{ $localJobName }}"></td>
+                                <td>{{ .TaskId }}</td>
+                                <td><a href="http://{{ .Hostname }}:{{ .SupervisorPort }}">{{ .Hostname }}:{{ .SupervisorPort }}</a>
+                                </td>
+                                <td>{{ .BasePort }}</td>
+                                {{ with .Attributes}}
+                                    {{ if eq .status "Running"}}
+                                        <td><span class="label label-success" >Running</span></td>
+                                    {{ else if eq .status "NotBootstrap" }}
+                                        <td><span class="label label-default">NotBootstrap</span></td>
+                                    {{ else if eq .status "Unknown" }}
+                                        <td><span class="label label-warning">Unknown</span></td>
+                                    {{ else if eq .status "Stopped" }}
+                                        <td><span class="label label-danger">Stopped</span></td>
+                                    {{ else }}
+                                        <td><span class="label label-warning">{{ .status }}</span></td>
+                                    {{ end }}
+                                {{ end }}
+                                <td><a href="/config/{{ $localProject }}/{{ $localClusterName }}/{{ $localJobName }}/{{ .TaskId }}">view</a></td>
+                                <td><a href="http://{{ .Hostname }}:{{ inc .BasePort }}">http://{{ .Hostname }}:{{ inc .BasePort }}</a></td>
+                            </tr>
+                        {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+                {{ end }}
+            {{ end }}
+        {{ end }}
+{{ end }}
+
+{{ end }}

@@ -1,0 +1,32 @@
+{{ define "Content" }}
+
+<h5 class="page-header">/ <a href="/list/{{ .project }}">{{ .project }}</a></h5>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Cluster</th>
+            <th>Package Name</th>
+            <th>Package Md5sum</th>
+            <th>Dependencies</th>
+        </tr>
+        </thead>
+
+        {{ range .clusters }}
+        <tbody>
+        <tr>
+            <td><a href="/detail/{{ .Project }}/{{ .ClusterName }}">{{ .ClusterName }}</a></td>
+            <td>{{ .PackageName }}</td>
+            <td>{{ .PackageMd5sum }}</td>
+            <td>
+                {{ range .Dependencies }}
+                <a href="/detail/{{ .Project }}/{{ .ClusterName }}">{{ .ClusterName }}</a>&nbsp;
+                {{ end }}
+            </td>
+        </tr>
+        </tbody>
+        {{ end }}
+    </table>
+</div>
+{{ end }}

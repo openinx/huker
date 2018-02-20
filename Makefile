@@ -17,7 +17,7 @@ travis-test: test
 release: build
 	@rm -rf release
 	@mkdir -p release/$(HUKER_VERSION)
-	@cp -R bin conf ansible release/$(HUKER_VERSION)
+	@cp -R bin conf ansible site release/$(HUKER_VERSION)
 	@cd release; tar czvf $(HUKER_VERSION).tar.gz $(HUKER_VERSION) >/dev/null 2>&1
 	@echo "Huker release package: release/$(HUKER_VERSION).tar.gz"
 
