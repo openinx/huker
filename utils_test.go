@@ -17,13 +17,11 @@ func TestReadEnvStrValue(t *testing.T) {
 	os.Setenv("hello", "world")
 	os.Setenv("intEnv", strconv.Itoa(100))
 
-	type StrNode struct {
+	case1 := []struct {
 		key          string
 		defaultValue string
 		getValue     string
-	}
-
-	case1 := []StrNode{
+	}{
 		{"hello", "world0", "world"},
 		{"hello", "world", "world"},
 		{"foo", "bar", "bar"},
@@ -38,13 +36,11 @@ func TestReadEnvStrValue(t *testing.T) {
 		}
 	}
 
-	type IntNode struct {
+	case2 := []struct {
 		key          string
 		defaultValue int
 		getValue     int
-	}
-
-	case2 := []IntNode{
+	}{
 		{"hello", 9000, 9000},
 		{"hello0", 234, 234},
 		{"intEnv", 9001, 100},

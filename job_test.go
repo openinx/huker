@@ -3,14 +3,12 @@ package huker
 import "testing"
 
 func TestHost(t *testing.T) {
-	type TestCase struct {
+	testCases := []struct {
 		hostKey     string
 		result      bool
 		httpAddress string
 		key         string
-	}
-
-	testCases := []TestCase{
+	}{
 		{"192.168.0.1:2001/id=0/base_port=9001", true, "http://192.168.0.1:2001", "192.168.0.1:2001/id=0"},
 		{"192.168.0.1:abc/id=0/base_port=9001", false, "", ""},
 		{"www.example.com/id=0/base_port=9001", false, "", ""},

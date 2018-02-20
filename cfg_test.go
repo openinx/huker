@@ -6,14 +6,12 @@ import (
 )
 
 func TestConfigFile(t *testing.T) {
-	type TestCase struct {
+	testCase := []struct {
 		cfgName       string
 		inputs        []string
 		keyValues     map[string]string
 		configuration string
-	}
-
-	testCase := []TestCase{
+	}{
 		{"zoo0.cfg", []string{}, map[string]string{}, ""},
 		{"zoo1.cfg", []string{"a=b", "c=d"}, map[string]string{"a": "b", "c": "d"}, "a=b\nc=d"},
 		{"zoo2.properties", []string{"a=b", "c=d"}, map[string]string{"a": "b", "c": "d"}, "a=b\nc=d"},
