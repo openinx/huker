@@ -16,15 +16,17 @@ import (
 
 // Directories and status for supervisor agent.
 const (
-	DATA_DIR      = "data"
-	LOG_DIR       = "log"
-	PKG_DIR       = "pkg"
-	CONF_DIR      = "conf"
-	LIBRARY_DIR   = ".packages"
-	STDOUT_DIR    = "stdout"
-	HOOKS_DIR     = ".hooks"
-	StatusRunning = "Running"
-	StatusStopped = "Stopped"
+	DATA_DIR           = "data"
+	LOG_DIR            = "log"
+	PKG_DIR            = "pkg"
+	CONF_DIR           = "conf"
+	LIBRARY_DIR        = ".packages"
+	STDOUT_DIR         = "stdout"
+	HOOKS_DIR          = ".hooks"
+	StatusRunning      = "Running"
+	StatusStopped      = "Stopped"
+	StatusNotBootstrap = "NotBootstrap"
+	StatusUnknown      = "Unknown"
 )
 
 func progDirs() []string {

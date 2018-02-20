@@ -136,7 +136,6 @@ func (s *Cluster) toShell(jobKey string) []string {
 // If skipHostRender is true , will skip to render the HostRender
 func (c *Cluster) RenderConfigFiles(job *Job, taskId int, skipHostRender bool) (map[string]string, error) {
 	var ok bool
-	// var host *Host
 	if job, ok = c.Jobs[job.JobName]; !ok {
 		return nil, fmt.Errorf("Job with name `%s` not exist in cluster %s", job.JobName, c.ClusterName)
 	}

@@ -2,7 +2,7 @@ package pkg
 
 import (
 	"bytes"
-	"fmt"
+	"github.com/qiniu/log"
 	"html/template"
 	"io/ioutil"
 	"strings"
@@ -10,7 +10,7 @@ import (
 
 func RenderTemplate(tmplFile string, baseFile string, args map[string]interface{}, funcMap template.FuncMap) (string, error) {
 	var err error
-	var fbytes []byte
+	var data []byte
 	var buf bytes.Buffer
 
 	t := template.New(tmplFile)
@@ -18,27 +18,27 @@ func RenderTemplate(tmplFile string, baseFile string, args map[string]interface{
 		t.Funcs(funcMap)
 	}
 
-	fbytes, err = ioutil.ReadFile(baseFile)
+	data, err = ioutil.ReadFile(baseFile)
 	if err != nil {
-		fmt.Println("read template file failed: " + err.Error())
+		log.Errorf("Read template file failed: " + err.Error())
 		return "", err
 	}
 
-	t, err = t.Parse(string(fbytes))
+	t, err = t.Parse(string(data))
 	if err != nil {
-		fmt.Println("parse template file failed: %s" + err.Error())
+		log.Errorf("Parse template file failed: %s" + err.Error())
 		return "", err
 	}
 
 	t, err = t.ParseFiles(tmplFile)
 
 	if err != nil {
-		fmt.Println("parse base file failed: %s" + err.Error())
+		log.Errorf("Parse base file failed: %s" + err.Error())
 		return "", err
 	}
 
 	if err = t.Execute(&buf, args); err != nil {
-		fmt.Println("Execute tmplate failed: " + err.Error())
+		log.Errorf("Execute tmplate failed: " + err.Error())
 		return "", err
 	}
 

@@ -23,7 +23,7 @@ jobs:
     config:
       hbase-site.xml:
         - hbase.cluster.distributed=true
-        - hbase.zookeeper.quorum=%{dependencies.0.zkServer.0.host}:%{dependencies.0.zkServer.0.base_port}
+        - hbase.zookeeper.quorum=%{dependencies.0.zkServer.1.host}:%{dependencies.0.zkServer.1.base_port}
       log4j.properties:
         file: {{.ConfRootDir}}/phoenix/common/log4j.properties
     classpath:
