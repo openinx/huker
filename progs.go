@@ -69,7 +69,7 @@ func (p *programMap) dumpToFile(fileName string) error {
 
 func (p *programMap) remove(prog *Program) {
 	p.mux.Lock()
-	p.mux.Unlock()
+	defer p.mux.Unlock()
 	delete(p.programs, programHash(prog.Name, prog.Job, prog.TaskId))
 }
 

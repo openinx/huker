@@ -127,11 +127,6 @@ func (h *Host) ToKey() string {
 	return fmt.Sprintf("%s:%d/id=%d", h.Hostname, h.SupervisorPort, h.TaskId)
 }
 
-func (h *Host) toConfigMap() map[string]string {
-	// TODO Render the config map of job's config files with variables of this Host.
-	return nil
-}
-
 func mergeConfigFiles(this, other map[string]ConfigFile) map[string]ConfigFile {
 	for fname, cfg := range other {
 		if _, ok := this[fname]; ok {
