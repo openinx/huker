@@ -5,6 +5,7 @@ all: build
 build:
 	find . -type f -name '*.go' | xargs gofmt -s -w
 	go build -o bin/huker cmd/huker.go
+	go build -o bin/metric cmd/huker-metrics.go
 
 test:
 	go get github.com/go-playground/overalls

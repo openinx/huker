@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/qiniu/log"
 	"io"
@@ -205,4 +206,21 @@ func LocalHukerDir() string {
 		panic(err)
 	}
 	return path.Join(usr.HomeDir, ".huker")
+}
+
+func HttpGetJSON(url string) (map[string]interface{}, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	data, err2 := ioutil.ReadAll(resp.Body)
+	if err2 != nil {
+		return nil, err2
+	}
+	jsonMap := make(map[string]interface{})
+	if err := json.Unmarshal(data, &jsonMap); err != nil {
+		return nil, err
+	}
+	return jsonMap, nil
 }

@@ -315,6 +315,16 @@ func (s *Supervisor) hStopProgram(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Supervisor) hGetMetrics(w http.ResponseWriter, r *http.Request) {
+	data, err := MarshalMetrics()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+	} else {
+		w.Write(data)
+	}
+}
+
 func (s *Supervisor) loadSupervisorDB() error {
 	// step.0 Create if not exist
 	if _, err := os.Stat(s.dbFile); os.IsNotExist(err) {
@@ -382,6 +392,7 @@ func (s *Supervisor) Start() error {
 	r.HandleFunc("/api/programs/{name}/{job}/{taskId}/restart", s.hRestartProgram).Methods("PUT")
 	r.HandleFunc("/api/programs/{name}/{job}/{taskId}", s.hCleanupProgram).Methods("DELETE")
 	r.HandleFunc("/api/programs/{name}/{job}/{taskId}/stop", s.hStopProgram).Methods("PUT")
+	r.HandleFunc("/api/metrics", s.hGetMetrics).Methods("GET")
 	s.srv.Handler = r
 	return s.srv.ListenAndServe()
 }
