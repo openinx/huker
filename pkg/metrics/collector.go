@@ -121,6 +121,13 @@ func (c *Collector) Start() {
 		}
 		c.tasks <- f1
 
+		f2, err2 := thirdparts.NewHDFSMetricFetcher("http://127.0.0.1:20101/jmx", "127.0.0.1", 20101, "test-hdfs")
+		if err2 != nil {
+			log.Errorf("Failed to initialize hdfs fetcher, error: %v", err2)
+			continue
+		}
+		c.tasks <- f2
+
 		time.Sleep(1 * time.Second)
 	}
 }
