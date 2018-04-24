@@ -2,10 +2,22 @@
 	"ImportPath": "github.com/openinx/huker",
 	"GoVersion": "go1.9",
 	"GodepVersion": "v80",
-	"Packages": [
-		"./..."
-	],
 	"Deps": [
+		{
+			"ImportPath": "github.com/StackExchange/wmi",
+			"Comment": "1.0.0-2-gcdffdb3",
+			"Rev": "cdffdb33acae0e14efff2628f9bae377b597840e"
+		},
+		{
+			"ImportPath": "github.com/go-ole/go-ole",
+			"Comment": "v1.2.1-4-ga1ec82a",
+			"Rev": "a1ec82a652ebc7e784d7df887cfb31061aeabbcc"
+		},
+		{
+			"ImportPath": "github.com/go-ole/go-ole/oleutil",
+			"Comment": "v1.2.1-4-ga1ec82a",
+			"Rev": "a1ec82a652ebc7e784d7df887cfb31061aeabbcc"
+		},
 		{
 			"ImportPath": "github.com/go-yaml/yaml",
 			"Rev": "287cf08546ab5e7e37d55a84f7ed3fd1db036de5"
@@ -22,6 +34,44 @@
 			"ImportPath": "github.com/qiniu/log",
 			"Comment": "v1.0.00-1-ga304a74",
 			"Rev": "a304a74568d6982c5b89de1c68ac8fca3add196a"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/cpu",
+			"Comment": "v2.18.03-6-g63047d7",
+			"Rev": "63047d776e07105e370af46ecbd0ae96850f5ef2"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/disk",
+			"Comment": "v2.18.03-6-g63047d7",
+			"Rev": "63047d776e07105e370af46ecbd0ae96850f5ef2"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/internal/common",
+			"Comment": "v2.18.03-6-g63047d7",
+			"Rev": "63047d776e07105e370af46ecbd0ae96850f5ef2"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/load",
+			"Comment": "v2.18.03-6-g63047d7",
+			"Rev": "63047d776e07105e370af46ecbd0ae96850f5ef2"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/mem",
+			"Comment": "v2.18.03-6-g63047d7",
+			"Rev": "63047d776e07105e370af46ecbd0ae96850f5ef2"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/net",
+			"Comment": "v2.18.03-6-g63047d7",
+			"Rev": "63047d776e07105e370af46ecbd0ae96850f5ef2"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "b699b7032584f0953262cb2788a0ca19bb494703"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/windows",
+			"Rev": "b699b7032584f0953262cb2788a0ca19bb494703"
 		}
 	]
 }
