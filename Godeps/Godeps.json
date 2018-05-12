@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/openinx/huker",
-	"GoVersion": "go1.9",
+	"GoVersion": "go1.8",
 	"GodepVersion": "v80",
 	"Deps": [
 		{
