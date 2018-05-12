@@ -24,3 +24,4 @@ release: build
 
 clean:
 	rm -rf bin/* log/* release/* *.coverprofile
+	find . | grep coverprofile | xargs rm -rf
