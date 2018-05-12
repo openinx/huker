@@ -1,4 +1,4 @@
-package huker
+package supervisor
 
 import (
 	"bytes"
@@ -39,6 +39,10 @@ type Supervisor struct {
 	refreshTicker *time.Ticker
 	srv           *http.Server
 	taskMux       sync.Mutex
+}
+
+func (s *Supervisor) RootDir() string {
+	return s.rootDir
 }
 
 func (s *Supervisor) hIndex(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +135,7 @@ func (s *Supervisor) updateProgram(w http.ResponseWriter, r *http.Request, handl
 		return
 	}
 
-	prog.renderVars(s.rootDir)
+	prog.RenderVars(s.rootDir)
 	if err := handleFunc(prog); err != nil {
 		w.Write(renderResp(err))
 		return
@@ -275,11 +279,11 @@ func (s *Supervisor) hRollingUpdateProgram(w http.ResponseWriter, r *http.Reques
 			return err
 		}
 		// Step.2 Update packages.
-		if err := p.updatePackage(s.rootDir); err != nil {
+		if err := p.UpdatePackage(s.rootDir); err != nil {
 			return err
 		}
 		// Step.3 Dump config files.
-		if err := p.dumpConfigFiles(s.rootDir); err != nil {
+		if err := p.DumpConfigFiles(s.rootDir); err != nil {
 			return err
 		}
 		// Step.4 Execute post hook

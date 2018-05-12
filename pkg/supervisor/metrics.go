@@ -1,4 +1,4 @@
-package huker
+package supervisor
 
 import (
 	"encoding/json"

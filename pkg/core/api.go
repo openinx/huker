@@ -1,7 +1,9 @@
-package huker
+package core
 
 import (
 	"fmt"
+	"github.com/openinx/huker/pkg/supervisor"
+	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"io/ioutil"
 	"os"
@@ -21,11 +23,11 @@ const (
 
 type TaskResult struct {
 	Host *Host
-	Prog *Program
+	Prog *supervisor.Program
 	Err  error
 }
 
-func NewTaskResult(host *Host, prog *Program, err error) TaskResult {
+func NewTaskResult(host *Host, prog *supervisor.Program, err error) TaskResult {
 	return TaskResult{Host: host, Prog: prog, Err: err}
 }
 
@@ -43,8 +45,8 @@ type HukerJob interface {
 }
 
 func NewDefaultHukerJob() (HukerJob, error) {
-	configRootDir := ReadEnvStrValue(HUKER_CONF_DIR, HUKER_CONF_DIR_DEFAULT)
-	pkgServerAddress := ReadEnvStrValue(HUKER_PKG_HTTP_SERVER, HUKER_PKG_HTTP_SERVER_DEFAULT)
+	configRootDir := utils.ReadEnvStrValue(HUKER_CONF_DIR, HUKER_CONF_DIR_DEFAULT)
+	pkgServerAddress := utils.ReadEnvStrValue(HUKER_PKG_HTTP_SERVER, HUKER_PKG_HTTP_SERVER_DEFAULT)
 	return NewConfigFileHukerJob(configRootDir, pkgServerAddress)
 }
 
@@ -77,11 +79,11 @@ func (cfg *ConfigFileHukerJob) newCluster(project, cluster, job string) (*Cluste
 	jobRootDir := path.Join("$AgentRootDir", cluster, fmt.Sprintf("%s.$TaskId", job))
 	env := &EnvVariables{
 		ConfRootDir:  cfg.configRootDir,
-		PkgRootDir:   path.Join(jobRootDir, PKG_DIR),
-		PkgConfDir:   path.Join(jobRootDir, CONF_DIR),
-		PkgDataDir:   path.Join(jobRootDir, DATA_DIR),
-		PkgLogDir:    path.Join(jobRootDir, LOG_DIR),
-		PkgStdoutDir: path.Join(jobRootDir, STDOUT_DIR),
+		PkgRootDir:   path.Join(jobRootDir, supervisor.PKG_DIR),
+		PkgConfDir:   path.Join(jobRootDir, supervisor.CONF_DIR),
+		PkgDataDir:   path.Join(jobRootDir, supervisor.DATA_DIR),
+		PkgLogDir:    path.Join(jobRootDir, supervisor.LOG_DIR),
+		PkgStdoutDir: path.Join(jobRootDir, supervisor.STDOUT_DIR),
 	}
 
 	c, err := LoadClusterConfig(clusterCfg, env)
@@ -95,7 +97,7 @@ func (cfg *ConfigFileHukerJob) newCluster(project, cluster, job string) (*Cluste
 	return c, nil
 }
 
-type updateFunc func(*Job, *Host, *SupervisorCli, *Program) error
+type updateFunc func(*Job, *Host, *supervisor.SupervisorCli, *supervisor.Program) error
 
 func (j *ConfigFileHukerJob) updateJob(project, cluster, job string, taskId int, update updateFunc) ([]TaskResult, error) {
 	c, err := j.newCluster(project, cluster, job)
@@ -113,8 +115,8 @@ func (j *ConfigFileHukerJob) updateJob(project, cluster, job string, taskId int,
 					project, cluster, job, host.TaskId)
 				return nil, err
 			}
-			superClient := NewSupervisorCli(host.ToHttpAddress())
-			prog := &Program{
+			superClient := supervisor.NewSupervisorCli(host.ToHttpAddress())
+			prog := &supervisor.Program{
 				Name:       c.ClusterName,
 				Job:        job,
 				TaskId:     host.TaskId,
@@ -183,7 +185,7 @@ func (j *ConfigFileHukerJob) Shell(project, cluster, job string, extraArgs []str
 			project, cluster, job, defaultLocalTaskId)
 		return err
 	}
-	prog := &Program{
+	prog := &supervisor.Program{
 		Name:       c.ClusterName,
 		Job:        job,
 		TaskId:     defaultLocalTaskId,
@@ -195,16 +197,16 @@ func (j *ConfigFileHukerJob) Shell(project, cluster, job string, extraArgs []str
 		PkgMD5Sum:  c.PackageMd5sum,
 		Hooks:      jobPtr.Hooks,
 	}
-	agentRootDir := LocalHukerDir()
-	prog.renderVars(agentRootDir)
+	agentRootDir := utils.LocalHukerDir()
+	prog.RenderVars(agentRootDir)
 	if err := prog.Install(agentRootDir); err != nil {
 		if !strings.Contains(err.Error(), "already exists, cleanup it first please.") {
 			return err
 		} else {
-			if err := prog.updatePackage(agentRootDir); err != nil {
+			if err := prog.UpdatePackage(agentRootDir); err != nil {
 				return err
 			}
-			if err := prog.dumpConfigFiles(agentRootDir); err != nil {
+			if err := prog.DumpConfigFiles(agentRootDir); err != nil {
 				return err
 			}
 		}
@@ -219,7 +221,7 @@ func (j *ConfigFileHukerJob) Shell(project, cluster, job string, extraArgs []str
 
 func (j *ConfigFileHukerJob) Bootstrap(project, cluster, job string, taskId int) ([]TaskResult, error) {
 	return j.updateJob(project, cluster, job, taskId,
-		func(jobPtr *Job, host *Host, s *SupervisorCli, prog *Program) error {
+		func(jobPtr *Job, host *Host, s *supervisor.SupervisorCli, prog *supervisor.Program) error {
 			return s.Bootstrap(prog)
 		})
 }
@@ -242,7 +244,7 @@ func (j *ConfigFileHukerJob) Restart(project, cluster, job string, taskId int) (
 
 func (j *ConfigFileHukerJob) RollingUpdate(project, cluster, job string, taskId int) ([]TaskResult, error) {
 	return j.updateJob(project, cluster, job, taskId,
-		func(jobPtr *Job, host *Host, s *SupervisorCli, prog *Program) error {
+		func(jobPtr *Job, host *Host, s *supervisor.SupervisorCli, prog *supervisor.Program) error {
 			return s.RollingUpdate(prog)
 		})
 }
@@ -260,7 +262,7 @@ func (j *ConfigFileHukerJob) lookupJob(project, cluster, job string, taskId int,
 	var taskResults []TaskResult
 	for _, host := range jobPtr.Hosts {
 		if taskId < 0 || taskId == host.TaskId {
-			supCli := NewSupervisorCli(host.ToHttpAddress())
+			supCli := supervisor.NewSupervisorCli(host.ToHttpAddress())
 			var err error
 			if action == "Show" {
 				prog, err := supCli.Show(cluster, job, host.TaskId)

@@ -1,10 +1,11 @@
-package huker
+package pkgsrv
 
 import (
 	"context"
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/gorilla/mux"
+	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"html/template"
 	"io/ioutil"
@@ -59,7 +60,7 @@ func (p *packageInfo) isCorrectPackage(libDir string) (bool, error) {
 		return false, err
 	} else if stat.Size() != p.Size {
 		return false, fmt.Errorf("Package size mismatch, %s, %d != %d", fName, stat.Size(), p.Size)
-	} else if realCheckSum, err2 := calcFileMD5Sum(fName); err2 != nil {
+	} else if realCheckSum, err2 := utils.CalcFileMD5Sum(fName); err2 != nil {
 		return false, err2
 	} else if realCheckSum != p.Md5sum {
 		return false, fmt.Errorf("Package md5 checksum mismatch, package: %s, %s != %s", fName, realCheckSum, p.Md5sum)
@@ -82,7 +83,7 @@ func (p *packageInfo) sync(libDir string, wg *sync.WaitGroup) {
 		log.Errorf("%v", err)
 		return
 	}
-	if err := WebGetToLocal(p.Link, abspath); err != nil {
+	if err := utils.WebGetToLocal(p.Link, abspath); err != nil {
 		log.Errorf("%v", err)
 		return
 	}

@@ -1,4 +1,4 @@
-package huker
+package utils
 
 import (
 	"bytes"
@@ -20,7 +20,7 @@ import (
 	"syscall"
 )
 
-func isProcessOK(pid int) bool {
+func IsProcessOK(pid int) bool {
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		log.Debugf("Failed to find process[pid: %d]: %v", pid, err)
@@ -34,7 +34,7 @@ func isProcessOK(pid int) bool {
 	return true
 }
 
-func calcFileMD5Sum(fName string) (string, error) {
+func CalcFileMD5Sum(fName string) (string, error) {
 	f, err := os.Open(fName)
 	if err != nil {
 		return "", err

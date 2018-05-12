@@ -1,4 +1,4 @@
-package huker
+package supervisor
 
 import (
 	"bytes"
@@ -10,12 +10,12 @@ import (
 )
 
 type SupervisorCli struct {
-	serverAddr string
+	ServerAddr string
 }
 
 func NewSupervisorCli(serverAddr string) *SupervisorCli {
 	return &SupervisorCli{
-		serverAddr: serverAddr,
+		ServerAddr: serverAddr,
 	}
 }
 
@@ -60,13 +60,13 @@ func (s *SupervisorCli) Bootstrap(p *Program) error {
 	if err != nil {
 		return err
 	}
-	url := s.serverAddr + "/api/programs"
+	url := s.ServerAddr + "/api/programs"
 	_, err2 := request("POST", url, bytes.NewBuffer(data))
 	return err2
 }
 
 func (s *SupervisorCli) Show(name, job string, taskId int) (*Program, error) {
-	url := fmt.Sprintf("%s/api/programs/%s/%s/%d", s.serverAddr, name, job, taskId)
+	url := fmt.Sprintf("%s/api/programs/%s/%s/%d", s.ServerAddr, name, job, taskId)
 	data, err := request("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -79,13 +79,13 @@ func (s *SupervisorCli) Show(name, job string, taskId int) (*Program, error) {
 }
 
 func (s *SupervisorCli) Start(name, job string, taskId int) error {
-	url := fmt.Sprintf("%s/api/programs/%s/%s/%d/start", s.serverAddr, name, job, taskId)
+	url := fmt.Sprintf("%s/api/programs/%s/%s/%d/start", s.ServerAddr, name, job, taskId)
 	_, err := request("PUT", url, nil)
 	return err
 }
 
 func (s *SupervisorCli) Cleanup(name, job string, taskId int) error {
-	url := fmt.Sprintf("%s/api/programs/%s/%s/%d", s.serverAddr, name, job, taskId)
+	url := fmt.Sprintf("%s/api/programs/%s/%s/%d", s.ServerAddr, name, job, taskId)
 	_, err := request("DELETE", url, nil)
 	return err
 }
@@ -95,25 +95,25 @@ func (s *SupervisorCli) RollingUpdate(p *Program) error {
 	if err != nil {
 		return err
 	}
-	url := s.serverAddr + "/api/programs/rolling_update"
+	url := s.ServerAddr + "/api/programs/rolling_update"
 	_, err2 := request("POST", url, bytes.NewBuffer(data))
 	return err2
 }
 
 func (s *SupervisorCli) Restart(name, job string, taskId int) error {
-	url := fmt.Sprintf("%s/api/programs/%s/%s/%d/restart", s.serverAddr, name, job, taskId)
+	url := fmt.Sprintf("%s/api/programs/%s/%s/%d/restart", s.ServerAddr, name, job, taskId)
 	_, err := request("PUT", url, nil)
 	return err
 }
 
 func (s *SupervisorCli) Stop(name, job string, taskId int) error {
-	url := fmt.Sprintf("%s/api/programs/%s/%s/%d/stop", s.serverAddr, name, job, taskId)
+	url := fmt.Sprintf("%s/api/programs/%s/%s/%d/stop", s.ServerAddr, name, job, taskId)
 	_, err := request("PUT", url, nil)
 	return err
 }
 
 func (s *SupervisorCli) ListTasks() ([]*Program, error) {
-	url := fmt.Sprintf("%s/api/programs", s.serverAddr)
+	url := fmt.Sprintf("%s/api/programs", s.ServerAddr)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err

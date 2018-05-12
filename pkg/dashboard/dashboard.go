@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/openinx/huker"
+	huker "github.com/openinx/huker/pkg/core"
+	"github.com/openinx/huker/pkg/supervisor"
 	"github.com/qiniu/log"
 	"html/template"
 	"net/http"
@@ -205,12 +206,12 @@ func (d *Dashboard) hWebApi(w http.ResponseWriter, r *http.Request) {
 		}
 
 		successStatus := map[string]string{
-			"bootstrap":      huker.StatusRunning,
-			"start":          huker.StatusRunning,
-			"stop":           huker.StatusStopped,
-			"restart":        huker.StatusRunning,
-			"rolling_update": huker.StatusRunning,
-			"cleanup":        huker.StatusNotBootstrap,
+			"bootstrap":      supervisor.StatusRunning,
+			"start":          supervisor.StatusRunning,
+			"stop":           supervisor.StatusStopped,
+			"restart":        supervisor.StatusRunning,
+			"rolling_update": supervisor.StatusRunning,
+			"cleanup":        supervisor.StatusNotBootstrap,
 		}
 
 		// Refresh the status if action succeed.
@@ -236,14 +237,14 @@ func (s *Dashboard) refreshCache() error {
 	for i := 0; i < len(s.clusters); i++ {
 		for _, job := range s.clusters[i].Jobs {
 			for _, host := range job.Hosts {
-				sup := huker.NewSupervisorCli(host.ToHttpAddress())
+				sup := supervisor.NewSupervisorCli(host.ToHttpAddress())
 				prog, err := sup.GetTask(s.clusters[i].ClusterName, job.JobName, host.TaskId)
-				status := huker.StatusUnknown
+				status := supervisor.StatusUnknown
 				if err != nil {
 					if !strings.Contains(err.Error(), "Task does not found") {
 						log.Errorf("Get task failed: %v", err)
 					} else {
-						status = huker.StatusNotBootstrap
+						status = supervisor.StatusNotBootstrap
 					}
 				} else {
 					status = prog.Status

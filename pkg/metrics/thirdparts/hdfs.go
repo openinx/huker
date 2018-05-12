@@ -3,7 +3,7 @@ package thirdparts
 import (
 	"fmt"
 	"github.com/influxdata/influxdb/client/v2"
-	"github.com/openinx/huker"
+	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 )
 
@@ -29,7 +29,7 @@ func (f *HDFSMetricFetcher) hostAndPort() string {
 
 func (f *HDFSMetricFetcher) Pull(conf client.BatchPointsConfig) (client.BatchPoints, error) {
 	bp, err := client.NewBatchPoints(conf)
-	data, err := huker.HttpGetJSON(f.url)
+	data, err := utils.HttpGetJSON(f.url)
 	if err != nil {
 		return bp, err
 	}

@@ -1,8 +1,9 @@
-package huker
+package core
 
 import (
 	"fmt"
 	"github.com/go-yaml/yaml"
+	"github.com/openinx/huker/pkg/utils"
 	"io/ioutil"
 )
 
@@ -21,7 +22,7 @@ type Cluster struct {
 func getRequiredField(m map[interface{}]interface{}, key string) (string, error) {
 	if obj, ok := m[key]; !ok || obj == nil {
 		return "", fmt.Errorf("Required key `%s` does not exist in config file.", key)
-	} else if !IsStringType(obj) {
+	} else if !utils.IsStringType(obj) {
 		return "", fmt.Errorf("`%s` should be a string: %v", key, m)
 	} else {
 		return obj.(string), nil
@@ -40,7 +41,7 @@ func NewCluster(yamlConfigs []string, e *EnvVariables) (*Cluster, error) {
 
 	// Read `base` section.
 	if obj, ok := cfgMap["base"]; ok && obj != nil {
-		if !IsStringType(obj) {
+		if !utils.IsStringType(obj) {
 			return nil, fmt.Errorf("Invalid cluster config, `base` should be a string path. %v", obj)
 		}
 		c.BaseConfig = obj.(string)
@@ -50,7 +51,7 @@ func NewCluster(yamlConfigs []string, e *EnvVariables) (*Cluster, error) {
 	var clusterMap map[interface{}]interface{}
 	if obj, ok := cfgMap["cluster"]; !ok || obj == nil {
 		return nil, fmt.Errorf("`cluster` section does not exists.")
-	} else if !IsMapType(obj) {
+	} else if !utils.IsMapType(obj) {
 		return nil, fmt.Errorf("`cluster` section shoud be a map. %v", obj)
 	} else {
 		clusterMap = obj.(map[interface{}]interface{})
@@ -86,16 +87,16 @@ func NewCluster(yamlConfigs []string, e *EnvVariables) (*Cluster, error) {
 	var jobsMap map[interface{}]interface{}
 	if obj, ok := cfgMap["jobs"]; !ok || obj == nil {
 		return nil, fmt.Errorf("`jobs` section does not exists.")
-	} else if !IsMapType(obj) {
+	} else if !utils.IsMapType(obj) {
 		return nil, fmt.Errorf("`jobs` section shoud be a map. %v", obj)
 	} else {
 		jobsMap = obj.(map[interface{}]interface{})
 	}
 	for jobName, jobMap := range jobsMap {
-		if !IsStringType(jobName) {
+		if !utils.IsStringType(jobName) {
 			return nil, fmt.Errorf("Job name should be a string. %v", jobName)
 		}
-		if !IsMapType(jobMap) {
+		if !utils.IsMapType(jobMap) {
 			return nil, fmt.Errorf("Job `%s` section should be a map, %v", jobName, jobMap)
 		}
 		if job, err := NewJob(jobName.(string), jobMap.(map[interface{}]interface{})); err != nil {
@@ -193,7 +194,7 @@ func readYamlConfig(yamlCfgPath string, e *EnvVariables) ([]string, error) {
 	strings := []string{string(data)}
 	if obj, ok := cfgMap["base"]; !ok || obj == nil {
 		return strings, nil
-	} else if !IsStringType(obj) {
+	} else if !utils.IsStringType(obj) {
 		return []string{}, fmt.Errorf("`base` section shoud be a string: %v", obj)
 	} else {
 		baseConfigs, err := readYamlConfig(obj.(string), e)
@@ -219,7 +220,7 @@ func mergeYamlConfigs(yamlConfigs []string) (map[interface{}]interface{}, error)
 	}
 	ret := yamlMaps[0]
 	for i := 1; i < len(yamlMaps); i++ {
-		ret = MergeMap(ret, yamlMaps[i])
+		ret = utils.MergeMap(ret, yamlMaps[i])
 	}
 	return ret, nil
 }

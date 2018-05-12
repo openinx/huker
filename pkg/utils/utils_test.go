@@ -1,4 +1,4 @@
-package huker
+package utils
 
 import (
 	"os"
@@ -8,7 +8,7 @@ import (
 
 func TestIsProcessOK(t *testing.T) {
 
-	if isProcessOK(64236) {
+	if IsProcessOK(64236) {
 		t.Errorf("Process %d is stopped actually.", 64236)
 	}
 }

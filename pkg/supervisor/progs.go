@@ -1,8 +1,9 @@
-package huker
+package supervisor
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/openinx/huker/pkg/utils"
 	"io/ioutil"
 	"sort"
 	"strings"
@@ -47,7 +48,7 @@ func (p *programMap) refreshAndDump(fileName string) error {
 	defer p.mux.Unlock()
 
 	for key, prog := range p.programs {
-		if isProcessOK(prog.PID) {
+		if utils.IsProcessOK(prog.PID) {
 			prog.Status = StatusRunning
 		} else {
 			prog.Status = StatusStopped

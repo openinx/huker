@@ -1,8 +1,9 @@
-package huker
+package core
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"io/ioutil"
 	"sort"
@@ -22,19 +23,19 @@ type MainEntry struct {
 }
 
 func parseMainEntry(s interface{}) (*MainEntry, error) {
-	if !IsMapType(s) {
+	if !utils.IsMapType(s) {
 		return nil, fmt.Errorf("Invalid main_entry, not a map")
 	}
 	mainEntry := &MainEntry{}
 	meMap := s.(map[interface{}]interface{})
 	if obj, ok := meMap["java_class"]; ok && obj != nil {
-		if !IsStringType(obj) {
+		if !utils.IsStringType(obj) {
 			return nil, fmt.Errorf("Invalid main entry, java_class is not a string. %v", s)
 		}
 		mainEntry.JavaClass = strings.Trim(obj.(string), " ")
 	}
 	if obj, ok := meMap["extra_args"]; ok && obj != nil {
-		if !IsStringType(obj) {
+		if !utils.IsStringType(obj) {
 			return nil, fmt.Errorf("Invalid main_entry, extra_args is not a string. %v", s)
 		}
 		mainEntry.ExtraArgs = meMap["extra_args"].(string)
@@ -161,7 +162,7 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (*Job, error) {
 	}
 	var err error
 	if obj, ok := jobMap["super_job"]; ok && obj != nil {
-		if !IsStringType(obj) {
+		if !utils.IsStringType(obj) {
 			return nil, fmt.Errorf("`super_job` field in job `%s` should be a string, now: %v", jobName, obj)
 		}
 		job.SuperJob = obj.(string)
@@ -218,10 +219,10 @@ func NewJob(jobName string, jobMap map[interface{}]interface{}) (*Job, error) {
 		}
 	}
 
-	if obj, ok := jobMap["hooks"]; ok && obj != nil && IsMapType(obj) {
+	if obj, ok := jobMap["hooks"]; ok && obj != nil && utils.IsMapType(obj) {
 		hooksMap := obj.(map[interface{}]interface{})
 		for hookKey, hookPath := range hooksMap {
-			if IsStringType(hookKey) && IsStringType(hookPath) {
+			if utils.IsStringType(hookKey) && utils.IsStringType(hookPath) {
 				data, err := ioutil.ReadFile(hookPath.(string))
 				if err != nil {
 					return nil, err
@@ -282,7 +283,7 @@ func (job *Job) mergeWith(other *Job) (*Job, error) {
 	// Merge array a with array b. if exist in both a and b, then use item in a.
 	mergeStringArray := func(a, b []string) []string {
 		for k := range b {
-			if !StringSliceContains(a, b[k]) {
+			if !utils.StringSliceContains(a, b[k]) {
 				a = append(a, b[k])
 			}
 		}
@@ -313,7 +314,7 @@ func (job *Job) GetHost(taskId int) (*Host, bool) {
 }
 
 func parseConfigFileArray(obj interface{}) ([]ConfigFile, error) {
-	if !IsMapType(obj) {
+	if !utils.IsMapType(obj) {
 		return nil, fmt.Errorf("Invalid config, shoud be a map. %v", obj)
 	}
 	cfMap := obj.(map[interface{}]interface{})
@@ -338,23 +339,23 @@ func parseConfigFileArray(obj interface{}) ([]ConfigFile, error) {
 }
 
 func ParseStringArray(obj interface{}) ([]string, error) {
-	if IsArrayType(obj) || IsSliceType(obj) {
+	if utils.IsArrayType(obj) || utils.IsSliceType(obj) {
 		array := obj.([]interface{})
 		var strings []string
 		for i := range array {
-			if IsStringType(array[i]) {
+			if utils.IsStringType(array[i]) {
 				strings = append(strings, array[i].(string))
-			} else if IsIntegerType(array[i]) {
+			} else if utils.IsIntegerType(array[i]) {
 				strings = append(strings, strconv.Itoa(array[i].(int)))
 			} else {
 				return nil, fmt.Errorf("Neither string nor int type. %v, origin: %v", array[i], obj)
 			}
 		}
 		return strings, nil
-	} else if IsMapType(obj) {
+	} else if utils.IsMapType(obj) {
 		mapObj := obj.(map[interface{}]interface{})
 		if fileObj, ok := mapObj["file"]; ok && fileObj != nil {
-			if IsStringType(fileObj) {
+			if utils.IsStringType(fileObj) {
 				fileBytes, err := ioutil.ReadFile(fileObj.(string))
 				if err != nil {
 					return nil, err

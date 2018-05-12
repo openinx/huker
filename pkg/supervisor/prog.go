@@ -1,7 +1,8 @@
-package huker
+package supervisor
 
 import (
 	"fmt"
+	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"io/ioutil"
 	"os"
@@ -56,7 +57,7 @@ func (p *Program) getJobRootDir(agentRootDir string) string {
 }
 
 // Update <job-root-dir>/pkg link.
-func (p *Program) updatePackage(agentRootDir string) error {
+func (p *Program) UpdatePackage(agentRootDir string) error {
 	libsDir := path.Join(agentRootDir, LIBRARY_DIR)
 	tmpPackageDir := path.Join(libsDir, fmt.Sprintf("%s.tmp", p.PkgMD5Sum))
 	md5sumPackageDir := path.Join(libsDir, p.PkgMD5Sum)
@@ -73,12 +74,12 @@ func (p *Program) updatePackage(agentRootDir string) error {
 
 		// step.1 Download the package
 		pkgFilePath := path.Join(tmpPackageDir, p.PkgName)
-		if err := WebGetToLocal(p.PkgAddress, pkgFilePath); err != nil {
+		if err := utils.WebGetToLocal(p.PkgAddress, pkgFilePath); err != nil {
 			return err
 		}
 
 		// step.2 Verify md5 checksum
-		md5sum, md5Err := calcFileMD5Sum(pkgFilePath)
+		md5sum, md5Err := utils.CalcFileMD5Sum(pkgFilePath)
 		if md5Err != nil {
 			log.Errorf("Calculate the md5 checksum of file %s failed, cause: %v", pkgFilePath, md5Err)
 			return md5Err
@@ -88,7 +89,7 @@ func (p *Program) updatePackage(agentRootDir string) error {
 		}
 
 		// step.3 Extract package
-		if err := RunCommand("tar", nil, "xzvf", pkgFilePath, "-C", tmpPackageDir); err != nil {
+		if err := utils.RunCommand("tar", nil, "xzvf", pkgFilePath, "-C", tmpPackageDir); err != nil {
 			return err
 		}
 		if err := os.Rename(tmpPackageDir, md5sumPackageDir); err != nil {
@@ -117,7 +118,7 @@ func (p *Program) updatePackage(agentRootDir string) error {
 	return fmt.Errorf("Sub-directory under %s does not exist.", md5sumPackageDir)
 }
 
-func (p *Program) dumpConfigFiles(agentRootDir string) error {
+func (p *Program) DumpConfigFiles(agentRootDir string) error {
 	for fname, content := range p.Configs {
 		// When fname is /tmp/huker/agent01/myid case, we should write directly.
 		if filepath.Base(fname) == fname {
@@ -131,7 +132,7 @@ func (p *Program) dumpConfigFiles(agentRootDir string) error {
 }
 
 // Render the agent root directory for config files and arguments.
-func (p *Program) renderVars(agentRootDir string) {
+func (p *Program) RenderVars(agentRootDir string) {
 	newConfigMap := make(map[string]string)
 	for fname, content := range p.Configs {
 		content = strings.Replace(content, "$AgentRootDir", agentRootDir, -1)
@@ -176,18 +177,18 @@ func (p *Program) Install(agentRootDir string) error {
 	}
 
 	// step.2 Download package and link pkg to library.
-	if err := p.updatePackage(agentRootDir); err != nil {
+	if err := p.UpdatePackage(agentRootDir); err != nil {
 		return err
 	}
 
 	// step.3 Dump configuration files
-	return p.dumpConfigFiles(agentRootDir)
+	return p.DumpConfigFiles(agentRootDir)
 }
 
 // Start the process in daemon.
 // TODO pipe stdout & stderr into pkg_root_dir/stdout directories.
 func (p *Program) Start(s *Supervisor) error {
-	if isProcessOK(p.PID) {
+	if utils.IsProcessOK(p.PID) {
 		return fmt.Errorf("Process %d is already running.", p.PID)
 	}
 	f, err := os.Create(path.Join(p.getJobRootDir(s.rootDir), STDOUT_DIR, "stdout"))
@@ -210,7 +211,7 @@ func (p *Program) Start(s *Supervisor) error {
 	}()
 	time.Sleep(time.Second * 1)
 
-	if cmd.Process != nil && isProcessOK(cmd.Process.Pid) {
+	if cmd.Process != nil && utils.IsProcessOK(cmd.Process.Pid) {
 		log.Infof("Start process success. [%s %s]", p.Bin, strings.Join(p.Args, " "))
 		p.Status = StatusRunning
 		p.PID = cmd.Process.Pid
@@ -231,7 +232,7 @@ func (p *Program) Stop(s *Supervisor) error {
 	}
 	time.Sleep(1 * time.Second)
 	// check the pid in the final
-	if isProcessOK(p.PID) {
+	if utils.IsProcessOK(p.PID) {
 		return fmt.Errorf("Failed to stop the process %d, still running.", p.PID)
 	}
 	p.Status = StatusStopped
@@ -241,7 +242,7 @@ func (p *Program) Stop(s *Supervisor) error {
 // Restart the process
 func (p *Program) Restart(s *Supervisor) error {
 	p.Stop(s)
-	if isProcessOK(p.PID) {
+	if utils.IsProcessOK(p.PID) {
 		return fmt.Errorf("Failed to stop the process %d, still running.", p.PID)
 	}
 	return p.Start(s)
@@ -280,5 +281,5 @@ func (p *Program) ExecHooks(hook string) error {
 		return err
 	}
 	// Execute the hooked bash script.
-	return RunCommand(hookFile, p.hookEnv(), []string{}...)
+	return utils.RunCommand(hookFile, p.hookEnv(), []string{}...)
 }

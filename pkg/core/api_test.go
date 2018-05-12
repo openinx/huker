@@ -1,7 +1,9 @@
-package huker
+package core
 
 import (
 	"fmt"
+	"github.com/openinx/huker/pkg/minihuker"
+	"github.com/openinx/huker/pkg/supervisor"
 	"os"
 	"testing"
 )
@@ -9,12 +11,12 @@ import (
 func TestHukerJob(t *testing.T) {
 	// TODO try to increase task size to 5. need to render(both global & host) the extra_args section.
 	taskSize := 1
-	miniHuker := NewMiniHuker(taskSize)
+	miniHuker := minihuker.NewMiniHuker(taskSize)
 	miniHuker.Start()
 	defer miniHuker.Stop()
 
-	os.Setenv(HUKER_CONF_DIR, "./testdata/conf")
-	os.Setenv(HUKER_PKG_HTTP_SERVER, fmt.Sprintf("http://127.0.0.1:%d", miniHuker.pkgServer.port))
+	os.Setenv(HUKER_CONF_DIR, minihuker.GetTestDataDir()+"/testdata/conf")
+	os.Setenv(HUKER_PKG_HTTP_SERVER, fmt.Sprintf("http://127.0.0.1:%d", minihuker.TEST_PKG_SRV_PORT))
 
 	hukerJob, err := NewDefaultHukerJob()
 	if err != nil {
@@ -54,7 +56,7 @@ func TestHukerJob(t *testing.T) {
 	for i := 0; i < taskSize; i++ {
 		if results[i].Err != nil {
 			t.Errorf("Show task %s failed, %v", results[i].Host.ToKey(), results[i].Err)
-		} else if results[i].Prog.Status != StatusRunning {
+		} else if results[i].Prog.Status != supervisor.StatusRunning {
 			t.Errorf("Status of %s shoud be Running. other than %s", results[i].Host.ToKey(), results[i].Prog.Status)
 		}
 	}
@@ -126,7 +128,7 @@ func TestHukerJob(t *testing.T) {
 }
 
 func TestHukerJobList(t *testing.T) {
-	os.Setenv(HUKER_CONF_DIR, "./testdata/conf")
+	os.Setenv(HUKER_CONF_DIR, minihuker.GetTestDataDir()+"/testdata/conf")
 
 	hukerJob, err := NewDefaultHukerJob()
 	if err != nil {

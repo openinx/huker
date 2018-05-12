@@ -1,7 +1,8 @@
-package huker
+package core
 
 import (
 	"fmt"
+	"github.com/openinx/huker/pkg/utils"
 	"reflect"
 	"sort"
 	"testing"
@@ -34,12 +35,12 @@ func TestMergeYamlMap(t *testing.T) {
 		"compute": "d",
 	}
 
-	actualMap := MergeMap(m1, m1)
+	actualMap := utils.MergeMap(m1, m1)
 	if !reflect.DeepEqual(m1, actualMap) {
 		t.Errorf("Merge the same yaml map failed. expected: %v, actual: %v", m1, actualMap)
 	}
 
-	actualMap = MergeMap(m1, m2)
+	actualMap = utils.MergeMap(m1, m2)
 	if !reflect.DeepEqual(m3, actualMap) {
 		t.Errorf("Merge the m1 with m2 failed, expected: %v, actual: %v", m3, actualMap)
 	}

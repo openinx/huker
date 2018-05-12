@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/openinx/huker"
+	huker "github.com/openinx/huker/pkg/core"
 	"github.com/openinx/huker/pkg/dashboard"
+	"github.com/openinx/huker/pkg/pkgsrv"
+	"github.com/openinx/huker/pkg/supervisor"
 	"github.com/qiniu/log"
 	"os"
 	"path/filepath"
@@ -184,7 +186,7 @@ func main() {
 			fmt.Printf("Unexpected arguments: %v\n", os.Args[index:])
 			printUsageAndExit()
 		}
-		if supervisor, err := huker.NewSupervisor(dir, port, file); err != nil {
+		if supervisor, err := supervisor.NewSupervisor(dir, port, file); err != nil {
 			log.Stack(err)
 			return
 		} else if err := supervisor.Start(); err != nil {
@@ -223,7 +225,7 @@ func main() {
 			fmt.Printf("Unexpected arguments: %v\n", os.Args[index:])
 			printUsageAndExit()
 		}
-		if pkgSrv, err := huker.NewPackageServer(port, pkgRoot, pkgConf); err != nil {
+		if pkgSrv, err := pkgsrv.NewPackageServer(port, pkgRoot, pkgConf); err != nil {
 			log.Stack(err)
 			return
 		} else if err := pkgSrv.Start(); err != nil {

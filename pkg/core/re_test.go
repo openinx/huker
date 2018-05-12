@@ -1,4 +1,4 @@
-package huker
+package core
 
 import (
 	"regexp"

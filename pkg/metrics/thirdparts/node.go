@@ -2,7 +2,7 @@ package thirdparts
 
 import (
 	"github.com/influxdata/influxdb/client/v2"
-	"github.com/openinx/huker"
+	"github.com/openinx/huker/pkg/utils"
 	"strings"
 )
 
@@ -17,7 +17,7 @@ func NewNodeMetricFetcher(url string, host string) (*NodeMetricFetcher, error) {
 
 func (f *NodeMetricFetcher) Pull(conf client.BatchPointsConfig) (client.BatchPoints, error) {
 	bp, err := client.NewBatchPoints(conf)
-	jsonMap, err := huker.HttpGetJSON(f.url)
+	jsonMap, err := utils.HttpGetJSON(f.url)
 	if err != nil {
 		return bp, err
 	}
