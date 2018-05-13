@@ -20,6 +20,7 @@ jobs:
       - hadoop.home.dir={{.PkgRootDir}}
       - hadoop.id.str=openinx
       - hadoop.log.dir={{.PkgLogDir}}
+      - yarn.log.dir={{.PkgLogDir}}
       - hadoop.policy.file=hadoop-policy.xml
       - hadoop.root.logger=INFO,RFA
       - hadoop.security.logger=INFO,RFAS
@@ -42,11 +43,13 @@ jobs:
         - yarn.nodemanager.aux-services=mapreduce_shuffle
         - yarn.resourcemanager.scheduler.address=%{resourcemanager.0.host}:%{resourcemanager.0.base_port}
         - yarn.resourcemanager.webapp.address=0.0.0.0:%{resourcemanager.0.base_port+1}
-        - yarn.resourcemanager.resource-tracker.address=0.0.0.0:%{resourcemanager.0.base_port+2}
+        - yarn.resourcemanager.resource-tracker.address=%{resourcemanager.0.host}:%{resourcemanager.0.base_port+2}
         - yarn.resourcemanager.address=%{resourcemanager.0.host}:%{resourcemanager.0.base_port+3}
         - yarn.resourcemanager.admin.address=%{resourcemanager.0.host}:%{resourcemanager.0.base_port+4}
         - yarn.timeline-service.address=%{resourcemanager.0.host}:%{resourcemanager.0.base_port+5}
         - yarn.web-proxy.address=%{resourcemanager.0.host}:%{resourcemanager.0.base_port+6}
+        - yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage=98.5
+        - yarn.application.classpath={{.PkgConfDir}}:{{.PkgRootDir}}/contrib/capacity-scheduler/*.jar:{{.PkgRootDir}}/lib/native/*:{{.PkgRootDir}}/share/hadoop/common/*:{{.PkgRootDir}}/share/hadoop/common/lib/*:{{.PkgRootDir}}/share/hadoop/hdfs:{{.PkgRootDir}}/share/hadoop/hdfs/*:{{.PkgRootDir}}/share/hadoop/hdfs/lib/*:{{.PkgRootDir}}/share/hadoop/mapreduce/*:{{.PkgRootDir}}/share/hadoop/mapreduce/lib/*:{{.PkgRootDir}}/share/hadoop/yarn/*:{{.PkgRootDir}}/share/hadoop/yarn/lib/*
       log4j.properties:
         file: {{.ConfRootDir}}/hdfs/common/log4j.properties
       capacity-scheduler.xml:
@@ -115,3 +118,12 @@ jobs:
       - hadoop.log.file=timelineserver.log
     main_entry:
       java_class: org.apache.hadoop.yarn.server.applicationhistoryservice.ApplicationHistoryServer
+  # Shell Command
+  jar:
+    super_job: job_common
+    main_entry:
+      java_class: org.apache.hadoop.util.RunJar
+  rmadmin:
+    super_job: job_common
+    main_entry:
+      java_class: org.apache.hadoop.yarn.client.cli.RMAdminCLI
