@@ -6,9 +6,11 @@ import (
 	"github.com/gorilla/mux"
 	huker "github.com/openinx/huker/pkg/core"
 	"github.com/openinx/huker/pkg/supervisor"
+	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"html/template"
 	"net/http"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -23,9 +25,8 @@ type Dashboard struct {
 	clusters      []*huker.Cluster
 }
 
-// Create a new supervisor agent.
-func NewDashboard(port int) (*Dashboard, error) {
-	hukerJob, err := huker.NewDefaultHukerJob()
+func NewRawDashboard(port int, configRootDir, pkgServerAddress string) (*Dashboard, error) {
+	hukerJob, err := huker.NewConfigFileHukerJob(configRootDir, pkgServerAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -40,6 +41,13 @@ func NewDashboard(port int) (*Dashboard, error) {
 		clusters:      make([]*huker.Cluster, 0),
 	}
 	return d, nil
+}
+
+// Create a new supervisor agent.
+func NewDashboard(port int) (*Dashboard, error) {
+	configRootDir := utils.ReadEnvStrValue(huker.HUKER_CONF_DIR, path.Join(utils.GetHukerDir(), huker.HUKER_CONF_DIR_DEFAULT))
+	pkgServerAddress := utils.ReadEnvStrValue(huker.HUKER_PKG_HTTP_SERVER, huker.HUKER_PKG_HTTP_SERVER_DEFAULT)
+	return NewRawDashboard(port, configRootDir, pkgServerAddress)
 }
 
 type HandleFunc func(w http.ResponseWriter, r *http.Request) (string, error)

@@ -28,7 +28,7 @@ func NewProgram() *supervisor.Program {
 }
 
 func TestMiniHuker(t *testing.T) {
-	m := NewMiniHuker(1)
+	m := NewTestingMiniHuker(1)
 
 	m.Start()
 	defer m.Stop()
@@ -70,7 +70,7 @@ func TestMiniHuker(t *testing.T) {
 }
 
 func TestRollingUpdate(t *testing.T) {
-	m := NewMiniHuker(1)
+	m := NewTestingMiniHuker(1)
 
 	m.Start()
 	defer m.Stop()
@@ -140,7 +140,7 @@ echo $PROGRAM_TASK_ID >> $file
 `
 
 func TestHooks(t *testing.T) {
-	m := NewMiniHuker(1)
+	m := NewTestingMiniHuker(1)
 	m.Start()
 	defer m.Stop()
 
@@ -190,7 +190,7 @@ func TestHooks(t *testing.T) {
 }
 
 func TestListTasks(t *testing.T) {
-	m := NewMiniHuker(1)
+	m := NewTestingMiniHuker(1)
 	m.Start()
 	defer m.Stop()
 

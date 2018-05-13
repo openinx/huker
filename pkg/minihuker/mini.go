@@ -2,6 +2,7 @@ package minihuker
 
 import (
 	"fmt"
+	"github.com/openinx/huker/pkg/core"
 	dash "github.com/openinx/huker/pkg/dashboard"
 	"github.com/openinx/huker/pkg/pkgsrv"
 	"github.com/openinx/huker/pkg/supervisor"
@@ -28,7 +29,7 @@ type MiniHuker struct {
 	WaitGroup      *sync.WaitGroup
 }
 
-func NewRawMiniHuker(agentSize int, agentRootDir string, agentPort int,
+func NewMiniHuker(agentSize int, agentRootDir string, agentPort int,
 	pkgSrvPort int, pkgSrvLibDir, pkgSrvConfFile string,
 	dashboardPort int) *MiniHuker {
 	// Initialize the supervisor agents.
@@ -78,9 +79,11 @@ func NewRawMiniHuker(agentSize int, agentRootDir string, agentPort int,
 	return m
 }
 
-func NewMiniHuker(supervisorSize int) *MiniHuker {
+func NewTestingMiniHuker(supervisorSize int) *MiniHuker {
+	os.Setenv(core.HUKER_CONF_DIR, utils.GetHukerDir()+"/testdata/conf")
+	os.Setenv(core.HUKER_PKG_HTTP_SERVER, fmt.Sprintf("http://127.0.0.1:%d", TEST_PKG_SRV_PORT))
 	agentRootDir := fmt.Sprintf("/tmp/huker/%d", time.Now().UnixNano())
-	return NewRawMiniHuker(supervisorSize, agentRootDir, TEST_AGENT_PORT, TEST_PKG_SRV_PORT,
+	return NewMiniHuker(supervisorSize, agentRootDir, TEST_AGENT_PORT, TEST_PKG_SRV_PORT,
 		utils.GetHukerDir()+"/testdata/lib", utils.GetHukerDir()+"/testdata/conf/pkg.yaml",
 		TEST_PKG_DASHBOARD_PORT)
 }

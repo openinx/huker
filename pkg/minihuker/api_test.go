@@ -1,7 +1,6 @@
 package minihuker
 
 import (
-	"fmt"
 	"github.com/openinx/huker/pkg/core"
 	"github.com/openinx/huker/pkg/supervisor"
 	"github.com/openinx/huker/pkg/utils"
@@ -12,12 +11,10 @@ import (
 func TestHukerJob(t *testing.T) {
 	// TODO try to increase task size to 5. need to render(both global & host) the extra_args section.
 	taskSize := 1
-	miniHuker := NewMiniHuker(taskSize)
+
+	miniHuker := NewTestingMiniHuker(taskSize)
 	miniHuker.Start()
 	defer miniHuker.Stop()
-
-	os.Setenv(core.HUKER_CONF_DIR, utils.GetHukerDir()+"/testdata/conf")
-	os.Setenv(core.HUKER_PKG_HTTP_SERVER, fmt.Sprintf("http://127.0.0.1:%d", TEST_PKG_SRV_PORT))
 
 	hukerJob, err := core.NewDefaultHukerJob()
 	if err != nil {
