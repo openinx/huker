@@ -1,0 +1,24 @@
+base: {{.ConfRootDir}}/hbase/common/common.yaml
+
+cluster:
+  project: hbase
+  cluster_name: test-hbase-slave
+  main_process: java
+  package_name: hbase-1.3.1-bin.tar.gz
+  package_md5sum: 215e29a66a0e1d5a9f319dd71008dd3b
+  dependencies:
+    - {{.ConfRootDir}}/zookeeper/test-zk.yaml
+    - {{.ConfRootDir}}/hdfs/test-hdfs.yaml
+
+jobs:
+  master:
+    hosts:
+      - 127.0.0.1:9001/id=0/base_port=32100
+      - 127.0.0.1:9001/id=1/base_port=32200
+  regionserver:
+    hosts:
+      - 127.0.0.1:9001/id=0/base_port=32000
+      - 127.0.0.1:9001/id=1/base_port=32010
+      - 127.0.0.1:9001/id=2/base_port=32020
+      - 127.0.0.1:9001/id=3/base_port=32030
+      - 127.0.0.1:9001/id=4/base_port=32040

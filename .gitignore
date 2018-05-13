@@ -1,6 +1,7 @@
 .project
 .DS_Store
 /bin
+/data
 /lib
 /.idea/
 /logs

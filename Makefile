@@ -5,6 +5,7 @@ all: build
 build:
 	find . -type f -name '*.go' | xargs gofmt -s -w
 	go build -o bin/huker cmd/huker.go
+	go build -o bin/huker-standalone cmd/huker-standalone.go
 	go build -o bin/metric cmd/huker-metrics.go
 
 test:
@@ -23,5 +24,5 @@ release: build
 	@echo "Huker release package: release/$(HUKER_VERSION).tar.gz"
 
 clean:
-	rm -rf bin/* log/* release/* *.coverprofile
+	rm -rf bin/* log/* data release/* *.coverprofile
 	find . | grep coverprofile | xargs rm -rf

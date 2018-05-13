@@ -2,20 +2,21 @@ package minihuker
 
 import (
 	"fmt"
+	dash "github.com/openinx/huker/pkg/dashboard"
 	"github.com/openinx/huker/pkg/pkgsrv"
 	"github.com/openinx/huker/pkg/supervisor"
+	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"os"
-	"path"
-	"runtime"
 	"strconv"
 	"sync"
 	"time"
 )
 
 const (
-	TEST_AGENT_PORT   = 9743
-	TEST_PKG_SRV_PORT = 4321
+	TEST_AGENT_PORT         = 9743
+	TEST_PKG_SRV_PORT       = 4321
+	TEST_PKG_DASHBOARD_PORT = 9008
 )
 
 type MiniHuker struct {
@@ -23,58 +24,65 @@ type MiniHuker struct {
 	Supervisor     []*supervisor.Supervisor
 	SuperClient    []*supervisor.SupervisorCli
 	PkgServer      *pkgsrv.PackageServer
+	Dashboard      *dash.Dashboard
 	WaitGroup      *sync.WaitGroup
 }
 
-func GetTestDataDir() string {
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("No caller information")
-	}
-	return path.Dir(path.Dir(path.Dir(filename)))
-}
-
-func NewMiniHuker(supervisorSize int) *MiniHuker {
-	agentRootDir := fmt.Sprintf("/tmp/huker/%d", time.Now().UnixNano())
-	// mkdir root dir of agent if not exist.
+func NewRawMiniHuker(agentSize int, agentRootDir string, agentPort int,
+	pkgSrvPort int, pkgSrvLibDir, pkgSrvConfFile string,
+	dashboardPort int) *MiniHuker {
+	// Initialize the supervisor agents.
 	if _, err := os.Stat(agentRootDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(agentRootDir, 0755); err != nil {
 			panic(err)
 		}
-	} else if err != nil {
-		panic(err)
 	}
 	var supervisors []*supervisor.Supervisor
 	var superClients []*supervisor.SupervisorCli
-	for i := 0; i < supervisorSize; i++ {
-		agent, err := supervisor.NewSupervisor(agentRootDir, TEST_AGENT_PORT+i, agentRootDir+"/supervisor.db"+strconv.Itoa(i))
+	for i := 0; i < agentSize; i++ {
+		agent, err := supervisor.NewSupervisor(agentRootDir, agentPort+i, agentRootDir+"/supervisor.db"+strconv.Itoa(i))
 		if err != nil {
 			panic(err)
 		}
 		supervisors = append(supervisors, agent)
 
 		superClient := &supervisor.SupervisorCli{
-			ServerAddr: fmt.Sprintf("http://127.0.0.1:%d", TEST_AGENT_PORT+i),
+			ServerAddr: fmt.Sprintf("http://127.0.0.1:%d", agentPort+i),
 		}
 		superClients = append(superClients, superClient)
 	}
 
 	// Initialize the package server.
-	p, err := pkgsrv.NewPackageServer(TEST_PKG_SRV_PORT, GetTestDataDir()+"/testdata/lib", GetTestDataDir()+"/testdata/conf/pkg.yaml")
+	p, err := pkgsrv.NewPackageServer(pkgSrvPort, pkgSrvLibDir, pkgSrvConfFile)
+	if err != nil {
+		panic(err)
+	}
+
+	// Initialize the dashboard http server
+	dashboard, err := dash.NewDashboard(dashboardPort)
 	if err != nil {
 		panic(err)
 	}
 
 	m := &MiniHuker{
-		SupervisorSize: supervisorSize,
+		SupervisorSize: agentSize,
 		Supervisor:     supervisors,
 		SuperClient:    superClients,
 		PkgServer:      p,
+		Dashboard:      dashboard,
 		WaitGroup:      &sync.WaitGroup{},
 	}
 
-	m.WaitGroup.Add(m.SupervisorSize + 1)
+	// supervisors, a package server, a dashboard server.
+	m.WaitGroup.Add(m.SupervisorSize + 1 + 1)
 	return m
+}
+
+func NewMiniHuker(supervisorSize int) *MiniHuker {
+	agentRootDir := fmt.Sprintf("/tmp/huker/%d", time.Now().UnixNano())
+	return NewRawMiniHuker(supervisorSize, agentRootDir, TEST_AGENT_PORT, TEST_PKG_SRV_PORT,
+		utils.GetHukerDir()+"/testdata/lib", utils.GetHukerDir()+"/testdata/conf/pkg.yaml",
+		TEST_PKG_DASHBOARD_PORT)
 }
 
 func (m *MiniHuker) Start() {
@@ -97,8 +105,20 @@ func (m *MiniHuker) Start() {
 		}
 	}()
 
+	// Start the dashboard server
+	go func() {
+		defer m.WaitGroup.Done()
+		if err := m.Dashboard.Start(); err != nil {
+			log.Error(err)
+		}
+	}()
+
 	// Wait until both supervisor and package server finished.
 	time.Sleep(1 * time.Second)
+}
+
+func (m *MiniHuker) Wait() {
+	m.WaitGroup.Wait()
 }
 
 func (m *MiniHuker) Stop() {
@@ -108,6 +128,9 @@ func (m *MiniHuker) Stop() {
 		}
 	}
 	if err := m.PkgServer.Shutdown(); err != nil {
+		log.Error(err)
+	}
+	if err := m.Dashboard.Shutdown(); err != nil {
 		log.Error(err)
 	}
 	m.WaitGroup.Wait()

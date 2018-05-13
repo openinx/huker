@@ -15,6 +15,7 @@ import (
 	"os/user"
 	"path"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -223,4 +224,13 @@ func HttpGetJSON(url string) (map[string]interface{}, error) {
 		return nil, err
 	}
 	return jsonMap, nil
+}
+
+// The directory: $GOPATH/src/github.com/openinx/huker
+func GetHukerDir() string {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("No caller information")
+	}
+	return path.Dir(path.Dir(path.Dir(filename)))
 }

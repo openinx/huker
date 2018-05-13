@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	huker "github.com/openinx/huker/pkg/core"
-	"github.com/openinx/huker/pkg/dashboard"
+	dash "github.com/openinx/huker/pkg/dashboard"
 	"github.com/openinx/huker/pkg/pkgsrv"
 	"github.com/openinx/huker/pkg/supervisor"
 	"github.com/qiniu/log"
@@ -251,7 +251,7 @@ func main() {
 			fmt.Printf("Unexpected arguments: %v\n", os.Args[index:])
 			printUsageAndExit()
 		}
-		if dashboard, err := pkg.NewDashboard(port); err != nil {
+		if dashboard, err := dash.NewDashboard(port); err != nil {
 			log.Error(err.Error())
 			return
 		} else if dashboard.Start(); err != nil {

@@ -1,8 +1,7 @@
-package core
+package minihuker
 
 import (
 	"fmt"
-	"github.com/openinx/huker/pkg/minihuker"
 	"github.com/openinx/huker/pkg/supervisor"
 	"io/ioutil"
 	"os"
@@ -21,7 +20,7 @@ func NewProgram() *supervisor.Program {
 		Configs: map[string]string{
 			"a": "b", "c": "d",
 		},
-		PkgAddress: fmt.Sprintf("http://127.0.0.1:%d/test.tar.gz", minihuker.TEST_PKG_SRV_PORT),
+		PkgAddress: fmt.Sprintf("http://127.0.0.1:%d/test.tar.gz", TEST_PKG_SRV_PORT),
 		PkgName:    "test.tar.gz",
 		PkgMD5Sum:  "f77f526dcfbdbfb2dd942b6628f4c0ab",
 		Hooks:      make(map[string]string),
@@ -29,7 +28,7 @@ func NewProgram() *supervisor.Program {
 }
 
 func TestMiniHuker(t *testing.T) {
-	m := minihuker.NewMiniHuker(1)
+	m := NewMiniHuker(1)
 
 	m.Start()
 	defer m.Stop()
@@ -71,7 +70,7 @@ func TestMiniHuker(t *testing.T) {
 }
 
 func TestRollingUpdate(t *testing.T) {
-	m := minihuker.NewMiniHuker(1)
+	m := NewMiniHuker(1)
 
 	m.Start()
 	defer m.Stop()
@@ -141,7 +140,7 @@ echo $PROGRAM_TASK_ID >> $file
 `
 
 func TestHooks(t *testing.T) {
-	m := minihuker.NewMiniHuker(1)
+	m := NewMiniHuker(1)
 	m.Start()
 	defer m.Stop()
 
@@ -191,7 +190,7 @@ func TestHooks(t *testing.T) {
 }
 
 func TestListTasks(t *testing.T) {
-	m := minihuker.NewMiniHuker(1)
+	m := NewMiniHuker(1)
 	m.Start()
 	defer m.Stop()
 
