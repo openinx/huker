@@ -1,0 +1,24 @@
+base: {{.ConfRootDir}}/hbase/common/common.yaml
+
+cluster:
+  project: hbase
+  cluster_name: test-hbase200-release
+  main_process: java
+  package_name: hbase-2.0.0-bin.tar.gz
+  package_md5sum: 398d89ad29facaf4998edecb9b4729d3
+  dependencies:
+    - {{.ConfRootDir}}/zookeeper/test-zk.yaml
+    - {{.ConfRootDir}}/hdfs/test-hdfs.yaml
+
+jobs:
+  master:
+    hosts:
+      - 127.0.0.1:9001/id=0/base_port=33100
+      - 127.0.0.1:9001/id=1/base_port=33200
+  regionserver:
+    hosts:
+      - 127.0.0.1:9001/id=0/base_port=33000
+      - 127.0.0.1:9001/id=1/base_port=33010
+      - 127.0.0.1:9001/id=2/base_port=33020
+      - 127.0.0.1:9001/id=3/base_port=33030
+      - 127.0.0.1:9001/id=4/base_port=33040

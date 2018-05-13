@@ -4,7 +4,7 @@ hadoop-2.6.5.tar.gz:
   date: 2017-06-20 10:21
   md5sum: 967c24f3c15fcdd058f34923e92ce8ac
   size: 199635269
-  link: http://mirrors.hust.edu.cn/apache/hadoop/core/hadoop-2.6.5/hadoop-2.6.5.tar.gz
+  link: http://archive.apache.org/dist/hadoop/core/hadoop-2.6.5/hadoop-2.6.5.tar.gz
 
 # zookeeper package
 zookeeper-3.4.11.tar.gz:
@@ -12,7 +12,7 @@ zookeeper-3.4.11.tar.gz:
   date: 2017-11-08 18:24
   md5sum: 55aec6196ed9fa4c451cb5ae4a1f42d8
   size: 36668066
-  link: http://mirrors.hust.edu.cn/apache/zookeeper/zookeeper-3.4.11/zookeeper-3.4.11.tar.gz
+  link: http://archive.apache.org/dist/zookeeper/zookeeper-3.4.11/zookeeper-3.4.11.tar.gz
 
 # hbase package
 hbase-1.2.6-bin.tar.gz:
@@ -20,13 +20,19 @@ hbase-1.2.6-bin.tar.gz:
   date: 2017-06-20 10:42
   md5sum: e2b28a6a0bb1699f853bd9ad9a813b2c
   size: 104659474
-  link: http://mirrors.hust.edu.cn/apache/hbase/1.2.6/hbase-1.2.6-bin.tar.gz
+  link: http://archive.apache.org/dist/hbase/1.2.6/hbase-1.2.6-bin.tar.gz
 hbase-1.3.1-bin.tar.gz:
   version: 1.3.1
   date: 2017-06-20 10:41
   md5sum: 215e29a66a0e1d5a9f319dd71008dd3b
   size: 105718722
-  link: http://mirrors.hust.edu.cn/apache/hbase/1.3.1/hbase-1.3.1-bin.tar.gz
+  link: http://archive.apache.org/dist/hbase/1.3.1/hbase-1.3.1-bin.tar.gz
+hbase-2.0.0-bin.tar.gz:
+  version: 2.0.0
+  date: 2018-04-23 05:23
+  md5sum: 398d89ad29facaf4998edecb9b4729d3
+  size: 152570064
+  link: http://archive.apache.org/dist/hbase/2.0.0/hbase-2.0.0-bin.tar.gz
 
 # spark package
 spark-2.2.1-bin-hadoop2.6.tgz:
@@ -34,7 +40,7 @@ spark-2.2.1-bin-hadoop2.6.tgz:
   date: 2017-11-25 02:44
   md5sum: 7774419f0fb7c28d93c24aefb19a014c
   size: 198936027
-  link: http://mirrors.hust.edu.cn/apache/spark/spark-2.2.1/spark-2.2.1-bin-hadoop2.6.tgz
+  link: http://archive.apache.org/dist/spark/spark-2.2.1/spark-2.2.1-bin-hadoop2.6.tgz
 
 # phoenix package
 apache-phoenix-4.13.1-HBase-1.2-bin.tar.gz:
@@ -42,7 +48,7 @@ apache-phoenix-4.13.1-HBase-1.2-bin.tar.gz:
   date: 2018-02-03 02:44
   md5sum: e78fd41708aaa8d286ed2dcde0a5b645
   size: 344934688
-  link: http://mirrors.hust.edu.cn/apache/phoenix/apache-phoenix-4.13.1-HBase-1.2/bin/apache-phoenix-4.13.1-HBase-1.2-bin.tar.gz
+  link: http://archive.apache.org/dist/phoenix/apache-phoenix-4.13.1-HBase-1.2/bin/apache-phoenix-4.13.1-HBase-1.2-bin.tar.gz
 
 # hive package
 apache-hive-2.3.2-bin.tar.gz:
@@ -50,4 +56,4 @@ apache-hive-2.3.2-bin.tar.gz:
   date: 2018-02-04 15:18
   md5sum: 8f3abedb3fba28769afcea1445c64231
   size: 231740978
-  link: http://mirror.bit.edu.cn/apache/hive/stable-2/apache-hive-2.3.2-bin.tar.gz
+  link: http://archive.apache.org/dist/hive/hive-2.3.2/apache-hive-2.3.2-bin.tar.gz
