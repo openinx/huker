@@ -2,6 +2,9 @@
 	"ImportPath": "github.com/openinx/huker",
 	"GoVersion": "go1.8",
 	"GodepVersion": "v80",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/StackExchange/wmi",
@@ -29,6 +32,21 @@
 		{
 			"ImportPath": "github.com/gorilla/mux",
 			"Rev": "49c024275504f0341e5a9971eb7ba7fa3dc7af40"
+		},
+		{
+			"ImportPath": "github.com/influxdata/influxdb/client/v2",
+			"Comment": "v1.5.0-154-g1bf0d16",
+			"Rev": "1bf0d16dbf707f40b8140d5c15e790b24137e34e"
+		},
+		{
+			"ImportPath": "github.com/influxdata/influxdb/models",
+			"Comment": "v1.5.0-154-g1bf0d16",
+			"Rev": "1bf0d16dbf707f40b8140d5c15e790b24137e34e"
+		},
+		{
+			"ImportPath": "github.com/influxdata/influxdb/pkg/escape",
+			"Comment": "v1.5.0-154-g1bf0d16",
+			"Rev": "1bf0d16dbf707f40b8140d5c15e790b24137e34e"
 		},
 		{
 			"ImportPath": "github.com/qiniu/log",
