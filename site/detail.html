@@ -58,7 +58,9 @@
                                 </td>
                                 <td>{{ .BasePort }}</td>
                                 {{ with .Attributes}}
-                                    {{ if eq .status "Running"}}
+                                    {{ if not .status }}
+                                        <td><span class="label label-warning">Unknown</span></td>
+                                    {{ else if eq .status "Running"}}
                                         <td><span class="label label-success" >Running</span></td>
                                     {{ else if eq .status "NotBootstrap" }}
                                         <td><span class="label label-default">NotBootstrap</span></td>
