@@ -106,7 +106,7 @@ func handleAction(command string, args []string) {
 		var err error
 		taskId, err = strconv.Atoi(args[index])
 		if err != nil {
-			fmt.Printf("<task_id> shoud be int, instead of %s\n", args[index])
+			fmt.Fprintf(os.Stderr, "<task_id> shoud be int, instead of %s\n", args[index])
 			os.Exit(1)
 		}
 		index++
@@ -114,6 +114,15 @@ func handleAction(command string, args []string) {
 	if err := handleClusterAction(command, project, cluster, job, taskId, args[index:]); err != nil {
 		log.Error(err)
 	}
+}
+
+func parsePort(portStr string) int {
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "port shoud be int, not %s\n", portStr)
+		printUsageAndExit()
+	}
+	return port
 }
 
 func main() {
@@ -134,11 +143,11 @@ func main() {
 			case "ERROR":
 				log.SetOutputLevel(log.Lerror)
 			default:
-				fmt.Printf("Invalid log level: %s", os.Args[index+1])
+				fmt.Fprintf(os.Stderr, "Invalid log level: %s\n", os.Args[index+1])
 				printUsageAndExit()
 			}
 		} else if os.Args[index] == "--log-file" {
-			f, err := os.OpenFile(os.Args[index+1], os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+			f, err := os.Create(os.Args[index+1])
 			if err != nil {
 				log.Error(err)
 				os.Exit(1)
@@ -148,7 +157,7 @@ func main() {
 	}
 
 	if index >= len(os.Args) {
-		fmt.Println("Command not found.")
+		fmt.Fprintf(os.Stderr, "Command not found.\n")
 		printUsageAndExit()
 	}
 
@@ -171,19 +180,14 @@ func main() {
 			} else if os.Args[index] == "-f" || os.Args[index] == "--file" {
 				file = os.Args[index+1]
 			} else if os.Args[index] == "-p" || os.Args[index] == "--port" {
-				newPort, err := strconv.Atoi(os.Args[index+1])
-				if err != nil {
-					fmt.Printf("port shoud be int, not %s\n", os.Args[index+1])
-					printUsageAndExit()
-				}
-				port = newPort
+				port = parsePort(os.Args[index+1])
 			} else {
-				fmt.Printf("Unexpected arguments: %v\n", os.Args[index:])
+				fmt.Fprintf(os.Stderr, "Unexpected arguments: %v\n", os.Args[index:])
 				printUsageAndExit()
 			}
 		}
 		if index < len(os.Args) {
-			fmt.Printf("Unexpected arguments: %v\n", os.Args[index:])
+			fmt.Fprintf(os.Stderr, "Unexpected arguments: %v\n", os.Args[index:])
 			printUsageAndExit()
 		}
 		if supervisor, err := supervisor.NewSupervisor(dir, port, file); err != nil {
@@ -203,26 +207,19 @@ func main() {
 			} else if os.Args[index] == "-c" || os.Args[index] == "--conf" {
 				pkgConf = os.Args[index+1]
 			} else if os.Args[index] == "-p" || os.Args[index] == "--port" {
-				newPort, err := strconv.Atoi(os.Args[index+1])
-				if err != nil {
-					fmt.Printf("port shoud be int, not %s\n", os.Args[index+1])
-					printUsageAndExit()
-				}
-				port = newPort
+				port = parsePort(os.Args[index+1])
 			} else {
-				fmt.Printf("Unexpected arguments: %v\n", os.Args[index:])
+				fmt.Fprintf(os.Stderr, "Unexpected arguments: %v\n", os.Args[index:])
 				printUsageAndExit()
 			}
 		}
 
-		if _, err := os.Stat(pkgRoot); err != nil {
-			if os.IsNotExist(err) {
-				log.Errorf("The %s directory does not exist, please create the directory firstly.", pkgRoot)
-				os.Exit(1)
-			}
+		if _, err := os.Stat(pkgRoot); os.IsNotExist(err) {
+			log.Errorf("The %s directory does not exist, please create the directory firstly.", pkgRoot)
+			os.Exit(1)
 		}
 		if index < len(os.Args) {
-			fmt.Printf("Unexpected arguments: %v\n", os.Args[index:])
+			fmt.Fprintf(os.Stderr, "Unexpected arguments: %v\n", os.Args[index:])
 			printUsageAndExit()
 		}
 		if pkgSrv, err := pkgsrv.NewPackageServer(port, pkgRoot, pkgConf); err != nil {
@@ -236,30 +233,25 @@ func main() {
 		port := 8001
 		for ; index+1 < len(os.Args); index += 2 {
 			if os.Args[index] == "-p" || os.Args[index] == "--port" {
-				newPort, err := strconv.Atoi(os.Args[index+1])
-				if err != nil {
-					fmt.Printf("port shoud be int, not %s\n", os.Args[index+1])
-					printUsageAndExit()
-				}
-				port = newPort
+				port = parsePort(os.Args[index+1])
 			} else {
-				fmt.Printf("Unexpected arguments: %v\n", os.Args[index:])
+				fmt.Fprintf(os.Stderr, "Unexpected arguments: %v\n", os.Args[index:])
 				printUsageAndExit()
 			}
 		}
 		if index < len(os.Args) {
-			fmt.Printf("Unexpected arguments: %v\n", os.Args[index:])
+			fmt.Fprintf(os.Stderr, "Unexpected arguments: %v\n", os.Args[index:])
 			printUsageAndExit()
 		}
 		if dashboard, err := dash.NewDashboard(port); err != nil {
-			log.Error(err.Error())
+			log.Stack(err)
 			return
 		} else if dashboard.Start(); err != nil {
-			log.Error(err.Error())
+			log.Stack(err)
 			return
 		}
 	} else {
-		fmt.Printf("No help topic for '%s'\n", command)
+		fmt.Fprintf(os.Stderr, "No help topic for '%s'\n", command)
 		printUsageAndExit()
 	}
 }
