@@ -8,6 +8,7 @@ cluster:
   package_md5sum: e78fd41708aaa8d286ed2dcde0a5b645
   dependencies:
     - {{.ConfRootDir}}/zookeeper/test-zk.yaml
+    - {{.ConfRootDir}}/hbase/test-hbase.yaml
 
 jobs:
   queryserver:

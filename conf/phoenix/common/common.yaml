@@ -24,6 +24,7 @@ jobs:
       hbase-site.xml:
         - hbase.cluster.distributed=true
         - hbase.zookeeper.quorum=%{dependencies.0.zkServer.1.host}:%{dependencies.0.zkServer.1.base_port}
+        - zookeeper.znode.parent=/hbase/test-hbase # TODO need to change this to be %{dependencies.0.cluster_name}
       log4j.properties:
         file: {{.ConfRootDir}}/phoenix/common/log4j.properties
     classpath:

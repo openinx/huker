@@ -34,6 +34,7 @@ jobs:
       - {{.PkgRootDir}}/lib/*
       - {{.PkgRootDir}}/lib/ruby/*
       - {{.PkgRootDir}}/*
+      - $AgentRootDir/.packages/e78fd41708aaa8d286ed2dcde0a5b645/apache-phoenix-4.13.1-HBase-1.2-bin/*
   master:
     super_job: job_common
     jvm_properties:
