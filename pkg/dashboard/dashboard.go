@@ -237,16 +237,15 @@ func (d *Dashboard) hWebApi(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Dashboard) refreshCache() error {
-	var err error
-	s.clusters, err = s.hukerJob.List()
+	clusters, err := s.hukerJob.List()
 	if err != nil {
 		return err
 	}
-	for i := 0; i < len(s.clusters); i++ {
-		for _, job := range s.clusters[i].Jobs {
+	for i := 0; i < len(clusters); i++ {
+		for _, job := range clusters[i].Jobs {
 			for _, host := range job.Hosts {
 				sup := supervisor.NewSupervisorCli(host.ToHttpAddress())
-				prog, err := sup.GetTask(s.clusters[i].ClusterName, job.JobName, host.TaskId)
+				prog, err := sup.GetTask(clusters[i].ClusterName, job.JobName, host.TaskId)
 				status := supervisor.StatusUnknown
 				if err != nil {
 					if !strings.Contains(err.Error(), "Task does not found") {
@@ -261,6 +260,7 @@ func (s *Dashboard) refreshCache() error {
 			}
 		}
 	}
+	s.clusters = clusters
 	return nil
 }
 
