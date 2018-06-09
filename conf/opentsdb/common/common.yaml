@@ -28,6 +28,8 @@ jobs:
         - tsd.network.async_io=true
         - tsd.http.staticroot={{.PkgRootDir}}/staticroot
         - tsd.http.cachedir={{.PkgDataDir}}
+        - tsd.http.request.enable_chunked=true # Enable chunk to allow send big request.
+        - tsd.http.request.max_chunk=4194304 # The max request size will be 4MB.
         - tsd.core.auto_create_metrics=true
         - tsd.core.enable_ui=false # Disable the UI, because lack of mygnuplot.sh script
         - tsd.core.enable_api=true

@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-	collector := metrics.NewCollector(10, "http://localhost:8086", "admin", "admin", "granfa")
+	collector := metrics.NewCollector(10, "http://localhost:51001/api/put?details")
 	collector.Start()
 }

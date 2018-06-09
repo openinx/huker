@@ -1,95 +1,79 @@
 package metrics
 
 import (
-	"github.com/influxdata/influxdb/client/v2"
+	"bytes"
+	"encoding/json"
 	"github.com/openinx/huker/pkg/metrics/thirdparts"
 	"github.com/qiniu/log"
+	"io/ioutil"
+	"net/http"
 	"time"
 )
 
-type InfluxDBClient struct {
-	Client   client.Client
-	Database string
-}
-
-func NewInfluxDBClient(addr string, username string, password string, database string) (*InfluxDBClient, error) {
-	c, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr:     addr,
-		Username: username,
-		Password: password,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &InfluxDBClient{
-		Client:   c,
-		Database: database,
-	}, nil
-}
-
-func (c *InfluxDBClient) NewBatchPointsConfig() client.BatchPointsConfig {
-	return client.BatchPointsConfig{
-		Database:  c.Database,
-		Precision: "s",
-	}
-}
-
-func (c *InfluxDBClient) Close() error {
-	return c.Client.Close()
-}
-
 type MetricFetcher interface {
-	Pull(conf client.BatchPointsConfig) (client.BatchPoints, error)
+	Pull() (interface{}, error)
 }
 
 type Collector struct {
 	workerSize int
 
 	// InfluxDB client configurations.
-	influxServerAddr string
-	influxUserName   string
-	influxPassword   string
-	influxDatabase   string
+	tsdbHttpAddr string
 
 	// task chan
 	tasks chan MetricFetcher
 }
 
-func NewCollector(workerSize int, influxServerAddr string, influxUserName string, influxPassword string, influxDatabase string) *Collector {
+func NewCollector(workerSize int, tsdbHttpAddr string) *Collector {
 	return &Collector{
-		workerSize:       workerSize,
-		influxServerAddr: influxServerAddr,
-		influxUserName:   influxUserName,
-		influxPassword:   influxPassword,
-		influxDatabase:   influxDatabase,
-		tasks:            make(chan MetricFetcher),
+		workerSize:   workerSize,
+		tsdbHttpAddr: tsdbHttpAddr,
+		tasks:        make(chan MetricFetcher),
 	}
 }
 
 func (c *Collector) fetchAndSave(workId int, m MetricFetcher) {
-	// Initialize the influxDB client.
-	influxCli, err := NewInfluxDBClient(c.influxServerAddr, c.influxUserName, c.influxPassword, c.influxDatabase)
-	if err != nil {
-		log.Stack(err)
-		return
-	}
-	defer influxCli.Close()
-
 	// Pull the metric from remote server
 	log.Infof("Try to fetch the metrics(workId: %d)...", workId)
-	bp, err := m.Pull(influxCli.NewBatchPointsConfig())
+	jsonObj, err := m.Pull()
 	if err != nil {
 		log.Errorf("Failed to pull metric, %s", err)
 	}
 
 	// Persist the metric into influxDB.
-	if bp == nil {
-		log.Warnf("Batch points is nil, skip to persist the points (workId: %d).", workId)
+	if jsonObj == nil {
+		log.Warnf("JSON object is nil, skip to persist the points (workId: %d).", workId)
 		return
 	}
 
-	if err := influxCli.Client.Write(bp); err != nil {
-		log.Errorf("Failed to persist the batch points to influxdb database, err: %v", err)
+	data, serialError := json.Marshal(jsonObj)
+	if serialError != nil {
+		log.Errorf("Failed to marshal the interface{} to json string, obj:%v, reason: %v", jsonObj, serialError)
+		return
+	}
+
+	// New Http Client
+	// TODO abstract an OpenTSDB Client.
+	req, err0 := http.NewRequest("POST", c.tsdbHttpAddr, bytes.NewBuffer(data))
+	if err0 != nil {
+		log.Errorf("Failed to new http request, url: %s, data: %v", c.tsdbHttpAddr, data)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	cli := http.Client{}
+	resp, err := cli.Do(req)
+	if err != nil {
+		log.Errorf("Send json data to OpenTSDB failed, url: %s, data: %s", c.tsdbHttpAddr, string(data))
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respData, _ := ioutil.ReadAll(resp.Body)
+		log.Errorf("Failed to persist json data to OpenTSDB, url: %s, data: %v, reason: %v", c.tsdbHttpAddr, string(data), string(respData))
+		return
 	}
 }
 
@@ -114,7 +98,7 @@ func (c *Collector) Start() {
 		}
 		c.tasks <- f
 
-		f1, err1 := thirdparts.NewHBaseMetricFetcher("http://127.0.0.1:64918/jmx", "127.0.0.1", 64916, "test-hbase")
+		f1, err1 := thirdparts.NewHBaseMetricFetcher("http://127.0.0.1:31001/jmx", "127.0.0.1", 64916, "test-hbase")
 		if err1 != nil {
 			log.Errorf("Failed to initialize hbase fetcher, error: %v", err1)
 			continue

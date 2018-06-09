@@ -2,9 +2,8 @@ package thirdparts
 
 import (
 	"fmt"
-	"github.com/influxdata/influxdb/client/v2"
 	"github.com/openinx/huker/pkg/utils"
-	"github.com/qiniu/log"
+	"time"
 )
 
 type HDFSMetricFetcher struct {
@@ -27,43 +26,36 @@ func (f *HDFSMetricFetcher) hostAndPort() string {
 	return fmt.Sprintf("%s:%d", f.host, f.port)
 }
 
-func (f *HDFSMetricFetcher) Pull(conf client.BatchPointsConfig) (client.BatchPoints, error) {
-	bp, err := client.NewBatchPoints(conf)
+func (f *HDFSMetricFetcher) tags() map[string]interface{} {
+	return map[string]interface{}{
+		"cluster": f.cluster,
+		"host":    f.host,
+		"port":    f.port,
+	}
+}
+
+func (f *HDFSMetricFetcher) Pull() (interface{}, error) {
 	data, err := utils.HttpGetJSON(f.url)
 	if err != nil {
-		return bp, err
+		return nil, err
 	}
+
+	var result []map[string]interface{}
+	now := time.Now().Unix()
 
 	beans := data["beans"].([]interface{})
 	for i := 0; i < len(beans); i++ {
 		bean := beans[i].(map[string]interface{})
-		var err error
 		if bean["name"] == "java.lang:type=Threading" {
-			err = f.handleThreading(bp, bean)
-		} else if bean["name"] == "" {
-
+			result = f.handleThreading(result, now, bean)
 		}
-		if err != nil {
-			log.Error("Failed to parse HDFS bean, bean: %s, err: %s", bean, err)
-		}
+		// TODO parse more beans ...
 	}
-	return bp, nil
+	return result, nil
 }
 
-func (f *HDFSMetricFetcher) handleThreading(bp client.BatchPoints, bean map[string]interface{}) error {
+func (f *HDFSMetricFetcher) handleThreading(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
 	threadCount := bean["ThreadCount"].(float64)
-	pt, err := client.NewPoint("hdfs_jvm", map[string]string{
-		"address": f.hostAndPort(),
-		"service": "NameNode",
-		"key":     "ThreadCount",
-		"cluster": f.cluster,
-		"type":    "hdfs",
-	}, map[string]interface{}{
-		"value": threadCount,
-	})
-	if err != nil {
-		return err
-	}
-	bp.AddPoint(pt)
-	return nil
+	result = append(result, formatMetric("hdfs.namenode.jvm", now, threadCount, f.tags()))
+	return result
 }

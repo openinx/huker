@@ -2,11 +2,10 @@ package thirdparts
 
 import (
 	"fmt"
-	"github.com/influxdata/influxdb/client/v2"
 	"github.com/openinx/huker/pkg/utils"
-	"github.com/qiniu/log"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type HBaseMetricFetcher struct {
@@ -29,58 +28,52 @@ func (f *HBaseMetricFetcher) hostAndPort() string {
 	return fmt.Sprintf("%s:%d", f.host, f.port)
 }
 
-func (f *HBaseMetricFetcher) Pull(conf client.BatchPointsConfig) (client.BatchPoints, error) {
-	bp, err := client.NewBatchPoints(conf)
+func (f *HBaseMetricFetcher) tags() map[string]interface{} {
+	return map[string]interface{}{
+		"cluster": f.cluster,
+		"host":    f.host,
+		"port":    f.port,
+	}
+}
+
+func (f *HBaseMetricFetcher) Pull() (interface{}, error) {
 	data, err := utils.HttpGetJSON(f.url)
 	if err != nil {
-		return bp, err
+		return nil, err
 	}
+
+	var result []map[string]interface{}
+	now := time.Now().Unix()
 
 	beans := data["beans"].([]interface{})
 	for i := 0; i < len(beans); i++ {
 		bean := beans[i].(map[string]interface{})
-		var err error
 		if bean["name"] == "java.lang:type=Threading" {
-			err = f.handleThreading(bp, bean)
+			result = f.handleThreading(result, now, bean)
 		} else if bean["name"] == "Hadoop:service=HBase,name=RegionServer,sub=Regions" {
-			err = f.handleRegionServerRegions(bp, bean)
+			result = f.handleRegionServerRegions(result, now, bean)
 		} else if bean["name"] == "Hadoop:service=HBase,name=RegionServer,sub=WAL" {
-			err = f.handleRegionServerWAL(bp, bean)
+			result = f.handleRegionServerWAL(result, now, bean)
 		} else if bean["name"] == "Hadoop:service=HBase,name=RegionServer,sub=Server" {
-			err = f.handleRegionServerServer(bp, bean)
+			result = f.handleRegionServerServer(result, now, bean)
 		} else if bean["name"] == "Hadoop:service=HBase,name=RegionServer,sub=IPC" {
-			err = f.handleRegionServerIPC(bp, bean)
-		}
-		if err != nil {
-			log.Error("Failed to parse HBase bean, bean: %s, err: %s", bean, err)
+			result = f.handleRegionServerIPC(result, now, bean)
 		}
 	}
-	return bp, nil
+	return result, nil
 }
 
-func (f *HBaseMetricFetcher) handleThreading(bp client.BatchPoints, bean map[string]interface{}) error {
+func (f *HBaseMetricFetcher) handleThreading(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
 	threadCount := bean["ThreadCount"].(float64)
-	pt, err := client.NewPoint("hbase_jvm", map[string]string{
-		"address": f.hostAndPort(),
-		"service": "RegionServer",
-		"key":     "ThreadCount",
-		"cluster": f.cluster,
-		"type":    "hbase",
-	}, map[string]interface{}{
-		"value": threadCount,
-	})
-	if err != nil {
-		return err
-	}
-	bp.AddPoint(pt)
-	return nil
+	metricMap := formatMetric("hbase.regionserver.jvm", now, threadCount, f.tags())
+	return append(result, metricMap)
 }
 
 const (
 	patternParseNsTableMetric = "Namespace_([a-zA-Z0-9_\\-\\.]+)_table_([a-zA-Z0-9_\\-\\.]+)_region_([a-z0-9]+)_metric_([a-zA-Z0-9_]+)"
 )
 
-func (f *HBaseMetricFetcher) handleRegionServerRegions(bp client.BatchPoints, bean map[string]interface{}) error {
+func (f *HBaseMetricFetcher) handleRegionServerRegions(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
 	namespaceMap := make(map[string]float64)
 	tableMap := make(map[string]float64)
 
@@ -100,20 +93,8 @@ func (f *HBaseMetricFetcher) handleRegionServerRegions(bp client.BatchPoints, be
 			continue
 		}
 
-		//add region point
-		pt, err := client.NewPoint("hbase_regions", map[string]string{
-			"address": f.hostAndPort(),
-			"region":  encodedRegionName,
-			"key":     metric,
-			"cluster": f.cluster,
-			"type":    "hbase",
-		}, map[string]interface{}{
-			"value": value,
-		})
-		if err != nil {
-			return err
-		}
-		bp.AddPoint(pt)
+		// add region point
+		result = append(result, formatMetric("hbase.regionserver.regions."+encodedRegionName, now, value, f.tags()))
 
 		// accumulate the namespace
 		nsKey := namespace + "$" + metric
@@ -132,47 +113,23 @@ func (f *HBaseMetricFetcher) handleRegionServerRegions(bp client.BatchPoints, be
 		}
 	}
 
-	//add namespace point
+	// add namespace point
 	for namespace, value := range namespaceMap {
 		parts := strings.Split(namespace, "$")
-		pt, err := client.NewPoint("hbase_namespace", map[string]string{
-			"address":   f.hostAndPort(),
-			"namespace": parts[0],
-			"key":       parts[1],
-			"cluster":   f.cluster,
-			"type":      "hbase",
-		}, map[string]interface{}{
-			"value": value,
-		})
-		if err != nil {
-			return err
-		}
-		bp.AddPoint(pt)
+		result = append(result, formatMetric("hbase.regionserver.namespace."+parts[0]+"."+parts[1], now, value, f.tags()))
 	}
 
 	// add table point
 	for table, value := range tableMap {
 		parts := strings.Split(table, "$")
-		pt, err := client.NewPoint("hbase_table", map[string]string{
-			"address": f.hostAndPort(),
-			"table":   parts[0],
-			"key":     parts[1],
-			"cluster": f.cluster,
-			"type":    "hbase",
-		}, map[string]interface{}{
-			"value": value,
-		})
-		if err != nil {
-			return err
-		}
-		bp.AddPoint(pt)
+		result = append(result, formatMetric("hbase.regionserver.table."+parts[0]+"."+parts[1], now, value, f.tags()))
 	}
 
-	return nil
+	return result
 }
 
-func (f *HBaseMetricFetcher) handleRegionServerWAL(bp client.BatchPoints, bean map[string]interface{}) error {
-	fields := make(map[string]interface{})
+func (f *HBaseMetricFetcher) handleRegionServerWAL(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
+	fields := make(map[string]float64)
 	for _, key := range []string{
 		"SyncTime_num_ops", "SyncTime_75th_percentile", "SyncTime_90th_percentile", "SyncTime_95th_percentile", "SyncTime_99th_percentile",
 		"AppendTime_num_ops", "AppendTime_75th_percentile", "AppendTime_90th_percentile", "AppendTime_95th_percentile", "AppendTime_99th_percentile",
@@ -180,25 +137,14 @@ func (f *HBaseMetricFetcher) handleRegionServerWAL(bp client.BatchPoints, bean m
 		fields[key] = bean[key].(float64)
 	}
 	for key, val := range fields {
-		pt, err := client.NewPoint("hbase_wal", map[string]string{
-			"address": f.hostAndPort(),
-			"service": "RegionServer",
-			"key":     key,
-			"cluster": f.cluster,
-			"type":    "hbase",
-		}, map[string]interface{}{
-			"value": val,
-		})
-		if err != nil {
-			return err
-		}
-		bp.AddPoint(pt)
+		metricMap := formatMetric("hbase.regionserver.wal."+key, now, val, f.tags())
+		result = append(result, metricMap)
 	}
-	return nil
+	return result
 }
 
-func (f *HBaseMetricFetcher) handleRegionServerServer(bp client.BatchPoints, bean map[string]interface{}) error {
-	fields := make(map[string]interface{})
+func (f *HBaseMetricFetcher) handleRegionServerServer(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
+	fields := make(map[string]float64)
 	for _, key := range []string{
 		"regionCount", "storeCount", "hlogFileCount", "hlogFileSize", "storeFileCount", "memStoreSize",
 		"Mutate_75th_percentile", "Mutate_90th_percentile", "Mutate_95th_percentile", "Mutate_99th_percentile",
@@ -213,23 +159,12 @@ func (f *HBaseMetricFetcher) handleRegionServerServer(bp client.BatchPoints, bea
 	}
 
 	for key, val := range fields {
-		pt, err := client.NewPoint("hbase_regionserver", map[string]string{
-			"address": f.hostAndPort(),
-			"service": "RegionServer",
-			"key":     key,
-			"cluster": f.cluster,
-			"type":    "hbase",
-		}, map[string]interface{}{
-			"value": val,
-		})
-		if err != nil {
-			return err
-		}
-		bp.AddPoint(pt)
+		metricMap := formatMetric("hbase.regionserver."+key, now, val, f.tags())
+		result = append(result, metricMap)
 	}
-	return nil
+	return result
 }
 
-func (f *HBaseMetricFetcher) handleRegionServerIPC(bp client.BatchPoints, bean map[string]interface{}) error {
-	return nil
+func (f *HBaseMetricFetcher) handleRegionServerIPC(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
+	return result
 }

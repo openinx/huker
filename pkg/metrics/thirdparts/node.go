@@ -1,9 +1,9 @@
 package thirdparts
 
 import (
-	"github.com/influxdata/influxdb/client/v2"
 	"github.com/openinx/huker/pkg/utils"
 	"strings"
+	"time"
 )
 
 type NodeMetricFetcher struct {
@@ -15,93 +15,80 @@ func NewNodeMetricFetcher(url string, host string) (*NodeMetricFetcher, error) {
 	return &NodeMetricFetcher{url: url, host: host}, nil
 }
 
-func (f *NodeMetricFetcher) Pull(conf client.BatchPointsConfig) (client.BatchPoints, error) {
-	bp, err := client.NewBatchPoints(conf)
+func formatMetric(metric string, timestamp int64, value float64, tags map[string]interface{}) map[string]interface{} {
+	return map[string]interface{}{
+		"metric":    metric,
+		"timestamp": timestamp,
+		"value":     value,
+		"tags":      tags,
+	}
+}
+
+func (f *NodeMetricFetcher) Pull() (interface{}, error) {
 	jsonMap, err := utils.HttpGetJSON(f.url)
 	if err != nil {
-		return bp, err
+		return nil, err
 	}
 
-	if err != nil {
-		return bp, err
+	var result []map[string]interface{}
+	now := time.Now().Unix()
+
+	tags := map[string]interface{}{
+		"host": "127.0.0.1",
 	}
 
-	// CPU: Usage Percent / Load
-	load := jsonMap["Load"].(map[string]interface{})
-	p, err := client.NewPoint("node_cpu", map[string]string{
-		"host": f.host,
-		"key":  "cpu",
-	}, map[string]interface{}{
-		"cpu_usage_percent": jsonMap["CpuPercents"].(float64),
-		"load1":             load["load1"].(float64),
-		"load5":             load["load5"].(float64),
-		"load15":            load["load15"].(float64),
-	})
-	if err != nil {
-		return bp, err
-	}
-	bp.AddPoint(p)
+	// CPU: Usage Percent
+	result = append(result, formatMetric("sys.cpu.percent", now, jsonMap["CpuPercents"].(float64), tags))
 
-	// Memory
+	// Load1
+	loadMap := jsonMap["Load"].(map[string]interface{})
+	result = append(result, formatMetric("sys.cpu.load1", now, loadMap["load1"].(float64), tags))
+
+	// Load5
+	result = append(result, formatMetric("sys.cpu.load5", now, loadMap["load5"].(float64), tags))
+
+	// Load15
+	result = append(result, formatMetric("sys.cpu.load15", now, loadMap["load15"].(float64), tags))
+
+	// sys.mem.free
 	mem := jsonMap["memory"].(map[string]interface{})
-	p, err = client.NewPoint("node_memory", map[string]string{
-		"host": f.host,
-		"key":  "memory",
-	}, map[string]interface{}{
-		"available":   mem["available"].(float64),
-		"free":        mem["free"].(float64),
-		"total":       mem["total"].(float64),
-		"used":        mem["used"].(float64),
-		"usedPercent": mem["usedPercent"].(float64),
-	})
-	if err != nil {
-		return bp, err
-	}
-	bp.AddPoint(p)
+	result = append(result, formatMetric("sys.mem.free", now, mem["free"].(float64), tags))
 
-	// Network
+	// sys.mem.avail
+	result = append(result, formatMetric("sys.mem.available", now, mem["available"].(float64), tags))
+
+	// sys.mem.total
+	result = append(result, formatMetric("sys.mem.total", now, mem["total"].(float64), tags))
+
+	// sys.mem.used
+	result = append(result, formatMetric("sys.mem.used", now, mem["used"].(float64), tags))
+
+	// sys.mem.used_percent
+	result = append(result, formatMetric("sys.mem.usedPercent", now, mem["usedPercent"].(float64), tags))
+
+	// sys.net.<key>.<interface-name>
 	interfaces := jsonMap["Network"].([]interface{})
 	for i := 0; i < len(interfaces); i++ {
-		interf := interfaces[i].(map[string]interface{})
-		p, err = client.NewPoint("node_network", map[string]string{
-			"host":      f.host,
-			"interface": interf["name"].(string),
-		}, map[string]interface{}{
-			"bytesRecv":   interf["bytesRecv"].(float64),
-			"bytesSent":   interf["bytesSent"].(float64),
-			"packetsRecv": interf["packetsRecv"].(float64),
-			"packetsSent": interf["packetsSent"].(float64),
-			"dropin":      interf["dropin"].(float64),
-			"dropout":     interf["dropout"].(float64),
-			"errin":       interf["errin"].(float64),
-			"errout":      interf["errout"].(float64),
-		})
-		if err != nil {
-			return bp, err
+		ifEntry := interfaces[i].(map[string]interface{})
+		ifName := ifEntry["name"].(string)
+
+		for _, key := range []string{"bytesRecv", "bytesSent", "packetsRecv", "packetsSent", "dropin", "dropout", "errin", "errout"} {
+			result = append(result, formatMetric("sys.net."+key+"."+ifName, now, ifEntry[key].(float64), tags))
 		}
-		bp.AddPoint(p)
 	}
 
-	// Disk
+	// sys.disk
 	duMap := jsonMap["DiskUsage"].(map[string]interface{})
 	for mountPoint := range duMap {
 		if strings.HasPrefix(mountPoint, "usage:") {
 			stat := duMap[mountPoint].(map[string]interface{})
-			p, err = client.NewPoint("node_disk", map[string]string{
-				"host":       f.host,
-				"mountpoint": strings.TrimPrefix(mountPoint, "usage:"),
-			}, map[string]interface{}{
-				"free":        stat["free"].(float64),
-				"total":       stat["total"].(float64),
-				"used":        stat["used"].(float64),
-				"usedPercent": stat["usedPercent"].(float64),
-			})
-			if err != nil {
-				return bp, err
+
+			mountPointKey := strings.TrimPrefix(mountPoint, "usage:")
+			for _, key := range []string{"free", "total", "used", "usedPercent"} {
+				result = append(result, formatMetric("sys.disk."+key+"."+mountPointKey, now, stat[key].(float64), tags))
 			}
-			bp.AddPoint(p)
 		}
 	}
 
-	return bp, nil
+	return result, nil
 }
