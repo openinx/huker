@@ -17,7 +17,7 @@ type MetricFetcher interface {
 type Collector struct {
 	workerSize int
 
-	// InfluxDB client configurations.
+	// OpenTSDB client configurations.
 	tsdbHttpAddr string
 
 	// task chan
