@@ -171,7 +171,7 @@ func (c PlainConfigFile) GetConfigName() string {
 // Initialize the concrete configuration file by the suffix of cfgName.
 func ParseConfigFile(cfgName string, keyValues []string) (ConfigFile, error) {
 	fname := filepath.Base(cfgName)
-	if strings.HasSuffix(fname, ".cfg") || strings.HasSuffix(fname, ".properties") {
+	if strings.HasSuffix(fname, ".cfg") || strings.HasSuffix(fname, ".properties") || strings.HasSuffix(fname, ".conf") {
 		return NewINIConfigFile(cfgName, keyValues), nil
 	} else if strings.HasSuffix(fname, ".xml") {
 		return NewXMLConfigFile(cfgName, keyValues), nil

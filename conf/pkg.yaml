@@ -57,3 +57,11 @@ apache-hive-2.3.2-bin.tar.gz:
   md5sum: 8f3abedb3fba28769afcea1445c64231
   size: 231740978
   link: http://archive.apache.org/dist/hive/hive-2.3.2/apache-hive-2.3.2-bin.tar.gz
+
+# OpenTSDB package
+opentsdb-2.3.1-bin.tar.gz:
+  version: opentsdb-2.3.1
+  date: 2018-06-09 14:40:14
+  md5sum: bd3a333aa4ca6ad01ff0d45c199f9c61
+  size: 78728746
+  link: https://github.com/openinx/huker/releases/download/1.0.0-alpha/opentsdb-2.3.1-bin.tar.gz

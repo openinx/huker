@@ -1,0 +1,18 @@
+base: {{.ConfRootDir}}/opentsdb/common/common.yaml
+
+cluster:
+  project: opentsdb
+  cluster_name: test-opentsdb
+  main_process: java
+  package_name: opentsdb-2.3.1-bin.tar.gz
+  package_md5sum: bd3a333aa4ca6ad01ff0d45c199f9c61
+  dependencies:
+    - {{.ConfRootDir}}/zookeeper/test-zk.yaml
+    - {{.ConfRootDir}}/hbase/test-hbase.yaml
+
+jobs:
+  tsdb:
+    hosts:
+      - 127.0.0.1:9001/id=0/base_port=51000
+      - 127.0.0.1:9001/id=1/base_port=51010
+      - 127.0.0.1:9001/id=2/base_port=51020
