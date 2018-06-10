@@ -1,0 +1,46 @@
+#------------------------------------------------------------------------------
+# Huker Core Configurations
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# Huker Package Server
+#------------------------------------------------------------------------------
+
+# Huker Package Server HTTP Address
+huker.pkgsrv.http.address: http://127.0.0.1:4000
+
+
+#------------------------------------------------------------------------------
+# Huker Dashboard
+#------------------------------------------------------------------------------
+
+# Huker Dashboard HTTP Address
+huker.dashboard.http.address: http://127.0.0.1:8001
+
+
+#------------------------------------------------------------------------------
+# Huker Metrics Collector
+#------------------------------------------------------------------------------
+
+# OpenTSDB HTTP Address
+huker.opentsdb.http.address: http://127.0.0.1:51001
+
+# Grafana HTTP Address
+huker.grafana.http.address: http://127.0.0.1:3000
+
+# Grafana HTTP Authenticate API Key
+huker.grafana.api.key: "Bearer eyJrIjoiSW9JelRJd2xSN3c2ZGZEMVBuUXdhbFJJQ0txR2pqR2wiLCJuIjoiaHVrZXIiLCJpZCI6MX0="
+
+# Granfa Data Source Key
+huker.grafana.data.source: test-opentsdb
+
+# Number of collector worker
+huker.collector.worker.size: 10
+
+
+#-------------------------------------------------------------------------------
+# Huker Supervisor Agent
+#-------------------------------------------------------------------------------
+
+# Huker supervisor agent port
+huker.supervisor.http.port: 9001

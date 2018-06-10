@@ -1,20 +1,36 @@
 package main
 
 import (
-	"github.com/openinx/huker/pkg/core"
+	"github.com/openinx/huker/pkg"
 	"github.com/openinx/huker/pkg/metrics"
 	"github.com/openinx/huker/pkg/utils"
+	"github.com/qiniu/log"
 	"path"
 )
 
 func main() {
 	hukerDir := utils.GetHukerDir()
-	collector := metrics.NewCollector(10,
-		"http://127.0.0.1:51001/api/put?details",
-		path.Join(hukerDir, core.HUKER_CONF_DIR_DEFAULT),
-		"http://127.0.0.1:4000",
-		"http://127.0.0.1:3000",
-		"Bearer eyJrIjoiSW9JelRJd2xSN3c2ZGZEMVBuUXdhbFJJQ0txR2pqR2wiLCJuIjoiaHVrZXIiLCJpZCI6MX0=",
-		"test-opentsdb")
+	hukerYamlFile := path.Join(hukerDir, "conf", "huker.yaml")
+	cfg, err := pkg.NewHukerConfig(hukerYamlFile)
+	if err != nil {
+		log.Fatalf("Failed to parse huker config file %s, %v", hukerYamlFile, err)
+		return
+	}
+
+	workSize := cfg.GetInt(pkg.HukerCollectorWorkerSize)
+	openTSDBHttpAddr := cfg.Get(pkg.HukerOpenTSDBHttpAddress)
+	pkgsrvAddr := cfg.Get(pkg.HukerPkgSrvHttpAddress)
+	grafanaHttpAddr := cfg.Get(pkg.HukerGrafanaHttpAddress)
+	grafanaApiKey := cfg.Get(pkg.HukerGrafanaAPIKey)
+	grafanaDataSource := cfg.Get(pkg.HukerGrafanaDataSource)
+
+	collector := metrics.NewCollector(workSize,
+		openTSDBHttpAddr,
+		path.Join(hukerDir, "conf"),
+		pkgsrvAddr,
+		grafanaHttpAddr,
+		grafanaApiKey,
+		grafanaDataSource)
+
 	collector.Start()
 }

@@ -6,26 +6,25 @@ import (
 	"github.com/gorilla/mux"
 	huker "github.com/openinx/huker/pkg/core"
 	"github.com/openinx/huker/pkg/supervisor"
-	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"html/template"
 	"net/http"
-	"path"
 	"strconv"
 	"strings"
 	"time"
 )
 
 type Dashboard struct {
-	Port          int
-	srv           *http.Server
-	hukerJob      huker.HukerJob
-	refreshTicker *time.Ticker
-	quit          chan int
-	clusters      []*huker.Cluster
+	Port           int
+	srv            *http.Server
+	hukerJob       huker.HukerJob
+	refreshTicker  *time.Ticker
+	quit           chan int
+	clusters       []*huker.Cluster
+	grafanaAddress string
 }
 
-func NewRawDashboard(port int, configRootDir, pkgServerAddress string) (*Dashboard, error) {
+func NewDashboard(port int, configRootDir, pkgServerAddress string, grafanaAddress string) (*Dashboard, error) {
 	hukerJob, err := huker.NewConfigFileHukerJob(configRootDir, pkgServerAddress)
 	if err != nil {
 		return nil, err
@@ -35,19 +34,13 @@ func NewRawDashboard(port int, configRootDir, pkgServerAddress string) (*Dashboa
 		srv: &http.Server{
 			Addr: fmt.Sprintf(":%d", port),
 		},
-		hukerJob:      hukerJob,
-		refreshTicker: time.NewTicker(5 * time.Second),
-		quit:          make(chan int),
-		clusters:      make([]*huker.Cluster, 0),
+		hukerJob:       hukerJob,
+		refreshTicker:  time.NewTicker(5 * time.Second),
+		quit:           make(chan int),
+		clusters:       make([]*huker.Cluster, 0),
+		grafanaAddress: grafanaAddress,
 	}
 	return d, nil
-}
-
-// Create a new supervisor agent.
-func NewDashboard(port int) (*Dashboard, error) {
-	configRootDir := utils.ReadEnvStrValue(huker.HUKER_CONF_DIR, path.Join(utils.GetHukerDir(), huker.HUKER_CONF_DIR_DEFAULT))
-	pkgServerAddress := utils.ReadEnvStrValue(huker.HUKER_PKG_HTTP_SERVER, huker.HUKER_PKG_HTTP_SERVER_DEFAULT)
-	return NewRawDashboard(port, configRootDir, pkgServerAddress)
 }
 
 type HandleFunc func(w http.ResponseWriter, r *http.Request) (string, error)

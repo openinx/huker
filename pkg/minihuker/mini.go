@@ -2,7 +2,6 @@ package minihuker
 
 import (
 	"fmt"
-	"github.com/openinx/huker/pkg/core"
 	dash "github.com/openinx/huker/pkg/dashboard"
 	"github.com/openinx/huker/pkg/pkgsrv"
 	"github.com/openinx/huker/pkg/supervisor"
@@ -15,9 +14,9 @@ import (
 )
 
 const (
-	TEST_AGENT_PORT         = 9743
-	TEST_PKG_SRV_PORT       = 4321
-	TEST_PKG_DASHBOARD_PORT = 9008
+	testAgentPort     = 9743
+	testPkgSrvPort    = 4321
+	testDashboardPort = 9008
 )
 
 type MiniHuker struct {
@@ -29,9 +28,13 @@ type MiniHuker struct {
 	WaitGroup      *sync.WaitGroup
 }
 
-func NewMiniHuker(agentSize int, agentRootDir string, agentPort int,
+func localHttpAddress(port int) string {
+	return fmt.Sprintf("http://127.0.0.1:%d", port)
+}
+
+func NewMiniHuker(cfgRootDir string, agentSize int, agentRootDir string, agentPort int,
 	pkgSrvPort int, pkgSrvLibDir, pkgSrvConfFile string,
-	dashboardPort int) *MiniHuker {
+	dashboardPort int, grafanaAddress string) *MiniHuker {
 	// Initialize the supervisor agents.
 	if _, err := os.Stat(agentRootDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(agentRootDir, 0755); err != nil {
@@ -48,7 +51,7 @@ func NewMiniHuker(agentSize int, agentRootDir string, agentPort int,
 		supervisors = append(supervisors, agent)
 
 		superClient := &supervisor.SupervisorCli{
-			ServerAddr: fmt.Sprintf("http://127.0.0.1:%d", agentPort+i),
+			ServerAddr: localHttpAddress(agentPort + i),
 		}
 		superClients = append(superClients, superClient)
 	}
@@ -60,7 +63,7 @@ func NewMiniHuker(agentSize int, agentRootDir string, agentPort int,
 	}
 
 	// Initialize the dashboard http server
-	dashboard, err := dash.NewDashboard(dashboardPort)
+	dashboard, err := dash.NewDashboard(dashboardPort, cfgRootDir, localHttpAddress(pkgSrvPort), grafanaAddress)
 	if err != nil {
 		panic(err)
 	}
@@ -80,12 +83,16 @@ func NewMiniHuker(agentSize int, agentRootDir string, agentPort int,
 }
 
 func NewTestingMiniHuker(supervisorSize int) *MiniHuker {
-	os.Setenv(core.HUKER_CONF_DIR, utils.GetHukerDir()+"/testdata/conf")
-	os.Setenv(core.HUKER_PKG_HTTP_SERVER, fmt.Sprintf("http://127.0.0.1:%d", TEST_PKG_SRV_PORT))
 	agentRootDir := fmt.Sprintf("/tmp/huker/%d", time.Now().UnixNano())
-	return NewMiniHuker(supervisorSize, agentRootDir, TEST_AGENT_PORT, TEST_PKG_SRV_PORT,
-		utils.GetHukerDir()+"/testdata/lib", utils.GetHukerDir()+"/testdata/conf/pkg.yaml",
-		TEST_PKG_DASHBOARD_PORT)
+	return NewMiniHuker(utils.GetHukerDir()+"/testdata/conf",
+		supervisorSize,
+		agentRootDir,
+		testAgentPort,
+		testPkgSrvPort,
+		utils.GetHukerDir()+"/testdata/lib",
+		utils.GetHukerDir()+"/testdata/conf/pkg.yaml",
+		testDashboardPort,
+		localHttpAddress(3000))
 }
 
 func (m *MiniHuker) Start() {

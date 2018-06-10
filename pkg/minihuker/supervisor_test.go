@@ -20,7 +20,7 @@ func NewProgram() *supervisor.Program {
 		Configs: map[string]string{
 			"a": "b", "c": "d",
 		},
-		PkgAddress: fmt.Sprintf("http://127.0.0.1:%d/test.tar.gz", TEST_PKG_SRV_PORT),
+		PkgAddress: fmt.Sprintf("http://127.0.0.1:%d/test.tar.gz", testPkgSrvPort),
 		PkgName:    "test.tar.gz",
 		PkgMD5Sum:  "f77f526dcfbdbfb2dd942b6628f4c0ab",
 		Hooks:      make(map[string]string),

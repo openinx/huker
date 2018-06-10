@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/openinx/huker/pkg"
 	"github.com/openinx/huker/pkg/supervisor"
 	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
@@ -14,11 +15,7 @@ import (
 
 // Constant key and value for the environment variables.
 const (
-	HUKER_CONF_DIR                = "HUKER_CONF_DIR"
-	HUKER_CONF_DIR_DEFAULT        = "conf"
-	HUKER_PKG_HTTP_SERVER         = "HUKER_PKG_HTTP_SERVER"
-	HUKER_PKG_HTTP_SERVER_DEFAULT = "http://127.0.0.1:4000"
-	defaultLocalTaskId            = 0
+	defaultLocalTaskId = 0
 )
 
 type TaskResult struct {
@@ -46,9 +43,13 @@ type HukerJob interface {
 }
 
 func NewDefaultHukerJob() (HukerJob, error) {
-	configRootDir := utils.ReadEnvStrValue(HUKER_CONF_DIR, path.Join(utils.GetHukerDir(), HUKER_CONF_DIR_DEFAULT))
-	pkgServerAddress := utils.ReadEnvStrValue(HUKER_PKG_HTTP_SERVER, HUKER_PKG_HTTP_SERVER_DEFAULT)
-	return NewConfigFileHukerJob(configRootDir, pkgServerAddress)
+	cfg, err := pkg.NewHukerConfig(path.Join(utils.GetHukerDir(), "conf", "huker.yaml"))
+	if err != nil {
+		return nil, err
+	}
+	cfgRootDir := path.Join(utils.GetHukerDir(), "conf")
+	pkgSrvAddres := cfg.Get(pkg.HukerPkgSrvHttpAddress)
+	return NewConfigFileHukerJob(cfgRootDir, pkgSrvAddres)
 }
 
 type ConfigFileHukerJob struct {

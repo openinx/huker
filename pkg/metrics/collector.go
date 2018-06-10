@@ -91,7 +91,7 @@ func (c *Collector) fetchAndSave(workId int, m MetricFetcher) {
 
 	// New Http Client
 	// TODO abstract an OpenTSDB Client.
-	req, err0 := http.NewRequest("POST", c.tsdbHttpAddr, bytes.NewBuffer(data))
+	req, err0 := http.NewRequest("POST", c.tsdbHttpAddr+"/api/put?details", bytes.NewBuffer(data))
 	if err0 != nil {
 		log.Errorf("Failed to new http request, url: %s, data: %v", c.tsdbHttpAddr, data)
 		return
@@ -102,14 +102,14 @@ func (c *Collector) fetchAndSave(workId int, m MetricFetcher) {
 	cli := http.Client{}
 	resp, err := cli.Do(req)
 	if err != nil {
-		log.Errorf("Send json data to OpenTSDB failed, url: %s, data: %s", c.tsdbHttpAddr, string(data))
+		log.Errorf("Failed to send json data to OpenTSDB, url: %s, data: %s", req.URL.String(), string(data))
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
 		respData, _ := ioutil.ReadAll(resp.Body)
-		log.Errorf("Failed to persist json data to OpenTSDB, url: %s, data: %v, reason: %v", c.tsdbHttpAddr, string(data), string(respData))
+		log.Errorf("Failed to persist json data to OpenTSDB, url: %s, data: %v, reason: %v", req.URL.String(), string(data), string(respData))
 		return
 	}
 }

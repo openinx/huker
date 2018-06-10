@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
+	"github.com/openinx/huker/pkg"
 	huker "github.com/openinx/huker/pkg/core"
 	dash "github.com/openinx/huker/pkg/dashboard"
 	"github.com/openinx/huker/pkg/pkgsrv"
 	"github.com/openinx/huker/pkg/supervisor"
+	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -81,16 +84,13 @@ func printUsageAndExit() {
 	fmt.Println("  restart             Restart the job")
 	fmt.Println("  start               Start the job")
 	fmt.Println("  stop                Stop the job")
+	fmt.Println("  start-pkg-manager   Start the package manager http server")
+	fmt.Println("  start-dashboard     Start huker dashboard")
 	fmt.Println("  start-agent         Start the supervisor agent")
 	fmt.Println("    --dir,-d          Root directory of huker agent (default: .)")
 	fmt.Println("    --port,-p         Port to listen for huker agent (default: 9001)")
 	fmt.Println("    --file,-f         File to store process meta. (default: ./supervisor.db)")
-	fmt.Println("  start-pkg-manager   Start the package manager http server")
-	fmt.Println("    --dir,-d          Libaray directory of huker package manager for downloading package (default: ./lib)")
-	fmt.Println("    --port,-p         Port of http server to listen (default: 4000)")
-	fmt.Println("    --conf,-c         Configuration file of huker package manager (default: ./conf/pkg.yaml)")
-	fmt.Println("  start-dashboard     Start huker dashboard")
-	fmt.Println("    --port,-p         Port of huker dashboard to listen (default: 8001)")
+
 	os.Exit(1)
 }
 
@@ -170,9 +170,17 @@ func main() {
 		}
 	}
 
+	hukerDir := utils.GetHukerDir()
+	hukerYaml := path.Join(hukerDir, "conf", "huker.yaml")
+	cfg, err := pkg.NewHukerConfig(hukerYaml)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to parse %s, %v", hukerYaml, err)
+		printUsageAndExit()
+	}
+
 	if command == "start-agent" {
 		dir, _ := filepath.Abs(".")
-		port := 9001
+		port := cfg.GetInt(pkg.HukerSupervisorPort)
 		file, _ := filepath.Abs("./supervisor.db")
 		for ; index+1 < len(os.Args); index += 2 {
 			if os.Args[index] == "-d" || os.Args[index] == "--dir" {
@@ -190,64 +198,39 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Unexpected arguments: %v\n", os.Args[index:])
 			printUsageAndExit()
 		}
-		if supervisor, err := supervisor.NewSupervisor(dir, port, file); err != nil {
-			log.Stack(err)
+		if sp, err := supervisor.NewSupervisor(dir, port, file); err != nil {
+			log.Fatal(err)
 			return
-		} else if err := supervisor.Start(); err != nil {
-			log.Stack(err)
+		} else if err := sp.Start(); err != nil {
+			log.Fatal(err)
 			return
 		}
 	} else if command == "start-pkg-manager" {
-		pkgRoot, _ := filepath.Abs("./lib")
-		port := 4000
-		pkgConf, _ := filepath.Abs("./conf/pkg.yaml")
-		for ; index+1 < len(os.Args); index += 2 {
-			if os.Args[index] == "-d" || os.Args[index] == "--dir" {
-				pkgRoot = os.Args[index+1]
-			} else if os.Args[index] == "-c" || os.Args[index] == "--conf" {
-				pkgConf = os.Args[index+1]
-			} else if os.Args[index] == "-p" || os.Args[index] == "--port" {
-				port = parsePort(os.Args[index+1])
-			} else {
-				fmt.Fprintf(os.Stderr, "Unexpected arguments: %v\n", os.Args[index:])
-				printUsageAndExit()
-			}
+		u, err := cfg.GetURL(pkg.HukerPkgSrvHttpAddress)
+		if err != nil {
+			log.Fatal(err)
+			return
 		}
-
-		if _, err := os.Stat(pkgRoot); os.IsNotExist(err) {
-			log.Errorf("The %s directory does not exist, please create the directory firstly.", pkgRoot)
-			os.Exit(1)
-		}
-		if index < len(os.Args) {
-			fmt.Fprintf(os.Stderr, "Unexpected arguments: %v\n", os.Args[index:])
-			printUsageAndExit()
-		}
-		if pkgSrv, err := pkgsrv.NewPackageServer(port, pkgRoot, pkgConf); err != nil {
-			log.Stack(err)
+		pkgSrvPort, _ := strconv.Atoi(u.Port())
+		if pkgSrv, err := pkgsrv.NewPackageServer(pkgSrvPort, path.Join(hukerDir, "lib"), path.Join(hukerDir, "conf", "pkg.yaml")); err != nil {
+			log.Fatal(err)
 			return
 		} else if err := pkgSrv.Start(); err != nil {
-			log.Stack(err)
+			log.Fatal(err)
 			return
 		}
 	} else if command == "start-dashboard" {
-		port := 8001
-		for ; index+1 < len(os.Args); index += 2 {
-			if os.Args[index] == "-p" || os.Args[index] == "--port" {
-				port = parsePort(os.Args[index+1])
-			} else {
-				fmt.Fprintf(os.Stderr, "Unexpected arguments: %v\n", os.Args[index:])
-				printUsageAndExit()
-			}
-		}
-		if index < len(os.Args) {
-			fmt.Fprintf(os.Stderr, "Unexpected arguments: %v\n", os.Args[index:])
-			printUsageAndExit()
-		}
-		if dashboard, err := dash.NewDashboard(port); err != nil {
-			log.Stack(err)
+		u, err := cfg.GetURL(pkg.HukerDashboardHttpAddress)
+		if err != nil {
+			log.Fatal(err)
 			return
-		} else if dashboard.Start(); err != nil {
-			log.Stack(err)
+		}
+		dashboardPort, _ := strconv.Atoi(u.Port())
+		if dashboard, err := dash.NewDashboard(dashboardPort, path.Join(hukerDir, "conf"), cfg.Get(pkg.HukerPkgSrvHttpAddress), cfg.Get(pkg.HukerGrafanaHttpAddress)); err != nil {
+			log.Fatal(err)
+			return
+		} else if err := dashboard.Start(); err != nil {
+			log.Fatal(err)
 			return
 		}
 	} else {
