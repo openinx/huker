@@ -46,6 +46,7 @@
                             <th>Status</th>
                             <th>Config Files</th>
                             <th>Task Web Address</th>
+                            <th>Node Monitor</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -74,6 +75,7 @@
                                 {{ end }}
                                 <td><a href="/config/{{ $localProject }}/{{ $localClusterName }}/{{ $localJobName }}/{{ .TaskId }}">view</a></td>
                                 <td><a href="http://{{ .Hostname }}:{{ inc .BasePort }}">http://{{ .Hostname }}:{{ inc .BasePort }}</a></td>
+                                <td><a href="{{ toNodeMonitor .Hostname }}}">view</a></td>
                             </tr>
                         {{ end }}
                         </tbody>

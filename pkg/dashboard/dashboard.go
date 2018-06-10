@@ -102,6 +102,10 @@ func (d *Dashboard) hDetail(w http.ResponseWriter, r *http.Request) {
 			"inc": func(i int) int {
 				return i + 1
 			},
+			"toNodeMonitor": func(hostname string) string {
+				val := strings.Replace(hostname, ".", "-", -1)
+				return fmt.Sprintf("%s/d/host-%s/host-%s", d.grafanaAddress, val, val)
+			},
 		})
 	})
 }
