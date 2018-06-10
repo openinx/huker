@@ -35,6 +35,7 @@ jobs:
         - tsd.core.enable_api=true
         - tsd.storage.enable_compaction=true
         - tsd.storage.flush_interval=1000
+        - tsd.storage.fix_duplicates=true # Fix the duplicates keys automatically.
         - tsd.storage.hbase.scanner.maxNumRows=128
         - tsd.storage.hbase.data_table=tsdb
         - tsd.storage.hbase.uid_table=tsdb-uid

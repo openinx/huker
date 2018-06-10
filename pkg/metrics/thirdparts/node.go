@@ -34,7 +34,7 @@ func (f *NodeMetricFetcher) Pull() (interface{}, error) {
 	now := time.Now().Unix()
 
 	tags := map[string]interface{}{
-		"host": "127.0.0.1",
+		"host": f.host,
 	}
 
 	// CPU: Usage Percent
