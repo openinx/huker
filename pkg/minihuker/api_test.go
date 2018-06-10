@@ -4,7 +4,6 @@ import (
 	"github.com/openinx/huker/pkg/core"
 	"github.com/openinx/huker/pkg/supervisor"
 	"github.com/openinx/huker/pkg/utils"
-	"os"
 	"testing"
 )
 
@@ -16,7 +15,7 @@ func TestHukerJob(t *testing.T) {
 	miniHuker.Start()
 	defer miniHuker.Stop()
 
-	hukerJob, err := core.NewDefaultHukerJob()
+	hukerJob, err := core.NewConfigFileHukerJob(utils.GetHukerDir()+"/testdata/conf", localHttpAddress(testPkgSrvPort))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,9 +125,7 @@ func TestHukerJob(t *testing.T) {
 }
 
 func TestHukerJobList(t *testing.T) {
-	os.Setenv(core.HUKER_CONF_DIR, utils.GetHukerDir()+"/testdata/conf")
-
-	hukerJob, err := core.NewDefaultHukerJob()
+	hukerJob, err := core.NewConfigFileHukerJob(utils.GetHukerDir()+"/testdata/conf", localHttpAddress(testPkgSrvPort))
 	if err != nil {
 		t.Fatal(err)
 	}

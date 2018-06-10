@@ -45,13 +45,13 @@ func TestHukerConfig(t *testing.T) {
 				continue
 			}
 			if expected != u.String() {
-				t.Errorf("Case#%d: Value of key: %s mismatch, expected: %d, actual: %d", i, testCases[i].key, expected, u.String())
+				t.Errorf("Case#%d: Value of key: %s mismatch, expected: %s, actual: %s", i, testCases[i].key, expected, u.String())
 			}
 		} else {
 			expected := testCases[i].val.(string)
 			actual := h.Get(testCases[i].key)
 			if expected != actual {
-				t.Errorf("Case#%d: Value of key: %s mismatch, expected: %d, actual: %d", i, testCases[i].key, expected, actual)
+				t.Errorf("Case#%d: Value of key: %s mismatch, expected: %s, actual: %s", i, testCases[i].key, expected, actual)
 			}
 		}
 	}
