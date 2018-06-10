@@ -2,9 +2,11 @@ package dashboard
 
 import (
 	"bytes"
+	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"html/template"
 	"io/ioutil"
+	"path"
 	"strings"
 )
 
@@ -13,12 +15,13 @@ func RenderTemplate(tmplFile string, baseFile string, args map[string]interface{
 	var data []byte
 	var buf bytes.Buffer
 
-	t := template.New(tmplFile)
+	hukerDir := utils.GetHukerDir()
+	t := template.New(path.Join(hukerDir, tmplFile))
 	if funcMap != nil {
 		t.Funcs(funcMap)
 	}
 
-	data, err = ioutil.ReadFile(baseFile)
+	data, err = ioutil.ReadFile(path.Join(hukerDir, baseFile))
 	if err != nil {
 		log.Errorf("Read template file failed: " + err.Error())
 		return "", err
@@ -30,7 +33,7 @@ func RenderTemplate(tmplFile string, baseFile string, args map[string]interface{
 		return "", err
 	}
 
-	t, err = t.ParseFiles(tmplFile)
+	t, err = t.ParseFiles(path.Join(hukerDir, tmplFile))
 
 	if err != nil {
 		log.Errorf("Parse base file failed: %s" + err.Error())
