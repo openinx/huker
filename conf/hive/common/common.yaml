@@ -11,6 +11,7 @@ jobs:
       - -XX:+PrintGCDetails
       - -XX:+PrintHeapAtGC
       - -XX:+PrintGCDateStamps
+      - -Xmx128m
       - -Xloggc:{{.PkgStdoutDir}}/hive_gc.log
     jvm_properties:
       - java.net.preferIPv4Stack=true

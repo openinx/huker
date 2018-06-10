@@ -12,7 +12,7 @@ jobs:
       - -XX:CMSInitiatingOccupancyFraction=80
       - -XX:HeapDumpPath={{.PkgStdoutDir}}
       - -Xloggc:{{.PkgStdoutDir}}/gc.log
-      - -Xmx1024m
+      - -Xmx128m
       - -verbose:gc
     jvm_properties:
       - java.net.preferIPv4Stack=true

@@ -12,6 +12,7 @@ jobs:
       - -XX:+PrintGCDetails
       - -XX:+PrintHeapAtGC
       - -XX:+PrintGCDateStamps
+      - -Xmx512m
       - -Xloggc:{{.PkgStdoutDir}}/hbase_gc.log
     jvm_properties:
       - java.net.preferIPv4Stack=true

@@ -11,6 +11,7 @@ jobs:
       - -XX:+PrintGCDetails
       - -XX:+PrintHeapAtGC
       - -XX:+PrintGCDateStamps
+      - -Xmx128m
       - -Xloggc:{{.PkgStdoutDir}}/phoenix_gc.log
       - -Dproc_phoenixserver
     jvm_properties:

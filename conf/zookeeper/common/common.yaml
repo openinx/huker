@@ -2,9 +2,9 @@ jobs:
   zkServer:
     super_job: remote
     jvm_opts:
-      - -Xmx4096m
-      - -Xms3072m
-      - -Xmn2048m
+      - -Xmx128m
+      - -Xms128m
+      - -Xmn128m
       - -XX:MaxDirectMemorySize=1024m
       - -XX:MaxPermSize=512m
       - -XX:+DisableExplicitGC
