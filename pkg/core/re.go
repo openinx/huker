@@ -14,6 +14,7 @@ const (
 	patternDependenciesServerList         = "%{dependencies\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\.server_list}"
 	patternDependenciesJobAttribute       = "%{dependencies\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\.([0-9]+)\\.([a-zA-Z0-9_]+)}"
 	patternDependenciesJobAttributeNumber = "%{dependencies\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\.([0-9]+)\\.([a-zA-Z0-9_]+)\\+([0-9]+)}"
+	patternDependenciesClusterName        = "%{dependencies\\.([0-9]+)\\.cluster_name}"
 	patternJobServerList                  = "%{([a-zA-Z0-9_]+)\\.server_list}"
 	patternVarJobAttribute                = "%{([a-zA-Z0-9_]+)\\.x\\.([a-zA-Z0-9_]+)}"
 	patternVarJobAttributeNumber          = "%{([a-zA-Z0-9_]+)\\.x\\.([a-zA-Z0-9_]+)\\+([0-9]+)}"
@@ -35,6 +36,10 @@ func match1(c *Cluster, input string) (string, error) {
 		match = match[1:]
 		jobName, taskIdStr, key := match[0], match[1], match[2]
 		matchPatten := fmt.Sprintf("%%{%s.%s.%s}", jobName, taskIdStr, key)
+		// It's possible that the format conflict with the format %{dependencies.0.cluster_name}
+		if jobName == "dependencies" {
+			continue
+		}
 		if _, ok := c.Jobs[jobName]; !ok {
 			return "", fmt.Errorf("Invalid job name. %s", matchPatten)
 		}
@@ -269,12 +274,30 @@ func match8(c *Cluster, input string) (string, error) {
 	return input, nil
 }
 
+// format %{dependencies.0.cluster_name}
+func match9(c *Cluster, input string) (string, error) {
+	re := regexp.MustCompile(patternDependenciesClusterName)
+	matches := re.FindAllStringSubmatch(input, -1)
+	for _, match := range matches {
+		match = match[1:]
+		clusterIndexStr := match[0]
+		matchPattern := fmt.Sprintf("%%{dependencies.%s.cluster_name}", clusterIndexStr)
+		clusterIndex, _ := strconv.Atoi(clusterIndexStr)
+		if clusterIndex >= len(c.Dependencies) {
+			return "", fmt.Errorf("Cluster index exceeded. %s", matchPattern)
+		}
+		dep := c.Dependencies[clusterIndex]
+		input = strings.Replace(input, matchPattern, dep.ClusterName, 1)
+	}
+	return input, nil
+}
+
 // Render the %{<job>.<index>.<attribute>} and %{dependencies.<index>.<job>.server_list} of input string
 // to value for the global cluster.
 func GlobalRender(c *Cluster, input string) (string, error) {
 	var err error
 	for _, matchFun := range []matchFunc{
-		match0, match1, match2, match3, match4, match7, match8,
+		match0, match1, match2, match3, match4, match7, match8, match9,
 	} {
 		input, err = matchFun(c, input)
 		if err != nil {

@@ -23,6 +23,8 @@ func TestPattern(t *testing.T) {
 		{patternJobAttributeNumber, "key=%{jOb0_1.0.base_por3t+00100}", true},
 		{patternJobAttributeNumber, "key=%{jOb0_1.0.base_port}", false},
 		{patternDependenciesServerList, "key=%{dependencies.100.jOb0_1.server_list}", true},
+		{patternDependenciesClusterName, "key=%{dependencies.100.cluster.name}", false},
+		{patternDependenciesClusterName, "key=%{dependencies.100.cluster_name}", true},
 		{patternJobServerList, "key=%{aB_0.server_list}", true},
 		{patternVarJobAttribute, "key=%{aB_0.x.base_PORT0}", true},
 		{patternVarJobAttributeNumber, "key=%{aB_0.x.base_PORT0+1}", true},
@@ -103,6 +105,9 @@ func TestRender(t *testing.T) {
 		{"key=%{dependencies.0.invalid_job.0.base_port+1}", false, ""},
 		{"key=%{dependencies.0.test_job.2.base_port+1}", false, ""},
 		{"key=%{dependencies.0.test_job.0.invalid_port+1}", false, ""},
+		{"key=%{dependencies.0.cluster_name}", true, "key=root"},
+		{"key=%{dependencies.1.cluster_name}", false, ""},
+		{"key=%{dependencies.1.cluster-name}", true, "key=%{dependencies.1.cluster-name}"},
 		{"key=%{test_job.server_list}", true, "key=www.example.com:7001,www.example.com:8001"},
 	}
 
