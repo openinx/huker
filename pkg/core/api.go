@@ -42,6 +42,7 @@ type HukerJob interface {
 	RollingUpdate(project, cluster, job string, taskId int) ([]TaskResult, error)
 	Show(project, cluster, job string, taskId int) ([]TaskResult, error)
 	Cleanup(project, cluster, job string, taskId int) ([]TaskResult, error)
+	ListHosts() ([]string, error)
 }
 
 func NewDefaultHukerJob() (HukerJob, error) {
@@ -284,4 +285,25 @@ func (j *ConfigFileHukerJob) lookupJob(project, cluster, job string, taskId int,
 		}
 	}
 	return taskResults, nil
+}
+
+func (j *ConfigFileHukerJob) ListHosts() ([]string, error) {
+	clusters, err := j.List()
+	if err != nil {
+		return nil, err
+	}
+	hosts := make(map[string]bool)
+	for _, cluster := range clusters {
+		for _, job := range cluster.Jobs {
+			for _, host := range job.Hosts {
+				hosts[host.ToHttpAddress()] = true
+			}
+		}
+	}
+
+	var hostStrings []string
+	for host := range hosts {
+		hostStrings = append(hostStrings, host)
+	}
+	return hostStrings, nil
 }
