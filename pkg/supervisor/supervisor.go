@@ -325,7 +325,9 @@ func (s *Supervisor) hGetMetrics(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 	} else {
-		w.Write(data)
+		var prettyJSON bytes.Buffer
+		json.Indent(&prettyJSON, data, "", "  ")
+		w.Write(prettyJSON.Bytes())
 	}
 }
 
