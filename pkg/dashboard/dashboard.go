@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	huker "github.com/openinx/huker/pkg/core"
 	"github.com/openinx/huker/pkg/supervisor"
+	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"html/template"
 	"net/http"
@@ -167,7 +168,7 @@ func (d *Dashboard) hConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *Dashboard) hStaticFile(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "site/static/"+mux.Vars(r)["filename"])
+	http.ServeFile(w, r, utils.GetHukerDir()+"/site/static/"+mux.Vars(r)["filename"])
 }
 
 func (d *Dashboard) hWebApi(w http.ResponseWriter, r *http.Request) {
