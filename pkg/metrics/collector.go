@@ -47,9 +47,15 @@ type Collector struct {
 
 	// Grafana Syncer
 	grafanaSyncer *grafana.GrafanaSyncer
+
+	// Period for sync dashboard(seconds), default: 24h
+	syncDashboardSeconds time.Duration
+
+	// Period for collect metrics(seconds), default: 5s
+	collectSeconds time.Duration
 }
 
-func NewCollector(workerSize int, tsdbHttpAddr, cfgRoot, pkgSrvAddr, grafanaAddr, grafanaApiKey string, grafanaDataSourceKey string) *Collector {
+func NewCollector(workerSize int, tsdbHttpAddr, cfgRoot, pkgSrvAddr, grafanaAddr, grafanaApiKey string, grafanaDataSourceKey string, syncDashboardSeconds int, collectSeconds int) *Collector {
 	hukerJob, err := huker.NewConfigFileHukerJob(cfgRoot, pkgSrvAddr)
 	if err != nil {
 		panic(err.Error())
@@ -65,6 +71,8 @@ func NewCollector(workerSize int, tsdbHttpAddr, cfgRoot, pkgSrvAddr, grafanaAddr
 		grafanaApiKey:        grafanaApiKey,
 		grafanaDataSourceKey: grafanaDataSourceKey,
 		grafanaSyncer:        grafana.NewGrafanaSyncer(grafanaAddr, grafanaApiKey, grafanaDataSourceKey),
+		syncDashboardSeconds: time.Duration(syncDashboardSeconds),
+		collectSeconds:       time.Duration(collectSeconds),
 	}
 }
 
@@ -138,22 +146,57 @@ func parseHostName(host string) string {
 	return strings.Split(host, ":")[0]
 }
 
-func (c *Collector) syncGrafanaDashboard() {
-	for {
-		time.Sleep(5 * time.Second)
-		hosts, err := c.hukerJob.ListHosts()
+func (c *Collector) createHostDashboard() {
+	hosts, err := c.hukerJob.ListHosts()
+	if err != nil {
+		log.Errorf("Failed to list all supervisor agents, %v", err)
+		return
+	}
+
+	// Dashboard for each host
+	for _, host := range hosts {
+		err := c.grafanaSyncer.CreateHostDashboard(parseHostName(host))
 		if err != nil {
-			log.Errorf("Failed to list all supervisor agents, %v", err)
+			log.Errorf("Failed to create host dashboard for host: %s, %v", host, err)
 			continue
 		}
+	}
+}
 
-		for _, host := range hosts {
-			err := c.grafanaSyncer.CreateHostDashboardIfNotExist(parseHostName(host))
-			if err != nil {
-				log.Errorf("Failed to create host dashboard for host: %s, %v", host, err)
-				continue
+func (c *Collector) createNodesDashboard() {
+	clusters, err := c.hukerJob.List()
+	if err != nil {
+		log.Errorf("Failed to list all clusters, %v", err)
+		return
+	}
+	hostNames := make(map[string]bool)
+	for _, cluster := range clusters {
+		for _, job := range cluster.Jobs {
+			for _, host := range job.Hosts {
+				hostNames[host.ToHttpAddress()] = true
 			}
 		}
+		var hostStrings []string
+		for host := range hostNames {
+			hostStrings = append(hostStrings, parseHostName(host))
+		}
+		err := c.grafanaSyncer.CreateNodesDashboard(cluster.ClusterName, hostStrings)
+		if err != nil {
+			log.Errorf("Failed to create nodes dashboard for cluster(%s), host: %v, %v", cluster.ClusterName, hostStrings, err)
+			continue
+		}
+	}
+}
+
+func (c *Collector) syncGrafanaDashboard() {
+	for {
+		// Dashboard for each host
+		c.createHostDashboard()
+
+		// Integrate Nodes Dashboard for each cluster
+		c.createNodesDashboard()
+
+		time.Sleep(c.syncDashboardSeconds * time.Second)
 	}
 }
 
@@ -166,7 +209,7 @@ func (c *Collector) Start() {
 	}
 
 	for {
-		time.Sleep(5 * time.Second)
+		time.Sleep(c.collectSeconds * time.Second)
 
 		clusters, err := c.hukerJob.List()
 		if err != nil {

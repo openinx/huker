@@ -15,11 +15,13 @@ const (
 	HukerDashboardHttpAddress = "huker.dashboard.http.address"
 
 	// metric collector
-	HukerOpenTSDBHttpAddress = "huker.opentsdb.http.address"
-	HukerGrafanaHttpAddress  = "huker.grafana.http.address"
-	HukerGrafanaAPIKey       = "huker.grafana.api.key"
-	HukerGrafanaDataSource   = "huker.grafana.data.source"
-	HukerCollectorWorkerSize = "huker.collector.worker.size"
+	HukerOpenTSDBHttpAddress           = "huker.opentsdb.http.address"
+	HukerGrafanaHttpAddress            = "huker.grafana.http.address"
+	HukerGrafanaAPIKey                 = "huker.grafana.api.key"
+	HukerGrafanaDataSource             = "huker.grafana.data.source"
+	HukerCollectorWorkerSize           = "huker.collector.worker.size"
+	HukerCollectorSyncDashboardSeconds = "huker.collector.sync.dashboard.seconds"
+	HukerCollectorCollectSeconds       = "huker.collector.collect.seconds"
 
 	// Supervisor agent
 	HukerSupervisorPort = "huker.supervisor.http.port"

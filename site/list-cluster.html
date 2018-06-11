@@ -10,6 +10,8 @@
             <th>Package Name</th>
             <th>Package Md5sum</th>
             <th>Dependencies</th>
+            <th>Nodes Monitor</th>
+            <th>Jobs Monitor</th>
         </tr>
         </thead>
 
@@ -26,6 +28,8 @@
                 <a href="/detail/{{ .Project }}/{{ .ClusterName }}">{{ .ClusterName }}</a>&nbsp;
                 {{ end }}
             </td>
+            <td><a href="{{ toNodesMonitor .ClusterName }}">view</a></td>
+            <td><a href="{{ toClusterMonitor .ClusterName }}">view</a></td>
         </tr>
         </tbody>
         {{ end }}

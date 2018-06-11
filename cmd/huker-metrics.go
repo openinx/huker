@@ -8,7 +8,7 @@ import (
 	"path"
 )
 
-func main() {
+func startCollector() {
 	hukerDir := utils.GetHukerDir()
 	hukerYamlFile := path.Join(hukerDir, "conf", "huker.yaml")
 	cfg, err := pkg.NewHukerConfig(hukerYamlFile)
@@ -23,6 +23,8 @@ func main() {
 	grafanaHttpAddr := cfg.Get(pkg.HukerGrafanaHttpAddress)
 	grafanaApiKey := cfg.Get(pkg.HukerGrafanaAPIKey)
 	grafanaDataSource := cfg.Get(pkg.HukerGrafanaDataSource)
+	syncDashboardSeconds := cfg.GetInt(pkg.HukerCollectorSyncDashboardSeconds)
+	collectSeconds := cfg.GetInt(pkg.HukerCollectorCollectSeconds)
 
 	collector := metrics.NewCollector(workSize,
 		openTSDBHttpAddr,
@@ -30,7 +32,13 @@ func main() {
 		pkgsrvAddr,
 		grafanaHttpAddr,
 		grafanaApiKey,
-		grafanaDataSource)
+		grafanaDataSource,
+		syncDashboardSeconds,
+		collectSeconds)
 
 	collector.Start()
+}
+
+func main() {
+	startCollector()
 }

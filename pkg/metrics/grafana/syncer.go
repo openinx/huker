@@ -2,6 +2,7 @@ package grafana
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
@@ -84,13 +85,60 @@ func (g *GrafanaSyncer) GetDashboard(uid string) ([]byte, error) {
 	return g.request("GET", "/api/dashboards/uid/"+uid, nil)
 }
 
-func (g *GrafanaSyncer) CreateHostDashboardIfNotExist(hostname string) error {
+func (g *GrafanaSyncer) CreateHostDashboard(hostname string) error {
 	data, err := RenderJsonTemplate(map[string]string{
 		"HostName":   hostname,
 		"DataSource": g.dataSourceKey,
 		"Tittle":     "host-" + strings.Replace(hostname, ".", "-", -1),
 		"Uid":        "host-" + strings.Replace(hostname, ".", "-", -1),
 	}, "grafana/host.json")
+	if err != nil {
+		return err
+	}
+	_, respErr := g.request("POST", "/api/dashboards/db", data)
+	return respErr
+}
+
+func copyMap(m map[string]interface{}) map[string]interface{} {
+	data, _ := json.Marshal(m)
+	newMap := make(map[string]interface{})
+	json.Unmarshal(data, &newMap)
+	return newMap
+}
+
+func (g *GrafanaSyncer) CreateNodesDashboard(cluster string, hostNames []string) error {
+	data, err := RenderJsonTemplate(map[string]string{
+		"DataSource": g.dataSourceKey,
+		"Tittle":     "nodes-" + cluster,
+		"Uid":        "nodes-" + cluster,
+	}, "grafana/host.json")
+	if err != nil {
+		return err
+	}
+	jsonMap := make(map[string]interface{})
+	if err := json.Unmarshal(data, &jsonMap); err != nil {
+		return err
+	}
+	panelMaps := (jsonMap["dashboard"].(map[string]interface{}))["panels"].([]interface{})
+	for _, panelMap := range panelMaps {
+		p := panelMap.(map[string]interface{})
+		targetMaps := p["targets"].([]interface{})
+		for _, targetMap := range targetMaps {
+			t := targetMap.(map[string]interface{})
+			var targets []interface{}
+			for _, hostName := range hostNames {
+				newTarget := copyMap(t)
+				newTarget["tags"] = map[string]string{
+					"host": hostName,
+				}
+				targets = append(targets, newTarget)
+			}
+			p["targets"] = targets
+			// Only need to handle one targetMap, because we already mapped to all hosts
+			break
+		}
+	}
+	data, err = json.Marshal(jsonMap)
 	if err != nil {
 		return err
 	}

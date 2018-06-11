@@ -27,6 +27,8 @@ func TestHukerConfig(t *testing.T) {
 		{HukerGrafanaAPIKey, "Bearer eyJrIjoiSW9JelRJd2xSN3c2ZGZEMVBuUXdhbFJJQ0txR2pqR2wiLCJuIjoiaHVrZXIiLCJpZCI6MX0=", false, false},
 		{HukerGrafanaDataSource, "test-opentsdb", false, false},
 		{HukerCollectorWorkerSize, 10, true, false},
+		{HukerCollectorSyncDashboardSeconds, 86400, true, false},
+		{HukerCollectorCollectSeconds, 5, true, false},
 		{HukerSupervisorPort, 9001, true, false},
 	}
 

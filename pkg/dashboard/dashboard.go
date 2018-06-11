@@ -82,7 +82,15 @@ func (d *Dashboard) hList(w http.ResponseWriter, r *http.Request) {
 		return RenderTemplate("site/list-cluster.html", "site/base.html", map[string]interface{}{
 			"project":          project,
 			"clusters":         projectClusters,
-			"pkgServerAddress": d.pkgServerAddress}, nil)
+			"pkgServerAddress": d.pkgServerAddress,
+		}, template.FuncMap{
+			"toNodesMonitor": func(cluster string) string {
+				return fmt.Sprintf("%s/d/nodes-%s/nodes-%s", d.grafanaAddress, cluster, cluster)
+			},
+			"toClusterMonitor": func(cluster string) string {
+				return fmt.Sprintf("%s/d/cluster-%s/cluster-%s", d.grafanaAddress, cluster, cluster)
+			},
+		})
 	})
 }
 

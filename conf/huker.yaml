@@ -37,6 +37,11 @@ huker.grafana.data.source: test-opentsdb
 # Number of collector worker
 huker.collector.worker.size: 10
 
+# Period for sync dashboard(seconds), default: 24h
+huker.collector.sync.dashboard.seconds: 86400
+
+# Period for collect metrics(seconds), default: 5s
+huker.collector.collect.seconds: 5
 
 #-------------------------------------------------------------------------------
 # Huker Supervisor Agent
