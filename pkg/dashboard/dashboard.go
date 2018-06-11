@@ -16,13 +16,14 @@ import (
 )
 
 type Dashboard struct {
-	Port           int
-	srv            *http.Server
-	hukerJob       huker.HukerJob
-	refreshTicker  *time.Ticker
-	quit           chan int
-	clusters       []*huker.Cluster
-	grafanaAddress string
+	Port             int
+	srv              *http.Server
+	hukerJob         huker.HukerJob
+	refreshTicker    *time.Ticker
+	quit             chan int
+	clusters         []*huker.Cluster
+	pkgServerAddress string
+	grafanaAddress   string
 }
 
 func NewDashboard(port int, configRootDir, pkgServerAddress string, grafanaAddress string) (*Dashboard, error) {
@@ -35,11 +36,12 @@ func NewDashboard(port int, configRootDir, pkgServerAddress string, grafanaAddre
 		srv: &http.Server{
 			Addr: fmt.Sprintf(":%d", port),
 		},
-		hukerJob:       hukerJob,
-		refreshTicker:  time.NewTicker(5 * time.Second),
-		quit:           make(chan int),
-		clusters:       make([]*huker.Cluster, 0),
-		grafanaAddress: grafanaAddress,
+		hukerJob:         hukerJob,
+		refreshTicker:    time.NewTicker(5 * time.Second),
+		quit:             make(chan int),
+		clusters:         make([]*huker.Cluster, 0),
+		pkgServerAddress: pkgServerAddress,
+		grafanaAddress:   grafanaAddress,
 	}
 	return d, nil
 }
@@ -78,8 +80,9 @@ func (d *Dashboard) hList(w http.ResponseWriter, r *http.Request) {
 		}
 
 		return RenderTemplate("site/list-cluster.html", "site/base.html", map[string]interface{}{
-			"project":  project,
-			"clusters": projectClusters}, nil)
+			"project":          project,
+			"clusters":         projectClusters,
+			"pkgServerAddress": d.pkgServerAddress}, nil)
 	})
 }
 

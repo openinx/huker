@@ -41,7 +41,7 @@ func RenderTemplate(tmplFile string, baseFile string, args map[string]interface{
 	}
 
 	if err = t.Execute(&buf, args); err != nil {
-		log.Errorf("Execute tmplate failed: " + err.Error())
+		log.Errorf("Execute template failed: %v", err)
 		return "", err
 	}
 
