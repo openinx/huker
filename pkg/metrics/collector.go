@@ -188,6 +188,24 @@ func (c *Collector) createNodesDashboard() {
 	}
 }
 
+func (c *Collector) createClusterDashboard() {
+	clusters, err := c.hukerJob.List()
+	if err != nil {
+		log.Errorf("Failed to list all clusters, %v", err)
+		return
+	}
+	for _, cluster := range clusters {
+		if cluster.Project == "hdfs" {
+			err := c.grafanaSyncer.CreateHDFSDashboard(cluster)
+			if err != nil {
+				log.Errorf("Failed to create hdfs dashboard, %v", err)
+			}
+		} else if cluster.Project == "zookeeper" {
+			// TODO implement zookeeper dashboard.
+		}
+	}
+}
+
 func (c *Collector) syncGrafanaDashboard() {
 	for {
 		// Dashboard for each host
@@ -195,6 +213,9 @@ func (c *Collector) syncGrafanaDashboard() {
 
 		// Integrate Nodes Dashboard for each cluster
 		c.createNodesDashboard()
+
+		// Dashboard for each cluster
+		c.createClusterDashboard()
 
 		time.Sleep(c.syncDashboardSeconds * time.Second)
 	}
@@ -244,10 +265,10 @@ func (c *Collector) Start() {
 							}
 							c.tasks <- f
 						}
-					} else if jobName == "namenode" {
+					} else if jobName == "namenode" || jobName == "datanode" {
 						// HDFS NameNode Metrics
 						for _, host := range job.Hosts {
-							f, err := thirdparts.NewHDFSMetricFetcher(getHostJMXAddr(host), host.Hostname, host.BasePort+1, cluster.ClusterName)
+							f, err := thirdparts.NewHDFSMetricFetcher(getHostJMXAddr(host), host.Hostname, host.BasePort+1, cluster.ClusterName, jobName)
 							if err != nil {
 								log.Errorf("Failed to initialize the NewHDFSMetricFetcher for %s, %v", host.ToKey(), err)
 								continue

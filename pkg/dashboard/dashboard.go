@@ -88,7 +88,7 @@ func (d *Dashboard) hList(w http.ResponseWriter, r *http.Request) {
 				return fmt.Sprintf("%s/d/nodes-%s/nodes-%s", d.grafanaAddress, cluster, cluster)
 			},
 			"toClusterMonitor": func(cluster string) string {
-				return fmt.Sprintf("%s/d/cluster-%s/cluster-%s", d.grafanaAddress, cluster, cluster)
+				return fmt.Sprintf("%s/d/cluster-%s-%s/cluster-%s-%s", d.grafanaAddress, project, cluster, project, cluster)
 			},
 		})
 	})

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/openinx/huker/pkg/core"
 	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"io/ioutil"
@@ -142,6 +144,63 @@ func (g *GrafanaSyncer) CreateNodesDashboard(cluster string, hostNames []string)
 	if err != nil {
 		return err
 	}
+	_, respErr := g.request("POST", "/api/dashboards/db", data)
+	return respErr
+}
+
+func (g *GrafanaSyncer) CreateHDFSDashboard(c *core.Cluster) error {
+	hukerDir := utils.GetHukerDir()
+	data, err := ioutil.ReadFile(path.Join(hukerDir, "grafana/hdfs-cluster.json"))
+	if err != nil {
+		return err
+	}
+	jsonMap := make(map[string]interface{})
+	if err := json.Unmarshal(data, &jsonMap); err != nil {
+		return err
+	}
+	panelMaps := jsonMap["panels"].([]interface{})
+	for _, panelMap := range panelMaps {
+		p := panelMap.(map[string]interface{})
+		tittleName := p["title"].(string)
+		targetMaps := p["targets"].([]interface{})
+		for _, targetMap := range targetMaps {
+			t := targetMap.(map[string]interface{})
+			var targets []interface{}
+			if strings.HasPrefix(tittleName, "hdfs.namenode") {
+				newTarget := copyMap(t)
+				newTarget["tags"] = map[string]string{
+					"cluster": c.ClusterName,
+					"job":     "namenode",
+				}
+				targets = append(targets, newTarget)
+			} else if strings.HasPrefix(tittleName, "hdfs.datanode") {
+				for _, host := range c.Jobs["datanode"].Hosts {
+					newTarget := copyMap(t)
+					newTarget["tags"] = map[string]string{
+						"cluster":     c.ClusterName,
+						"job":         "datanode",
+						"hostAndPort": fmt.Sprintf("%s-%d", host.Hostname, host.BasePort+1),
+					}
+					targets = append(targets, newTarget)
+				}
+			}
+			p["targets"] = targets
+			// Only need to handle one targetMap, because we already mapped to all hosts
+			break
+		}
+	}
+	jsonMap["title"] = "cluster-hdfs-" + c.ClusterName
+	jsonMap["uid"] = "cluster-hdfs-" + c.ClusterName
+	jsonMap["id"] = nil
+	dashMap := map[string]interface{}{
+		"overwrite": true,
+		"dashboard": jsonMap,
+	}
+	data, err = json.MarshalIndent(dashMap, "", "  ")
+	if err != nil {
+		return err
+	}
+	log.Infof("data: %s", string(data))
 	_, respErr := g.request("POST", "/api/dashboards/db", data)
 	return respErr
 }
