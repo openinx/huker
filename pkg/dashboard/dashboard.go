@@ -94,16 +94,20 @@ func (d *Dashboard) hList(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (d *Dashboard) getCluster(project string, clusterName string) *huker.Cluster {
+	for i := 0; i < len(d.clusters); i++ {
+		if d.clusters[i].Project == project && d.clusters[i].ClusterName == clusterName {
+			return d.clusters[i]
+		}
+	}
+	return nil
+}
+
 func (d *Dashboard) hDetail(w http.ResponseWriter, r *http.Request) {
 	handleResponse(w, r, func(w http.ResponseWriter, r *http.Request) (string, error) {
 		project := mux.Vars(r)["project"]
 		clusterName := mux.Vars(r)["cluster"]
-		var cluster *huker.Cluster
-		for i := 0; i < len(d.clusters); i++ {
-			if d.clusters[i].Project == project && d.clusters[i].ClusterName == clusterName {
-				cluster = d.clusters[i]
-			}
-		}
+		cluster := d.getCluster(project, clusterName)
 		if cluster == nil {
 			return "", fmt.Errorf("Cluster not found. project:%s, cluster:%s", project, clusterName)
 		}
@@ -131,13 +135,7 @@ func (d *Dashboard) hConfig(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return "", err
 		}
-
-		var cluster *huker.Cluster
-		for i := 0; i < len(d.clusters); i++ {
-			if d.clusters[i].Project == project && d.clusters[i].ClusterName == clusterName {
-				cluster = d.clusters[i]
-			}
-		}
+		cluster := d.getCluster(project, clusterName)
 		if cluster == nil {
 			return "", fmt.Errorf("Cluster not found. project:%s, cluster:%s", project, clusterName)
 		}
