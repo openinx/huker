@@ -200,7 +200,52 @@ func (g *GrafanaSyncer) CreateHDFSDashboard(c *core.Cluster) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("data: %s", string(data))
+	_, respErr := g.request("POST", "/api/dashboards/db", data)
+	return respErr
+}
+
+func (g *GrafanaSyncer) CreateZookeeperDashboard(c *core.Cluster) error {
+	hukerDir := utils.GetHukerDir()
+	data, err := ioutil.ReadFile(path.Join(hukerDir, "grafana/zookeeper.json"))
+	if err != nil {
+		return err
+	}
+	jsonMap := make(map[string]interface{})
+	if err := json.Unmarshal(data, &jsonMap); err != nil {
+		return err
+	}
+	panelMaps := jsonMap["panels"].([]interface{})
+	for _, panelMap := range panelMaps {
+		p := panelMap.(map[string]interface{})
+		targetMaps := p["targets"].([]interface{})
+		for _, targetMap := range targetMaps {
+			t := targetMap.(map[string]interface{})
+			var targets []interface{}
+			for _, host := range c.Jobs["zkServer"].Hosts {
+				newTarget := copyMap(t)
+				newTarget["tags"] = map[string]string{
+					"cluster":     c.ClusterName,
+					"job":         "zkServer",
+					"hostAndPort": fmt.Sprintf("%s-%d", host.Hostname, host.BasePort),
+				}
+				targets = append(targets, newTarget)
+			}
+			p["targets"] = targets
+			// Only need to handle one targetMap, because we already mapped to all hosts
+			break
+		}
+	}
+	jsonMap["title"] = "cluster-zookeeper-" + c.ClusterName
+	jsonMap["uid"] = "cluster-zookeeper-" + c.ClusterName
+	jsonMap["id"] = nil
+	dashMap := map[string]interface{}{
+		"overwrite": true,
+		"dashboard": jsonMap,
+	}
+	data, err = json.Marshal(dashMap)
+	if err != nil {
+		return err
+	}
 	_, respErr := g.request("POST", "/api/dashboards/db", data)
 	return respErr
 }

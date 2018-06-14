@@ -201,7 +201,10 @@ func (c *Collector) createClusterDashboard() {
 				log.Errorf("Failed to create hdfs dashboard, %v", err)
 			}
 		} else if cluster.Project == "zookeeper" {
-			// TODO implement zookeeper dashboard.
+			err := c.grafanaSyncer.CreateZookeeperDashboard(cluster)
+			if err != nil {
+				log.Errorf("Failed to create zookeeper dashboard, %v", err)
+			}
 		}
 	}
 }
@@ -274,6 +277,10 @@ func (c *Collector) Start() {
 								continue
 							}
 							c.tasks <- f
+						}
+					} else if jobName == "zkServer" {
+						for _, host := range job.Hosts {
+							c.tasks <- thirdparts.NewZookeeperMetricFetcher(cluster.ClusterName, host.Hostname, host.BasePort)
 						}
 					}
 				}
