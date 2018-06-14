@@ -34,8 +34,11 @@ jobs:
       - {{.PkgConfDir}}
       - {{.PkgRootDir}}/lib/*
       - {{.PkgRootDir}}/lib/ruby/*
+      - {{.PkgRootDir}}/conf/hadoop-metrics2-hbase.properties
+      - {{.PkgRootDir}}/conf/hbase-policy.xml
       - {{.PkgRootDir}}/*
       - $AgentRootDir/.packages/e78fd41708aaa8d286ed2dcde0a5b645/apache-phoenix-4.13.1-HBase-1.2-bin/*
+      - $AgentRootDir/.packages/e78fd41708aaa8d286ed2dcde0a5b645/apache-phoenix-4.13.1-HBase-1.2-bin/bin
   master:
     super_job: job_common
     jvm_properties:
