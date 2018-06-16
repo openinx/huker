@@ -205,6 +205,11 @@ func (c *Collector) createClusterDashboard() {
 			if err != nil {
 				log.Errorf("Failed to create zookeeper dashboard, %v", err)
 			}
+		} else if cluster.Project == "hbase" {
+			err := c.grafanaSyncer.CreateHBaseDashboard(cluster)
+			if err != nil {
+				log.Errorf("Failed to create hbase dashboard, %v", err)
+			}
 		}
 	}
 }
@@ -261,7 +266,7 @@ func (c *Collector) Start() {
 					if jobName == "regionserver" {
 						// HBase RegionServer Metrics
 						for _, host := range job.Hosts {
-							f, err := thirdparts.NewHBaseMetricFetcher(getHostJMXAddr(host), host.Hostname, host.BasePort+1, cluster.ClusterName)
+							f, err := thirdparts.NewHBaseMetricFetcher(getHostJMXAddr(host), host.Hostname, host.BasePort+1, cluster.ClusterName, jobName)
 							if err != nil {
 								log.Errorf("Failed to initialize the HBaseMetricFetcher for %s, %v", host.ToKey(), err)
 								continue

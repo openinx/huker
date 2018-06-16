@@ -12,28 +12,32 @@ type HBaseMetricFetcher struct {
 	url     string
 	host    string
 	port    int
+	job     string
 	cluster string
 }
 
-func NewHBaseMetricFetcher(url string, host string, port int, cluster string) (*HBaseMetricFetcher, error) {
+func NewHBaseMetricFetcher(url string, host string, port int, cluster string, job string) (*HBaseMetricFetcher, error) {
 	return &HBaseMetricFetcher{
 		url:     url,
 		host:    host,
 		port:    port,
+		job:     job,
 		cluster: cluster,
 	}, nil
 }
 
-func (f *HBaseMetricFetcher) hostAndPort() string {
-	return fmt.Sprintf("%s:%d", f.host, f.port)
-}
-
-func (f *HBaseMetricFetcher) tags() map[string]interface{} {
-	return map[string]interface{}{
-		"cluster": f.cluster,
-		"host":    f.host,
-		"port":    f.port,
+func (f *HBaseMetricFetcher) tags(keyValues map[string]string) map[string]interface{} {
+	tagMap := map[string]interface{}{
+		"cluster":     f.cluster,
+		"hostAndPort": fmt.Sprintf("%s-%d", f.host, f.port),
+		"job":         f.job,
 	}
+	if keyValues != nil {
+		for key, val := range keyValues {
+			tagMap[key] = val
+		}
+	}
+	return tagMap
 }
 
 func (f *HBaseMetricFetcher) Pull() (interface{}, error) {
@@ -65,7 +69,7 @@ func (f *HBaseMetricFetcher) Pull() (interface{}, error) {
 
 func (f *HBaseMetricFetcher) handleThreading(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
 	threadCount := bean["ThreadCount"].(float64)
-	metricMap := formatMetric("hbase.regionserver.jvm", now, threadCount, f.tags())
+	metricMap := formatMetric("hbase.regionserver.jvm", now, threadCount, f.tags(nil))
 	return append(result, metricMap)
 }
 
@@ -76,14 +80,29 @@ const (
 func (f *HBaseMetricFetcher) handleRegionServerRegions(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
 	namespaceMap := make(map[string]float64)
 	tableMap := make(map[string]float64)
+	regionServerMap := make(map[string]float64)
 
-	metricMap := map[string]bool{"storeCount": true, "storeFileCount": true, "memStoreSize": true,
-		"storeFileSize": true, "readRequestCount": true, "writeRequestCount": true,
-		"get_num_ops": true, "scanNext_num_ops": true, "deleteCount": true, "mutateCount": true}
+	metricKeys := []string{
+		"storeCount",
+		"storeFileCount",
+		"memStoreSize",
+		"storeFileSize",
+		"readRequestCount",
+		"writeRequestCount",
+		"get_num_ops",
+		"scanNext_num_ops",
+		"deleteCount",
+		"mutateCount",
+	}
+	metricMap := make(map[string]bool)
+	for _, metricKey := range metricKeys {
+		metricMap[metricKey] = true
+	}
+
 	for metricName, metricValue := range bean {
 		re := regexp.MustCompile(patternParseNsTableMetric)
 		matches := re.FindAllStringSubmatch(metricName, -1)
-		if len(matches) != 1 {
+		if len(matches) != 1 || len(matches[0]) != 5 {
 			continue
 		}
 		match := matches[0]
@@ -94,7 +113,8 @@ func (f *HBaseMetricFetcher) handleRegionServerRegions(result []map[string]inter
 		}
 
 		// add region point
-		result = append(result, formatMetric("hbase.regionserver.regions."+encodedRegionName, now, value, f.tags()))
+		tags := f.tags(map[string]string{"regions": encodedRegionName, "namespace": namespace, "table": table})
+		result = append(result, formatMetric("hbase.regionserver.regions."+metric, now, value, tags))
 
 		// accumulate the namespace
 		nsKey := namespace + "$" + metric
@@ -105,24 +125,42 @@ func (f *HBaseMetricFetcher) handleRegionServerRegions(result []map[string]inter
 		}
 
 		// accumulate the table
-		tableKey := namespace + ":" + table + "$" + metric
+		tableKey := namespace + "$" + table + "$" + metric
 		if val, ok := tableMap[tableKey]; !ok {
 			tableMap[tableKey] = value
 		} else {
 			tableMap[tableKey] = val + value
+		}
+
+		// accumulate the region server
+		if val, ok := regionServerMap[metric]; !ok {
+			regionServerMap[metric] = val
+		} else {
+			regionServerMap[metric] = val + value
 		}
 	}
 
 	// add namespace point
 	for namespace, value := range namespaceMap {
 		parts := strings.Split(namespace, "$")
-		result = append(result, formatMetric("hbase.regionserver.namespace."+parts[0]+"."+parts[1], now, value, f.tags()))
+		if len(parts) == 2 {
+			tags := f.tags(map[string]string{"namespace": parts[0]})
+			result = append(result, formatMetric("hbase.regionserver.namespace."+parts[1], now, value, tags))
+		}
 	}
 
 	// add table point
 	for table, value := range tableMap {
 		parts := strings.Split(table, "$")
-		result = append(result, formatMetric("hbase.regionserver.table."+parts[0]+"."+parts[1], now, value, f.tags()))
+		if len(parts) == 3 {
+			tags := f.tags(map[string]string{"namespace": parts[0], "table": parts[1]})
+			result = append(result, formatMetric("hbase.regionserver.table."+parts[2], now, value, tags))
+		}
+	}
+
+	// add region server point
+	for metric, value := range regionServerMap {
+		result = append(result, formatMetric("hbase.regionserver."+metric, now, value, f.tags(nil)))
 	}
 
 	return result
@@ -131,13 +169,21 @@ func (f *HBaseMetricFetcher) handleRegionServerRegions(result []map[string]inter
 func (f *HBaseMetricFetcher) handleRegionServerWAL(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
 	fields := make(map[string]float64)
 	for _, key := range []string{
-		"SyncTime_num_ops", "SyncTime_75th_percentile", "SyncTime_90th_percentile", "SyncTime_95th_percentile", "SyncTime_99th_percentile",
-		"AppendTime_num_ops", "AppendTime_75th_percentile", "AppendTime_90th_percentile", "AppendTime_95th_percentile", "AppendTime_99th_percentile",
+		"SyncTime_num_ops",
+		"SyncTime_75th_percentile",
+		"SyncTime_90th_percentile",
+		"SyncTime_95th_percentile",
+		"SyncTime_99th_percentile",
+		"AppendTime_num_ops",
+		"AppendTime_75th_percentile",
+		"AppendTime_90th_percentile",
+		"AppendTime_95th_percentile",
+		"AppendTime_99th_percentile",
 	} {
 		fields[key] = bean[key].(float64)
 	}
 	for key, val := range fields {
-		metricMap := formatMetric("hbase.regionserver.wal."+key, now, val, f.tags())
+		metricMap := formatMetric("hbase.regionserver.wal."+key, now, val, f.tags(nil))
 		result = append(result, metricMap)
 	}
 	return result
@@ -146,20 +192,46 @@ func (f *HBaseMetricFetcher) handleRegionServerWAL(result []map[string]interface
 func (f *HBaseMetricFetcher) handleRegionServerServer(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
 	fields := make(map[string]float64)
 	for _, key := range []string{
-		"regionCount", "storeCount", "hlogFileCount", "hlogFileSize", "storeFileCount", "memStoreSize",
-		"Mutate_75th_percentile", "Mutate_90th_percentile", "Mutate_95th_percentile", "Mutate_99th_percentile",
-		"Increment_75th_percentile", "Increment_90th_percentile", "Increment_95th_percentile", "Increment_99th_percentile",
-		"FlushTime_75th_percentile", "FlushTime_90th_percentile", "FlushTime_95th_percentile", "FlushTime_99th_percentile",
-		"Delete_75th_percentile", "Delete_90th_percentile", "Delete_95th_percentile", "Delete_99th_percentile",
-		"Get_75th_percentile", "Get_90th_percentile", "Get_95th_percentile", "Get_99th_percentile",
-		"ScanNext_75th_percentile", "ScanNext_90th_percentile", "ScanNext_95th_percentile", "ScanNext_99th_percentile",
-		"Append_75th_percentile", "Append_90th_percentile", "Append_95th_percentile", "Append_99th_percentile",
+		"regionCount",
+		"storeCount",
+		"hlogFileCount",
+		"hlogFileSize",
+		"storeFileCount",
+		"memStoreSize",
+		"Mutate_75th_percentile",
+		"Mutate_90th_percentile",
+		"Mutate_95th_percentile",
+		"Mutate_99th_percentile",
+		"Increment_75th_percentile",
+		"Increment_90th_percentile",
+		"Increment_95th_percentile",
+		"Increment_99th_percentile",
+		"FlushTime_75th_percentile",
+		"FlushTime_90th_percentile",
+		"FlushTime_95th_percentile",
+		"FlushTime_99th_percentile",
+		"Delete_75th_percentile",
+		"Delete_90th_percentile",
+		"Delete_95th_percentile",
+		"Delete_99th_percentile",
+		"Get_75th_percentile",
+		"Get_90th_percentile",
+		"Get_95th_percentile",
+		"Get_99th_percentile",
+		"ScanNext_75th_percentile",
+		"ScanNext_90th_percentile",
+		"ScanNext_95th_percentile",
+		"ScanNext_99th_percentile",
+		"Append_75th_percentile",
+		"Append_90th_percentile",
+		"Append_95th_percentile",
+		"Append_99th_percentile",
 	} {
 		fields[key] = bean[key].(float64)
 	}
 
 	for key, val := range fields {
-		metricMap := formatMetric("hbase.regionserver."+key, now, val, f.tags())
+		metricMap := formatMetric("hbase.regionserver."+key, now, val, f.tags(nil))
 		result = append(result, metricMap)
 	}
 	return result

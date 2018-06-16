@@ -37,8 +37,8 @@ jobs:
       - {{.PkgRootDir}}/conf/hadoop-metrics2-hbase.properties
       - {{.PkgRootDir}}/conf/hbase-policy.xml
       - {{.PkgRootDir}}/*
-      - $AgentRootDir/.packages/e78fd41708aaa8d286ed2dcde0a5b645/apache-phoenix-4.13.1-HBase-1.2-bin/*
-      - $AgentRootDir/.packages/e78fd41708aaa8d286ed2dcde0a5b645/apache-phoenix-4.13.1-HBase-1.2-bin/bin
+      #- $AgentRootDir/.packages/e78fd41708aaa8d286ed2dcde0a5b645/apache-phoenix-4.13.1-HBase-1.2-bin/*
+      #- $AgentRootDir/.packages/e78fd41708aaa8d286ed2dcde0a5b645/apache-phoenix-4.13.1-HBase-1.2-bin/bin
   master:
     super_job: job_common
     jvm_properties:
@@ -73,3 +73,14 @@ jobs:
     main_entry:
       java_class: org.jruby.Main
       extra_args: -X+O {{.PkgRootDir}}/bin/hirb.rb
+  # Performance Evaluation Tool
+  pe:
+    super_job: job_common
+    jvm_opts:
+      - -Dproc_shell
+    jvm_properties:
+      - hbase.ruby.sources={{.PkgRootDir}}/lib/ruby
+      - hbase.root.logger=INFO,console
+      - hbase.security.logger=INFO,console
+    main_entry:
+      java_class: org.apache.hadoop.hbase.PerformanceEvaluation

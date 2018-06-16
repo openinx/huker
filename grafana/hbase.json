@@ -1,0 +1,3741 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": 36,
+  "links": [],
+  "panels": [
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.regionCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.regionCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.regionCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.regionCount",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.storeCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.storeCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.storeCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.storeCount",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 4,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.hlogFileCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.hlogFileCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.hlogFileCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.hlogFileCount",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 5,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.hlogFileSize",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.hlogFileSize",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.hlogFileSize",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.hlogFileSize",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "decbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "id": 6,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.storeFileCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.storeFileCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.storeFileCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.storeFileCount",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 7,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.memStoreSize",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.memStoreSize",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.memStoreSize",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.memStoreSize",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "decbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      },
+      "id": 9,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Mutate_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Mutate_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Mutate_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.Mutate_75th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
+      "id": 8,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Mutate_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Mutate_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Mutate_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.Mutate_90th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 36
+      },
+      "id": 12,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Increment_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Increment_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Increment_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.Increment_75th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 36
+      },
+      "id": 11,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Mutate_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Mutate_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Mutate_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.Mutate_99th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 45
+      },
+      "id": 10,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Mutate_95th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Mutate_95th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Mutate_95th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.Mutate_95th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 45
+      },
+      "id": 15,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Increment_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Increment_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Increment_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.Increment_99th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 54
+      },
+      "id": 14,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.FlushTime_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.FlushTime_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.FlushTime_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.FlushTime_75th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 54
+      },
+      "id": 18,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.FlushTime_95th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.FlushTime_95th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.FlushTime_95th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.FlushTime_95th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 63
+      },
+      "id": 21,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Get_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Get_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Get_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.Get_75th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 63
+      },
+      "id": 22,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Get_95th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Get_95th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Get_95th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.Get_95th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 72
+      },
+      "id": 26,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.ScanNext_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.ScanNext_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.ScanNext_75th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.ScanNext_75th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 72
+      },
+      "id": 24,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.ScanNext_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.ScanNext_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.ScanNext_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.ScanNext_90th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 81
+      },
+      "id": 13,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Increment_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Increment_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Increment_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.Increment_90th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 81
+      },
+      "id": 16,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Increment_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Increment_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Increment_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.Increment_99th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 90
+      },
+      "id": 17,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.FlushTime_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.FlushTime_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.FlushTime_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.FlushTime_90th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 90
+      },
+      "id": 19,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.FlushTime_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.FlushTime_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.FlushTime_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.FlushTime_99th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 99
+      },
+      "id": 20,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Get_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Get_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Get_90th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.Get_90th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 99
+      },
+      "id": 23,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Get_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Get_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.Get_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.Get_99th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 108
+      },
+      "id": 25,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.ScanNext_95th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.ScanNext_95th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.ScanNext_95th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.ScanNext_95th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 108
+      },
+      "id": 27,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.ScanNext_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.ScanNext_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.ScanNext_99th_percentile",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.ScanNext_99th_percentile",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 117
+      },
+      "id": 28,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.readRequestCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.readRequestCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.readRequestCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.readRequestCount",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 117
+      },
+      "id": 29,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.writeRequestCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.writeRequestCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.writeRequestCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.writeRequestCount",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 126
+      },
+      "id": 30,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.get_num_ops",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.get_num_ops",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.get_num_ops",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.get_num_ops",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 126
+      },
+      "id": 31,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.scanNext_num_ops",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.scanNext_num_ops",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.scanNext_num_ops",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.scanNext_num_ops",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 135
+      },
+      "id": 32,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.mutateCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.mutateCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.mutateCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.mutateCount",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "test-opentsdb",
+      "fill": 1,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 135
+      },
+      "id": 33,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.deleteCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31001",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.deleteCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31011",
+            "job": "regionserver"
+          }
+        },
+        {
+          "aggregator": "avg",
+          "currentTagKey": "",
+          "currentTagValue": "",
+          "downsampleAggregator": "avg",
+          "downsampleFillPolicy": "none",
+          "metric": "hbase.regionserver.deleteCount",
+          "refId": "A",
+          "tags": {
+            "cluster": "test-hbase",
+            "hostAndPort": "127.0.0.1-31021",
+            "job": "regionserver"
+          }
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "hbase.regionserver.deleteCount",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 16,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "",
+  "title": "cluster-hbase-test-hbase",
+  "uid": "cluster-hbase-test-hbase",
+  "version": 4
+}
