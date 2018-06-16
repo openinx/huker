@@ -50,7 +50,7 @@ func (f *HDFSMetricFetcher) Pull() (interface{}, error) {
 	for i := 0; i < len(beans); i++ {
 		bean := beans[i].(map[string]interface{})
 		nameValue, ok := bean["name"]
-		if !ok {
+		if !ok || nameValue == nil {
 			continue
 		}
 		name := nameValue.(string)
@@ -90,7 +90,14 @@ func (f *HDFSMetricFetcher) handleThreading(result []map[string]interface{}, now
 }
 
 func (f *HDFSMetricFetcher) handleFSNamesystem(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
-	keys := []string{"MissingBlocks", "CapacityTotal", "CapacityUsed", "CapacityRemaining", "BlocksTotal", "FilesTotal"}
+	keys := []string{
+		"MissingBlocks",
+		"CapacityTotal",
+		"CapacityUsed",
+		"CapacityRemaining",
+		"BlocksTotal",
+		"FilesTotal",
+	}
 	for _, key := range keys {
 		if value, ok := bean[key]; ok {
 			result = append(result, formatMetric("hdfs.namenode.fs."+key, now, value.(float64), f.tags()))
@@ -110,7 +117,11 @@ func (f *HDFSMetricFetcher) handleNameNodeActivity(result []map[string]interface
 }
 
 func (f *HDFSMetricFetcher) handleFSNamesystemState(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
-	keys := []string{"NumLiveDataNodes", "NumDeadDataNodes", "NumDecomLiveDataNodes"}
+	keys := []string{
+		"NumLiveDataNodes",
+		"NumDeadDataNodes",
+		"NumDecomLiveDataNodes",
+	}
 	for _, key := range keys {
 		if value, ok := bean[key]; ok {
 			result = append(result, formatMetric("hdfs.namenode.fs.state."+key, now, value.(float64), f.tags()))
@@ -120,7 +131,11 @@ func (f *HDFSMetricFetcher) handleFSNamesystemState(result []map[string]interfac
 }
 
 func (f *HDFSMetricFetcher) handleDataNodeFSDatasetState(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
-	keys := []string{"Capacity", "DfsUsed", "Remaining"}
+	keys := []string{
+		"Capacity",
+		"DfsUsed",
+		"Remaining",
+	}
 	for _, key := range keys {
 		if value, ok := bean[key]; ok {
 			result = append(result, formatMetric("hdfs.datanode.fs.state."+key, now, value.(float64), f.tags()))
@@ -130,15 +145,29 @@ func (f *HDFSMetricFetcher) handleDataNodeFSDatasetState(result []map[string]int
 }
 
 func (f *HDFSMetricFetcher) handleDataNodeActivity(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
-	keys := []string{"BytesWritten", "BytesRead", "BlocksWritten", "BlocksRead", "ReadsFromLocalClient", "ReadsFromRemoteClient",
-		"WritesFromLocalClient", "WritesFromRemoteClient", "FlushNanosNumOps", "FsyncNanosNumOps"}
+	keys := []string{
+		"BytesWritten",
+		"BytesRead",
+		"BlocksWritten",
+		"BlocksRead",
+		"ReadsFromLocalClient",
+		"ReadsFromRemoteClient",
+		"WritesFromLocalClient",
+		"WritesFromRemoteClient",
+		"FlushNanosNumOps",
+		"FsyncNanosNumOps",
+	}
 	for _, key := range keys {
 		if value, ok := bean[key]; ok {
 			result = append(result, formatMetric("hdfs.datanode.activity."+key, now, value.(float64), f.tags()))
 		}
 	}
 
-	keys = []string{"FsyncNanosAvgTime", "FlushNanosAvgTime", "SendDataPacketTransferNanosAvgTime"}
+	keys = []string{
+		"FsyncNanosAvgTime",
+		"FlushNanosAvgTime",
+		"SendDataPacketTransferNanosAvgTime",
+	}
 	for _, key := range keys {
 		if value, ok := bean[key]; ok {
 			keyMs := strings.Replace(key, "Nanos", "", -1)

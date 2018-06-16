@@ -3,6 +3,7 @@ package thirdparts
 import (
 	"fmt"
 	"github.com/openinx/huker/pkg/utils"
+	"github.com/qiniu/log"
 	"regexp"
 	"strings"
 	"time"
@@ -68,9 +69,12 @@ func (f *HBaseMetricFetcher) Pull() (interface{}, error) {
 }
 
 func (f *HBaseMetricFetcher) handleThreading(result []map[string]interface{}, now int64, bean map[string]interface{}) []map[string]interface{} {
-	threadCount := bean["ThreadCount"].(float64)
-	metricMap := formatMetric("hbase.regionserver.jvm", now, threadCount, f.tags(nil))
-	return append(result, metricMap)
+	if val, ok := bean["ThreadCount"]; ok && val != nil {
+		threadCount := val.(float64)
+		metricMap := formatMetric("hbase.jvm.ThreadCount", now, threadCount, f.tags(nil))
+		result = append(result, metricMap)
+	}
+	return result
 }
 
 const (
@@ -180,7 +184,11 @@ func (f *HBaseMetricFetcher) handleRegionServerWAL(result []map[string]interface
 		"AppendTime_95th_percentile",
 		"AppendTime_99th_percentile",
 	} {
-		fields[key] = bean[key].(float64)
+		if val, ok := bean[key]; ok {
+			fields[key] = val.(float64)
+		} else {
+			log.Infof("key %s not exist in %v", key, f.tags(nil))
+		}
 	}
 	for key, val := range fields {
 		metricMap := formatMetric("hbase.regionserver.wal."+key, now, val, f.tags(nil))
@@ -227,7 +235,11 @@ func (f *HBaseMetricFetcher) handleRegionServerServer(result []map[string]interf
 		"Append_95th_percentile",
 		"Append_99th_percentile",
 	} {
-		fields[key] = bean[key].(float64)
+		if val, ok := bean[key]; ok {
+			fields[key] = val.(float64)
+		} else {
+			log.Infof("key %s not exist in %v", key, f.tags(nil))
+		}
 	}
 
 	for key, val := range fields {
