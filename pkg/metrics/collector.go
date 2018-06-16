@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/openinx/huker/pkg"
 	huker "github.com/openinx/huker/pkg/core"
 	"github.com/openinx/huker/pkg/metrics/grafana"
 	"github.com/openinx/huker/pkg/metrics/thirdparts"
@@ -55,11 +56,13 @@ type Collector struct {
 	collectSeconds time.Duration
 }
 
-func NewCollector(workerSize int, tsdbHttpAddr, cfgRoot, pkgSrvAddr, grafanaAddr, grafanaApiKey string, grafanaDataSourceKey string, syncDashboardSeconds int, collectSeconds int) *Collector {
+func NewCollector(workerSize int, tsdbHttpAddr, cfgRoot, pkgSrvAddr, grafanaAddr, grafanaApiKey string, grafanaDataSourceKey string, syncDashboardSeconds int, collectSeconds int, cfg *pkg.HukerConfig) *Collector {
 	hukerJob, err := huker.NewConfigFileHukerJob(cfgRoot, pkgSrvAddr)
 	if err != nil {
 		panic(err.Error())
 	}
+	networkInterfaces := cfg.GetSlice(pkg.HukerCollectorNetworkInterfaces)
+	diskDevices := cfg.GetSlice(pkg.HukerCollectorDiskDevices)
 	return &Collector{
 		workerSize:           workerSize,
 		tsdbHttpAddr:         tsdbHttpAddr,
@@ -70,7 +73,7 @@ func NewCollector(workerSize int, tsdbHttpAddr, cfgRoot, pkgSrvAddr, grafanaAddr
 		grafanaAddr:          grafanaAddr,
 		grafanaApiKey:        grafanaApiKey,
 		grafanaDataSourceKey: grafanaDataSourceKey,
-		grafanaSyncer:        grafana.NewGrafanaSyncer(grafanaAddr, grafanaApiKey, grafanaDataSourceKey),
+		grafanaSyncer:        grafana.NewGrafanaSyncer(grafanaAddr, grafanaApiKey, grafanaDataSourceKey, networkInterfaces, diskDevices),
 		syncDashboardSeconds: time.Duration(syncDashboardSeconds),
 		collectSeconds:       time.Duration(collectSeconds),
 	}

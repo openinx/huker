@@ -43,6 +43,14 @@ huker.collector.sync.dashboard.seconds: 86400
 # Period for collect metrics(seconds), default: 5s
 huker.collector.collect.seconds: 5
 
+# Network Interfaces to monitor, format: <if0>,<if1>,<if2>
+# TODO Will let the code auto-detect the network interfaces and show the charts.
+huker.collector.network.interfaces: lo0,en0,en1,en2,p2p0,awdl0,bridg
+
+# Disk Devices to monitor, format: <disk-device0>,<disk-device1>,<disk-device2>
+# TODO Will let the code auto-detect the disk devices and show the charts.
+huker.collector.disk.devices: /dev/disk1,/dev/disk2s2
+
 #-------------------------------------------------------------------------------
 # Huker Supervisor Agent
 #-------------------------------------------------------------------------------

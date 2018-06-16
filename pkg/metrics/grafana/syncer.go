@@ -7,49 +7,29 @@ import (
 	"fmt"
 	"github.com/openinx/huker/pkg/core"
 	"github.com/openinx/huker/pkg/utils"
-	"github.com/qiniu/log"
 	"io/ioutil"
 	"net/http"
 	"path"
 	"strings"
-	"text/template"
 )
 
 type GrafanaSyncer struct {
-	grafanaAddr   string
-	apiKey        string
-	dataSourceKey string
+	grafanaAddr       string
+	apiKey            string
+	dataSourceKey     string
+	networkInterfaces []string
+	diskDevices       []string
 }
 
-func NewGrafanaSyncer(grafanaAddr string, apiKey string, dataSourceKey string) *GrafanaSyncer {
+func NewGrafanaSyncer(grafanaAddr string, apiKey string, dataSourceKey string,
+	networkInterfaces []string, diskDevices []string) *GrafanaSyncer {
 	return &GrafanaSyncer{
-		grafanaAddr:   grafanaAddr,
-		apiKey:        apiKey,
-		dataSourceKey: dataSourceKey,
+		grafanaAddr:       grafanaAddr,
+		apiKey:            apiKey,
+		dataSourceKey:     dataSourceKey,
+		networkInterfaces: networkInterfaces,
+		diskDevices:       diskDevices,
 	}
-}
-
-func RenderJsonTemplate(args map[string]string, jsonFile string) ([]byte, error) {
-	hukerDir := utils.GetHukerDir()
-	data, err := ioutil.ReadFile(path.Join(hukerDir, jsonFile))
-	if err != nil {
-		log.Errorf("Failed to read file: %s, %v", jsonFile, err)
-		return nil, err
-	}
-
-	t := template.New(jsonFile + "-template")
-	t, err = t.Parse(string(data))
-	if err != nil {
-		log.Errorf("Failed to parse the template file, %v", err)
-		return nil, err
-	}
-
-	var buf bytes.Buffer
-	if err = t.Execute(&buf, args); err != nil {
-		log.Errorf("Failed to render the template file: %s, %v ", jsonFile, err.Error())
-		return nil, err
-	}
-	return buf.Bytes(), nil
 }
 
 func (g *GrafanaSyncer) request(method, resource string, body []byte) ([]byte, error) {
@@ -88,17 +68,8 @@ func (g *GrafanaSyncer) GetDashboard(uid string) ([]byte, error) {
 }
 
 func (g *GrafanaSyncer) CreateHostDashboard(hostname string) error {
-	data, err := RenderJsonTemplate(map[string]string{
-		"HostName":   hostname,
-		"DataSource": g.dataSourceKey,
-		"Tittle":     "host-" + strings.Replace(hostname, ".", "-", -1),
-		"Uid":        "host-" + strings.Replace(hostname, ".", "-", -1),
-	}, "grafana/host.json")
-	if err != nil {
-		return err
-	}
-	_, respErr := g.request("POST", "/api/dashboards/db", data)
-	return respErr
+	uid := "host-" + strings.Replace(hostname, ".", "-", -1)
+	return g.createHostsDashboard(uid, uid, []string{hostname})
 }
 
 func copyMap(m map[string]interface{}) map[string]interface{} {
@@ -108,12 +79,31 @@ func copyMap(m map[string]interface{}) map[string]interface{} {
 	return newMap
 }
 
-func (g *GrafanaSyncer) CreateNodesDashboard(cluster string, hostNames []string) error {
-	data, err := RenderJsonTemplate(map[string]string{
-		"DataSource": g.dataSourceKey,
-		"Tittle":     "nodes-" + cluster,
-		"Uid":        "nodes-" + cluster,
-	}, "grafana/host.json")
+// Each target represent a curve in chart. if multiple targets in a panel, then
+// it will has multiple curves shown in the same chart. Here we try to replace
+// tags of one targetMap in the targetsMap to generate a new target.
+func generateNewTargetMap(targetMaps []interface{}, newTags map[string]string) map[string]interface{} {
+	for _, targetMap := range targetMaps {
+		t := targetMap.(map[string]interface{})
+		newTarget := copyMap(t)
+		newTarget["tags"] = newTags
+		// Only need to handle one targetMap, because we will map to all hosts in upper layer.
+		return newTarget
+	}
+	panic("Found no target map")
+}
+
+func removeLastKey(metric string) string {
+	idx := strings.LastIndex(metric, ".")
+	if idx >= 0 {
+		return metric[:idx]
+	}
+	return metric
+}
+
+func (g *GrafanaSyncer) createHostsDashboard(title, uid string, hostNames []string) error {
+	hukerDir := utils.GetHukerDir()
+	data, err := ioutil.ReadFile(path.Join(hukerDir, "grafana/host.json"))
 	if err != nil {
 		return err
 	}
@@ -121,32 +111,58 @@ func (g *GrafanaSyncer) CreateNodesDashboard(cluster string, hostNames []string)
 	if err := json.Unmarshal(data, &jsonMap); err != nil {
 		return err
 	}
-	panelMaps := (jsonMap["dashboard"].(map[string]interface{}))["panels"].([]interface{})
+
+	// Generate the new panel maps.
+	panelMaps := jsonMap["panels"].([]interface{})
 	for _, panelMap := range panelMaps {
 		p := panelMap.(map[string]interface{})
 		targetMaps := p["targets"].([]interface{})
 		p["datasource"] = g.dataSourceKey
-		for _, targetMap := range targetMaps {
-			t := targetMap.(map[string]interface{})
-			var targets []interface{}
-			for _, hostName := range hostNames {
-				newTarget := copyMap(t)
-				newTarget["tags"] = map[string]string{
-					"host": hostName,
+		mKey := p["title"].(string)
+		if strings.HasPrefix(mKey, "sys.disk.") {
+			var newTargets []interface{}
+			for _, dd := range g.diskDevices {
+				for _, hostName := range hostNames {
+					target := generateNewTargetMap(targetMaps, map[string]string{"host": hostName, "disk": dd})
+					newTargets = append(newTargets, target)
 				}
-				targets = append(targets, newTarget)
 			}
-			p["targets"] = targets
-			// Only need to handle one targetMap, because we already mapped to all hosts
-			break
+			p["targets"] = newTargets
+		} else if strings.HasPrefix(mKey, "sys.net.") {
+			var newTargets []interface{}
+			for _, nif := range g.networkInterfaces {
+				for _, hostName := range hostNames {
+					target := generateNewTargetMap(targetMaps, map[string]string{"host": hostName, "if": nif})
+					newTargets = append(newTargets, target)
+				}
+			}
+			p["targets"] = newTargets
+		} else {
+			newTargets := make([]interface{}, len(hostNames))
+			for hostIdx := range hostNames {
+				newTargets[hostIdx] = generateNewTargetMap(targetMaps, map[string]string{"host": hostNames[hostIdx]})
+			}
+			p["targets"] = newTargets
 		}
 	}
-	data, err = json.Marshal(jsonMap)
+	jsonMap["title"] = title
+	jsonMap["uid"] = uid
+	jsonMap["id"] = nil
+	dashMap := map[string]interface{}{
+		"overwrite": true,
+		"dashboard": jsonMap,
+	}
+	data, err = json.Marshal(dashMap)
 	if err != nil {
 		return err
 	}
 	_, respErr := g.request("POST", "/api/dashboards/db", data)
 	return respErr
+}
+
+func (g *GrafanaSyncer) CreateNodesDashboard(cluster string, hostNames []string) error {
+	uid := "nodes-" + cluster
+	return g.createHostsDashboard(uid, uid, hostNames)
 }
 
 func (g *GrafanaSyncer) CreateHDFSDashboard(c *core.Cluster) error {
@@ -162,34 +178,28 @@ func (g *GrafanaSyncer) CreateHDFSDashboard(c *core.Cluster) error {
 	panelMaps := jsonMap["panels"].([]interface{})
 	for _, panelMap := range panelMaps {
 		p := panelMap.(map[string]interface{})
-		tittleName := p["title"].(string)
+		titleName := p["title"].(string)
 		targetMaps := p["targets"].([]interface{})
 		p["datasource"] = g.dataSourceKey
-		for _, targetMap := range targetMaps {
-			t := targetMap.(map[string]interface{})
-			var targets []interface{}
-			if strings.HasPrefix(tittleName, "hdfs.namenode") {
-				newTarget := copyMap(t)
-				newTarget["tags"] = map[string]string{
-					"cluster": c.ClusterName,
-					"job":     "namenode",
-				}
+
+		var targets []interface{}
+		if strings.HasPrefix(titleName, "hdfs.namenode") {
+			newTarget := generateNewTargetMap(targetMaps, map[string]string{
+				"cluster": c.ClusterName,
+				"job":     "namenode",
+			})
+			targets = append(targets, newTarget)
+		} else if strings.HasPrefix(titleName, "hdfs.datanode") {
+			for _, host := range c.Jobs["datanode"].Hosts {
+				newTarget := generateNewTargetMap(targetMaps, map[string]string{
+					"cluster":     c.ClusterName,
+					"job":         "datanode",
+					"hostAndPort": fmt.Sprintf("%s-%d", host.Hostname, host.BasePort+1),
+				})
 				targets = append(targets, newTarget)
-			} else if strings.HasPrefix(tittleName, "hdfs.datanode") {
-				for _, host := range c.Jobs["datanode"].Hosts {
-					newTarget := copyMap(t)
-					newTarget["tags"] = map[string]string{
-						"cluster":     c.ClusterName,
-						"job":         "datanode",
-						"hostAndPort": fmt.Sprintf("%s-%d", host.Hostname, host.BasePort+1),
-					}
-					targets = append(targets, newTarget)
-				}
 			}
-			p["targets"] = targets
-			// Only need to handle one targetMap, because we already mapped to all hosts
-			break
 		}
+		p["targets"] = targets
 	}
 	jsonMap["title"] = "cluster-hdfs-" + c.ClusterName
 	jsonMap["uid"] = "cluster-hdfs-" + c.ClusterName
@@ -221,22 +231,17 @@ func (g *GrafanaSyncer) CreateZookeeperDashboard(c *core.Cluster) error {
 		p := panelMap.(map[string]interface{})
 		targetMaps := p["targets"].([]interface{})
 		p["datasource"] = g.dataSourceKey
-		for _, targetMap := range targetMaps {
-			t := targetMap.(map[string]interface{})
-			var targets []interface{}
-			for _, host := range c.Jobs["zkServer"].Hosts {
-				newTarget := copyMap(t)
-				newTarget["tags"] = map[string]string{
-					"cluster":     c.ClusterName,
-					"job":         "zkServer",
-					"hostAndPort": fmt.Sprintf("%s-%d", host.Hostname, host.BasePort),
-				}
-				targets = append(targets, newTarget)
-			}
-			p["targets"] = targets
-			// Only need to handle one targetMap, because we already mapped to all hosts
-			break
+
+		var targets []interface{}
+		for _, host := range c.Jobs["zkServer"].Hosts {
+			newTarget := generateNewTargetMap(targetMaps, map[string]string{
+				"cluster":     c.ClusterName,
+				"job":         "zkServer",
+				"hostAndPort": fmt.Sprintf("%s-%d", host.Hostname, host.BasePort),
+			})
+			targets = append(targets, newTarget)
 		}
+		p["targets"] = targets
 	}
 	jsonMap["title"] = "cluster-zookeeper-" + c.ClusterName
 	jsonMap["uid"] = "cluster-zookeeper-" + c.ClusterName
@@ -268,22 +273,17 @@ func (g *GrafanaSyncer) CreateHBaseDashboard(c *core.Cluster) error {
 		p := panelMap.(map[string]interface{})
 		targetMaps := p["targets"].([]interface{})
 		p["datasource"] = g.dataSourceKey
-		for _, targetMap := range targetMaps {
-			t := targetMap.(map[string]interface{})
-			var targets []interface{}
-			for _, host := range c.Jobs["regionserver"].Hosts {
-				newTarget := copyMap(t)
-				newTarget["tags"] = map[string]string{
-					"cluster":     c.ClusterName,
-					"job":         "regionserver",
-					"hostAndPort": fmt.Sprintf("%s-%d", host.Hostname, host.BasePort+1),
-				}
-				targets = append(targets, newTarget)
-			}
-			p["targets"] = targets
-			// Only need to handle one targetMap, because we already mapped to all hosts
-			break
+
+		var targets []interface{}
+		for _, host := range c.Jobs["regionserver"].Hosts {
+			newTarget := generateNewTargetMap(targetMaps, map[string]string{
+				"cluster":     c.ClusterName,
+				"job":         "regionserver",
+				"hostAndPort": fmt.Sprintf("%s-%d", host.Hostname, host.BasePort+1),
+			})
+			targets = append(targets, newTarget)
 		}
+		p["targets"] = targets
 	}
 	jsonMap["title"] = "cluster-hbase-" + c.ClusterName
 	jsonMap["uid"] = "cluster-hbase-" + c.ClusterName

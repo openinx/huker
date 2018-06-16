@@ -34,7 +34,8 @@ func startCollector() {
 		grafanaApiKey,
 		grafanaDataSource,
 		syncDashboardSeconds,
-		collectSeconds)
+		collectSeconds,
+		cfg)
 
 	collector.Start()
 }

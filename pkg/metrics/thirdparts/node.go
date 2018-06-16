@@ -72,20 +72,39 @@ func (f *NodeMetricFetcher) Pull() (interface{}, error) {
 		ifEntry := interfaces[i].(map[string]interface{})
 		ifName := ifEntry["name"].(string)
 
-		for _, key := range []string{"bytesRecv", "bytesSent", "packetsRecv", "packetsSent", "dropin", "dropout", "errin", "errout"} {
-			result = append(result, formatMetric("sys.net."+key+"."+ifName, now, ifEntry[key].(float64), tags))
+		for _, key := range []string{
+			"bytesRecv",
+			"bytesSent",
+			"packetsRecv",
+			"packetsSent",
+			"dropin",
+			"dropout",
+			"errin",
+			"errout",
+		} {
+			result = append(result, formatMetric("sys.net."+key, now, ifEntry[key].(float64), map[string]interface{}{
+				"host": f.host,
+				"if":   ifName,
+			}))
 		}
 	}
 
 	// sys.disk
 	duMap := jsonMap["DiskUsage"].(map[string]interface{})
-	for mountPoint := range duMap {
-		if strings.HasPrefix(mountPoint, "usage:") {
-			stat := duMap[mountPoint].(map[string]interface{})
-
-			mountPointKey := strings.TrimPrefix(mountPoint, "usage:")
-			for _, key := range []string{"free", "total", "used", "usedPercent"} {
-				result = append(result, formatMetric("sys.disk."+key+"."+mountPointKey, now, stat[key].(float64), tags))
+	for diskKey := range duMap {
+		if strings.HasPrefix(diskKey, "usage:") {
+			stat := duMap[diskKey].(map[string]interface{})
+			disk := strings.TrimPrefix(diskKey, "usage:")
+			for _, key := range []string{
+				"free",
+				"total",
+				"used",
+				"usedPercent",
+			} {
+				result = append(result, formatMetric("sys.disk."+key, now, stat[key].(float64), map[string]interface{}{
+					"host": f.host,
+					"disk": disk,
+				}))
 			}
 		}
 	}

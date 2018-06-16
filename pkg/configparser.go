@@ -5,6 +5,7 @@ import (
 	"github.com/go-yaml/yaml"
 	"io/ioutil"
 	"net/url"
+	"strings"
 )
 
 const (
@@ -22,6 +23,8 @@ const (
 	HukerCollectorWorkerSize           = "huker.collector.worker.size"
 	HukerCollectorSyncDashboardSeconds = "huker.collector.sync.dashboard.seconds"
 	HukerCollectorCollectSeconds       = "huker.collector.collect.seconds"
+	HukerCollectorNetworkInterfaces    = "huker.collector.network.interfaces"
+	HukerCollectorDiskDevices          = "huker.collector.disk.devices"
 
 	// Supervisor agent
 	HukerSupervisorPort = "huker.supervisor.http.port"
@@ -74,4 +77,12 @@ func (h *HukerConfig) GetURL(key string) (*url.URL, error) {
 		}
 		return u, nil
 	}
+}
+
+func (h *HukerConfig) GetSlice(key string) []string {
+	values := h.Get(key)
+	for _, ch := range []string{" ", "\n", "\t", "\r", ","} {
+		values = strings.Trim(values, ch)
+	}
+	return strings.Split(values, ",")
 }
