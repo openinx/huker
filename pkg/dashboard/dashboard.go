@@ -61,7 +61,7 @@ func handleResponse(w http.ResponseWriter, r *http.Request, handleFunc HandleFun
 
 func (d *Dashboard) hIndex(w http.ResponseWriter, r *http.Request) {
 	handleResponse(w, r, func(w http.ResponseWriter, r *http.Request) (string, error) {
-		return RenderTemplate("site/overview.html", "site/base.html", map[string]interface{}{}, nil)
+		return utils.RenderHTMLTemplate("site/overview.html", "site/base.html", map[string]interface{}{}, nil)
 	})
 }
 
@@ -79,7 +79,7 @@ func (d *Dashboard) hList(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		return RenderTemplate("site/list-cluster.html", "site/base.html", map[string]interface{}{
+		return utils.RenderHTMLTemplate("site/list-cluster.html", "site/base.html", map[string]interface{}{
 			"project":          project,
 			"clusters":         projectClusters,
 			"pkgServerAddress": d.pkgServerAddress,
@@ -112,7 +112,7 @@ func (d *Dashboard) hDetail(w http.ResponseWriter, r *http.Request) {
 			return "", fmt.Errorf("Cluster not found. project:%s, cluster:%s", project, clusterName)
 		}
 
-		return RenderTemplate("site/detail.html", "site/base.html", map[string]interface{}{
+		return utils.RenderHTMLTemplate("site/detail.html", "site/base.html", map[string]interface{}{
 			"cluster": cluster,
 		}, template.FuncMap{
 			"inc": func(i int) int {
@@ -150,7 +150,7 @@ func (d *Dashboard) hConfig(w http.ResponseWriter, r *http.Request) {
 		}
 
 		isFirst := 1
-		return RenderTemplate("site/config.html", "site/base.html", map[string]interface{}{
+		return utils.RenderHTMLTemplate("site/config.html", "site/base.html", map[string]interface{}{
 			"cluster": cluster,
 			"Job":     jobName,
 			"TaskId":  strconv.Itoa(taskId),

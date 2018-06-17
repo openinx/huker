@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"html/template"
 	"io"
@@ -46,36 +47,24 @@ func (s *Supervisor) RootDir() string {
 }
 
 func (s *Supervisor) hIndex(w http.ResponseWriter, r *http.Request) {
-	const INDEX_TMPL = `
-	<table border="1" bordercolor="#a0c6e5" style="border-collapse:collapse;" align="left">
-		<tr>
-			<td>Name</td>
-			<td>Job</td>
-			<td>PID</td>
-			<td>Status</td>
-		</tr>
-
-		{{ range .}}
-		<tr>
-			<td>{{ .Name }}</td>
-			<td>{{ .Job }}</td>
-			<td>{{ .PID }}</td>
-			<td>{{ .Status }}</td>
-		</tr>
-		{{ end }}
-	</table>
-	<div style="clear:both">
-	{{ len . }} programs in total.
-	`
-
-	t, err := template.New("Get Program List").Parse(INDEX_TMPL)
+	data, err := ioutil.ReadFile(path.Join(utils.GetHukerDir(), "site/supervisor.html"))
 	if err != nil {
-		log.Error("Parse template failed: %v", err)
+		w.Write(renderResp(err))
+		return
+	}
+	t, err := template.New("Get Program List").Parse(string(data))
+	if err != nil {
+		w.Write(renderResp(err))
 		return
 	}
 	if err := t.Execute(w, s.programs.toArray()); err != nil {
-		log.Errorf("Render template error: %v", err)
+		w.Write(renderResp(err))
+		return
 	}
+}
+
+func (s *Supervisor) hStaticFile(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, utils.GetHukerDir()+"/site/static/"+mux.Vars(r)["filename"])
 }
 
 func (s *Supervisor) hGetProgramList(w http.ResponseWriter, r *http.Request) {
@@ -390,6 +379,7 @@ func NewSupervisor(rootDir string, port int, supervisorDB string) (*Supervisor, 
 func (s *Supervisor) Start() error {
 	r := mux.NewRouter()
 	r.HandleFunc("/", s.hIndex)
+	r.HandleFunc("/static/{filename}", s.hStaticFile)
 	r.HandleFunc("/api/programs", s.hGetProgramList).Methods("GET")
 	r.HandleFunc("/api/programs", s.hBootstrapProgram).Methods("POST")
 	r.HandleFunc("/api/programs/{name}/{job}/{taskId}", s.hShowProgram).Methods("GET")
