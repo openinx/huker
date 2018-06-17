@@ -18,6 +18,17 @@ function listAllSelectedCheckBoxes() {
     return selected
 }
 
+// Radio input
+function sshAuthMethod(method) {
+    if (method == "sshPrivateKey") {
+        $("#sshPasswordDiv").hide()
+        $("#sshPrivateKeyDiv").show()
+    } else if (method == "sshPassword") {
+        $("#sshPrivateKeyDiv").hide()
+        $("#sshPasswordDiv").show()
+    }
+}
+
 function errorHTML(status, errMsg) {
     return "<span class=\"label label-danger\">" + status + "</span><a href=\"javascript:void(0)\" data-toggle=\"tooltip\" data-placement=\"right\" title=\'" + errMsg + "\'><img src=\"/static/help-icon.jpeg\" width=\"20px\" height=\"20px\"></a>"
 }
@@ -165,6 +176,51 @@ $(document).on("click", "#rollingUpdateBtn", function () {
 });
 $(document).on("click", "#cleanupBtn", function () {
     doAction("cleanup")
+});
+
+
+function deployHukerAgent(sshUser, sshPrivateKey, sshPassword, hukerAgentRootDir, host) {
+    postData = {
+        "sshUser": sshUser,
+        "sshPrivateKey": sshPrivateKey,
+        "sshPassword": sshPassword,
+        "hukerAgentRootDir": hukerAgentRootDir,
+        "host": host,
+    }
+    $.ajax({
+            type: "POST",
+            url: "/api/deploy-agent",
+            data: JSON.stringify(postData),
+            success: function (data) {
+                var div = document.getElementById('DeployProgressDetailList')
+                div.innerHTML += "<li style='color:green'>" + "Host: " + host + " deploy successfully" + "</li>"
+            },
+            error: function (xhr, status, error) {
+                var div = document.getElementById('DeployProgressDetailList')
+                div.innerHTML += "<li style='color: red'>" + "Failed to deploy huker agent on host: " + host + ", reason: " + error + ", " + xhr.responseText + "</li>"
+            },
+        }
+    )
+}
+
+$(document).on("click", "#deployHukerAgent", function () {
+    var sshUser = $("#sshUser").val()
+    var sshPrivateKey = $("#sshPrivateKey").val()
+    var sshPassword = $("#sshPassword").val()
+    var hukerAgentRootDir = $("#hukerAgentRootDir").val()
+    var hosts = $("#hosts").val()
+    if (hosts != null && hosts.length > 0) {
+        $("#DeployProgress").show();
+        $("#DeployProgressDetails").show();
+        var hostArray = hosts.split("\n")
+        for (var i = 0; i < hostArray.length; i++) {
+            var host = hostArray[i].trim('\n').trim().trim('\t').trim('\r')
+            if (host.length > 0) {
+                deployHukerAgent(sshUser, sshPrivateKey, sshPassword, hukerAgentRootDir, host)
+            }
+        }
+    }
+
 });
 
 $(document).ready(function () {

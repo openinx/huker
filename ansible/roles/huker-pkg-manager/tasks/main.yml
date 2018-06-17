@@ -1,9 +1,0 @@
----
-- name: Copy huker-agent script
-  template: src=huker-pkg-manager.sh dest={{ huker_install_dir }}/huker-pkg-manager.sh mode=766
-
-- name: Copy package yaml configuration file.
-  copy: src={{ huker_dir }}/conf/pkg.yaml dest={{ huker_install_dir }}/pkg.yaml mode=766
-
-- name: Start Huker Package Manager
-  command: "{{ huker_install_dir }}/huker-pkg-manager.sh"

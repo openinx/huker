@@ -65,3 +65,11 @@ opentsdb-2.3.1-bin.tar.gz:
   md5sum: bd3a333aa4ca6ad01ff0d45c199f9c61
   size: 78728746
   link: https://github.com/openinx/huker/releases/download/1.0.0-alpha/opentsdb-2.3.1-bin.tar.gz
+
+# Huker 1.0.0 Release Package
+huker-1.0.0.tar.gz:
+  version: huker-1.0.0
+  date: 2018-06-18 11:21:00
+  md5sum: fedb21bb13827c0e69d136bc94210296
+  size: 11741690
+  link: https://github.com/openinx/huker/releases/download/1.0.0-alpha/huker-1.0.0.tar.gz

@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	huker "github.com/openinx/huker/pkg/core"
@@ -9,6 +10,7 @@ import (
 	"github.com/openinx/huker/pkg/utils"
 	"github.com/qiniu/log"
 	"html/template"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -93,6 +95,18 @@ func (d *Dashboard) hList(w http.ResponseWriter, r *http.Request) {
 				return fmt.Sprintf("%s/d/cluster-%s-%s/cluster-%s-%s", d.grafanaAddress, project, cluster, project, cluster)
 			},
 		})
+	})
+}
+
+func (d *Dashboard) hDeploy(w http.ResponseWriter, r *http.Request) {
+	handleResponse(w, r, func(w http.ResponseWriter, r *http.Request) (string, error) {
+		return utils.RenderHTMLTemplate("site/deploy.html", "site/base.html", map[string]interface{}{}, nil)
+	})
+}
+
+func (d *Dashboard) hNewCluster(w http.ResponseWriter, r *http.Request) {
+	handleResponse(w, r, func(w http.ResponseWriter, r *http.Request) (string, error) {
+		return utils.RenderHTMLTemplate("site/new-cluster.html", "site/base.html", map[string]interface{}{}, nil)
 	})
 }
 
@@ -183,6 +197,31 @@ func (d *Dashboard) hConfig(w http.ResponseWriter, r *http.Request) {
 
 func (d *Dashboard) hStaticFile(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, utils.GetHukerDir()+"/site/static/"+mux.Vars(r)["filename"])
+}
+
+func (d *Dashboard) hDeployAgent(w http.ResponseWriter, r *http.Request) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Stack(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	req := DeployRequest{}
+	if err := json.Unmarshal(data, &req); err != nil {
+		log.Stack(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	if err := deployHukerAgent(&req); err != nil {
+		log.Stack(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
 }
 
 func (d *Dashboard) hWebApi(w http.ResponseWriter, r *http.Request) {
@@ -299,9 +338,12 @@ func (s *Dashboard) Start() error {
 	r := mux.NewRouter()
 	r.HandleFunc("/", s.hIndex)
 	r.HandleFunc("/list/{project}", s.hList)
+	r.HandleFunc("/deploy", s.hDeploy)
+	r.HandleFunc("/new-cluster", s.hNewCluster)
 	r.HandleFunc("/detail/{project}/{cluster}", s.hDetail)
 	r.HandleFunc("/config/{project}/{cluster}/{job}/{task_id}", s.hConfig)
 	r.HandleFunc("/static/{filename}", s.hStaticFile)
+	r.HandleFunc("/api/deploy-agent", s.hDeployAgent)
 	r.HandleFunc("/api/{action}/{project}/{cluster}/{job}/{task_id}", s.hWebApi)
 	s.srv.Handler = r
 

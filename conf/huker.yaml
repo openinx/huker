@@ -49,7 +49,7 @@ huker.collector.network.interfaces: lo0,en0
 
 # Disk Devices to monitor, format: <disk-device0>,<disk-device1>,<disk-device2>
 # TODO Will let the code auto-detect the disk devices and show the charts.
-huker.collector.disk.devices: /dev/disk1,/dev/disk2s2
+huker.collector.disk.devices: /dev/loop1,/dev/loop2,/dev/mapper/ubuntu--vg-root
 
 #-------------------------------------------------------------------------------
 # Huker Supervisor Agent
