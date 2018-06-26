@@ -130,29 +130,35 @@ func NewPackageServer(port int, pkgRoot, pkgConf string) (*PackageServer, error)
 			Addr: fmt.Sprintf(":%d", port),
 		},
 	}
+	return p, p.loadConfig()
+}
 
+func (p *PackageServer) loadConfig() error {
 	data, err := ioutil.ReadFile(p.pkgConf)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = yaml.Unmarshal(data, &(p.pkgMap))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// NOTE: need to update package name.
 	for pkgN, pkgInfo := range p.pkgMap {
 		pkgInfo.PackageName = pkgN
 	}
-
-	return p, nil
+	return nil
 }
 
 func (p *PackageServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	t, err := template.New("Package Index").Parse(htmlTempl)
 	if err != nil {
 		log.Error("Parse template failed: %v", err)
+		return
+	}
+	if err := p.loadConfig(); err != nil {
+		log.Error("Failed to load the pkg.yaml config: %v", err)
 		return
 	}
 
@@ -171,6 +177,11 @@ func (p *PackageServer) hIndex(w http.ResponseWriter, r *http.Request) {
 
 func (p *PackageServer) hDownload(w http.ResponseWriter, r *http.Request) {
 	pkgName := mux.Vars(r)["packageName"]
+	if err := p.loadConfig(); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
 	if _, ok := p.pkgMap[pkgName]; !ok {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(fmt.Sprintf("Package %s not found", pkgName)))
