@@ -36,6 +36,7 @@ type Supervisor struct {
 	port          int
 	dbFile        string
 	programs      *programMap
+	trashCleaner  *TrashCleaner
 	quit          chan int
 	refreshTicker *time.Ticker
 	srv           *http.Server
@@ -346,8 +347,9 @@ func NewSupervisor(rootDir string, port int, supervisorDB string) (*Supervisor, 
 		port:          port,
 		dbFile:        supervisorDB,
 		programs:      newProgramMap(),
+		trashCleaner:  NewTrashCleaner(rootDir, 6*3600), // TODO Make it to be configurable. 6 hour default.
 		quit:          make(chan int),
-		refreshTicker: time.NewTicker(1 * time.Second),
+		refreshTicker: time.NewTicker(10 * time.Second),
 		srv: &http.Server{
 			Addr: fmt.Sprintf(":%d", port),
 		},
@@ -365,6 +367,9 @@ func NewSupervisor(rootDir string, port int, supervisorDB string) (*Supervisor, 
 			case <-s.refreshTicker.C:
 				if err := s.programs.refreshAndDump(s.dbFile); err != nil {
 					log.Errorf("Failed to refresh and dump %s, %s", s.dbFile, err)
+				}
+				if err := s.trashCleaner.CheckAndClean(); err != nil {
+					log.Errorf("Failed to check and clean the trash, %v", err)
 				}
 			case <-s.quit:
 				s.refreshTicker.Stop()
