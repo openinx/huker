@@ -2,18 +2,45 @@ jobs:
   job_common:
     super_job: remote
     jvm_opts:
+      - -Xmx128m # Increase to 12g or larger if online environment.
+      - -Xms128m # Increase to 12g or larger if online environment.
+      - -Xmn64m  # Increase to 2g if online environment.
+      - -Xss256k
+      - -XX:MaxDirectMemorySize=32m  # Increase to 1024m if online environment.
+      - -XX:SurvivorRatio=6
+      - -XX:CMSInitiatingOccupancyFraction=65
+      - -XX:+UseCMSInitiatingOccupancyOnly
+      - -XX:+CMSParallelRemarkEnabled
+      - -XX:+UseNUMA
+      - -XX:+CMSClassUnloadingEnabled
+      - -XX:CMSMaxAbortablePrecleanTime=10000
+      - -XX:TargetSurvivorRatio=80
+      - -XX:CMSWaitDuration=2000
+      - -XX:ConcGCThreads=16
+      - -XX:ParallelGCThreads=16
+      - -XX:PretenureSizeThreshold=2097088
+      - -XX:+CMSConcurrentMTEnabled
+      - -XX:+ExplicitGCInvokesConcurrent
+      - -XX:MaxTenuringThreshold=3
+      - -XX:+ParallelRefProcEnabled
+      - -XX:-UseBiasedLocking
+      - -XX:+UseConcMarkSweepGC  # Use CMS GC
+      - -XX:+UseMembar
       - -XX:+DisableExplicitGC
       - -XX:+HeapDumpOnOutOfMemoryError
       - -XX:HeapDumpPath={{.PkgStdoutDir}}
-      - -XX:+PrintGCApplicationStoppedTime
-      - -XX:+UseConcMarkSweepGC
-      - -XX:+UseMembar
+      - -Xloggc:{{.PkgStdoutDir}}/gc.log
       - -verbose:gc
+      - -XX:+PrintGC
       - -XX:+PrintGCDetails
+      - -XX:+PrintGCApplicationStoppedTime
       - -XX:+PrintHeapAtGC
       - -XX:+PrintGCDateStamps
-      - -Xmx128m
-      - -Xloggc:{{.PkgStdoutDir}}/hbase_gc.log
+      - -XX:+PrintAdaptiveSizePolicy
+      - -XX:+PrintTenuringDistribution
+      #- -XX:+PrintSafepointStatistics
+      #- -XX:PrintSafepointStatisticsCount=1
+      - -XX:PrintFLSStatistics=1
     jvm_properties:
       - java.net.preferIPv4Stack=true
       - jute.maxbuffer=10240000
@@ -37,6 +64,9 @@ jobs:
       - {{.PkgRootDir}}/conf/hadoop-metrics2-hbase.properties
       - {{.PkgRootDir}}/conf/hbase-policy.xml
       - {{.PkgRootDir}}/*
+      - {{.PkgRootDir}}/lib/ruby/*                      # To be compatible with hbase-2.0.0 release.
+      - {{.PkgRootDir}}/lib/client-facing-thirdparty/*  # To be compatible with hbase-2.0.0 release.
+      - {{.PkgRootDir}}/lib/shaded-clients/*            # To be compatible with hbase-2.0.0 release.
       #- $AgentRootDir/.packages/e78fd41708aaa8d286ed2dcde0a5b645/apache-phoenix-4.13.1-HBase-1.2-bin/*
       #- $AgentRootDir/.packages/e78fd41708aaa8d286ed2dcde0a5b645/apache-phoenix-4.13.1-HBase-1.2-bin/bin
   master:

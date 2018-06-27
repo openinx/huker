@@ -1,19 +1,45 @@
 jobs:
   job_common:
     jvm_opts:
+      - -Xmx128m # Increase to 4g or larger if online environment.
+      - -Xms128m # Increase to 4g or larger if online environment.
+      - -Xmn64m  # Increase to 2g if online environment.
+      - -Xss256k
+      - -XX:MaxDirectMemorySize=32m  # Increase to 1024m if online environment.
+      - -XX:SurvivorRatio=6
+      - -XX:CMSInitiatingOccupancyFraction=65
+      - -XX:+UseCMSInitiatingOccupancyOnly
+      - -XX:+CMSParallelRemarkEnabled
+      - -XX:+UseNUMA
+      - -XX:+CMSClassUnloadingEnabled
+      - -XX:CMSMaxAbortablePrecleanTime=10000
+      - -XX:TargetSurvivorRatio=80
+      - -XX:CMSWaitDuration=2000
+      - -XX:ConcGCThreads=16
+      - -XX:ParallelGCThreads=16
+      - -XX:PretenureSizeThreshold=2097088
+      - -XX:+CMSConcurrentMTEnabled
+      - -XX:+ExplicitGCInvokesConcurrent
+      - -XX:MaxTenuringThreshold=3
+      - -XX:+ParallelRefProcEnabled
+      - -XX:-UseBiasedLocking
+      - -XX:+UseConcMarkSweepGC  # Use CMS GC.
+      - -XX:+UseMembar
       - -XX:+DisableExplicitGC
       - -XX:+HeapDumpOnOutOfMemoryError
-      - -XX:+PrintGCApplicationStoppedTime
-      - -XX:+PrintGCDateStamps
-      - -XX:+PrintGCDetails
-      - -XX:+PrintHeapAtGC
-      - -XX:+UseConcMarkSweepGC
-      - -XX:+UseMembar
-      - -XX:CMSInitiatingOccupancyFraction=80
       - -XX:HeapDumpPath={{.PkgStdoutDir}}
       - -Xloggc:{{.PkgStdoutDir}}/gc.log
-      - -Xmx128m
       - -verbose:gc
+      - -XX:+PrintGC
+      - -XX:+PrintGCDetails
+      - -XX:+PrintGCApplicationStoppedTime
+      - -XX:+PrintHeapAtGC
+      - -XX:+PrintGCDateStamps
+      - -XX:+PrintAdaptiveSizePolicy
+      - -XX:+PrintTenuringDistribution
+      #- -XX:+PrintSafepointStatistics
+      #- -XX:PrintSafepointStatisticsCount=1
+      - -XX:PrintFLSStatistics=1
     jvm_properties:
       - java.net.preferIPv4Stack=true
       - java.library.path={{.PkgRootDir}}/lib/native
