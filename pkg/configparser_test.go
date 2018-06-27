@@ -36,8 +36,8 @@ func TestHukerConfig(t *testing.T) {
 		{HukerCollectorWorkerSize, 10, typeInt},
 		{HukerCollectorSyncDashboardSeconds, 86400, typeInt},
 		{HukerCollectorCollectSeconds, 5, typeInt},
-		{HukerCollectorNetworkInterfaces, []string{"lo", "eth0"}, typeSlice},
-		{HukerCollectorDiskDevices, []string{"disk1", "disk2"}, typeSlice},
+		{HukerCollectorNetworkInterfaces, []string{"lo0", "en0"}, typeSlice},
+		{HukerCollectorDiskDevices, []string{"/dev/disk1", "/dev/disk2s2"}, typeSlice},
 		{HukerSupervisorPort, 9001, typeInt},
 	}
 
