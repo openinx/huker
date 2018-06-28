@@ -18,30 +18,6 @@ import (
 	"sync"
 )
 
-const htmlTempl = `
-	<table border="1" bordercolor="#a0c6e5" style="border-collapse:collapse;" align="left">
-		<tr>
-			<td>PackageName</td>
-			<td>Version</td>
-			<td>Date</td>
-			<td>MD5 Checksum</td>
-			<td>Size</td>
-		</tr>
-
-		{{ range . }}
-		<tr>
-			<td><a href="/{{ .PackageName }}">{{ .PackageName  }}</a></td>
-			<td>{{ .Version }}</td>
-			<td>{{ .Date }}</td>
-			<td>{{ .Md5sum }}</td>
-			<td>{{ .Size }}</td>
-		</tr>
-		{{ end }}
-	</table>
-	<div style="clear:both">
-	{{ len . }} packages in total.
-	`
-
 type packageInfo struct {
 	PackageName string
 	Version     string `yaml:"version"`
@@ -151,46 +127,55 @@ func (p *PackageServer) loadConfig() error {
 	return nil
 }
 
+func logHttpError(code int, err error, w http.ResponseWriter) {
+	log.Errorf("- http response: %s %s %s", code, http.StatusText(code), err.Error())
+	w.WriteHeader(code)
+	w.Write([]byte(err.Error()))
+}
+
 func (p *PackageServer) hIndex(w http.ResponseWriter, r *http.Request) {
-	t, err := template.New("Package Index").Parse(htmlTempl)
+	data, err := ioutil.ReadFile(path.Join(utils.GetHukerDir(), "site/pkgsrv.html"))
 	if err != nil {
-		log.Error("Parse template failed: %v", err)
+		logHttpError(http.StatusInternalServerError, err, w)
+		return
+	}
+	t, err := template.New("Package Server Index").Parse(string(data))
+	if err != nil {
+		logHttpError(http.StatusInternalServerError, err, w)
 		return
 	}
 	if err := p.loadConfig(); err != nil {
-		log.Error("Failed to load the pkg.yaml config: %v", err)
+		logHttpError(http.StatusInternalServerError, err, w)
 		return
 	}
-
 	var pkgList []*packageInfo
 	for _, pkgInfo := range p.pkgMap {
 		pkgList = append(pkgList, pkgInfo)
 	}
-
 	sort.Sort(packageList(pkgList))
-
-	err = t.Execute(w, pkgList)
-	if err != nil {
-		log.Errorf("Render template error: %v", err)
+	if err := t.Execute(w, pkgList); err != nil {
+		logHttpError(http.StatusInternalServerError, err, w)
+		return
 	}
+}
+
+func (p *PackageServer) hStaticFile(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, utils.GetHukerDir()+"/site/static/"+mux.Vars(r)["filename"])
 }
 
 func (p *PackageServer) hDownload(w http.ResponseWriter, r *http.Request) {
 	pkgName := mux.Vars(r)["packageName"]
 	if err := p.loadConfig(); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		logHttpError(http.StatusInternalServerError, err, w)
 		return
 	}
 	if _, ok := p.pkgMap[pkgName]; !ok {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(fmt.Sprintf("Package %s not found", pkgName)))
+		logHttpError(http.StatusNotFound, fmt.Errorf("Package %s not found", pkgName), w)
 		return
 	}
 	pkg := p.pkgMap[pkgName]
 	if _, err := pkg.isCorrectPackage(p.pkgRoot); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(fmt.Sprintf("check package %s error: %v", pkgName, err)))
+		logHttpError(http.StatusInternalServerError, fmt.Errorf("check package %s error: %v", pkgName, err), w)
 		return
 	}
 	fName, _ := pkg.getAbsPath(p.pkgRoot)
@@ -217,6 +202,7 @@ func (p *PackageServer) Start() error {
 	// Start Http Server.
 	r := mux.NewRouter()
 	r.HandleFunc("/", p.hIndex).Methods("GET")
+	r.HandleFunc("/static/{filename}", p.hStaticFile)
 	r.HandleFunc("/{packageName}", p.hDownload).Methods("GET")
 	p.httpSrv.Handler = r
 	return p.httpSrv.ListenAndServe()

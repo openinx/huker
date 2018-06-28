@@ -61,7 +61,9 @@ func handleResponse(w http.ResponseWriter, r *http.Request, handleFunc HandleFun
 
 func (d *Dashboard) hIndex(w http.ResponseWriter, r *http.Request) {
 	handleResponse(w, r, func(w http.ResponseWriter, r *http.Request) (string, error) {
-		return utils.RenderHTMLTemplate("site/overview.html", "site/base.html", map[string]interface{}{}, nil)
+		return utils.RenderHTMLTemplate("site/overview.html", "site/base.html", map[string]interface{}{
+			"pkgServerAddress": d.pkgServerAddress,
+		}, nil)
 	})
 }
 
@@ -113,7 +115,8 @@ func (d *Dashboard) hDetail(w http.ResponseWriter, r *http.Request) {
 		}
 
 		return utils.RenderHTMLTemplate("site/detail.html", "site/base.html", map[string]interface{}{
-			"cluster": cluster,
+			"cluster":          cluster,
+			"pkgServerAddress": d.pkgServerAddress,
 		}, template.FuncMap{
 			"inc": func(i int) int {
 				return i + 1
@@ -151,10 +154,11 @@ func (d *Dashboard) hConfig(w http.ResponseWriter, r *http.Request) {
 
 		isFirst := 1
 		return utils.RenderHTMLTemplate("site/config.html", "site/base.html", map[string]interface{}{
-			"cluster": cluster,
-			"Job":     jobName,
-			"TaskId":  strconv.Itoa(taskId),
-			"config":  configMap,
+			"cluster":          cluster,
+			"Job":              jobName,
+			"TaskId":           strconv.Itoa(taskId),
+			"config":           configMap,
+			"pkgServerAddress": d.pkgServerAddress,
 		}, template.FuncMap{
 			"checkIsFirst": func() int {
 				if isFirst == 1 {
