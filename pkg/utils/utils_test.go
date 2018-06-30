@@ -53,3 +53,13 @@ func TestReadEnvStrValue(t *testing.T) {
 		}
 	}
 }
+
+func TestFindJavaHome(t *testing.T) {
+	javaHome, err := FindJavaHome("/home/huker/bin/java")
+	if err != nil {
+		t.Fatalf("Failed to find java home, %v", err)
+	}
+	if javaHome != "/home/huker" {
+		t.Fatalf("Failed to parse java home from /home/huker/bin/java")
+	}
+}

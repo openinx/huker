@@ -310,7 +310,7 @@ func (s *Supervisor) hStopProgram(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Supervisor) hGetMetrics(w http.ResponseWriter, r *http.Request) {
-	data, err := MarshalMetrics()
+	data, err := MarshalMetrics(s.programs)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))

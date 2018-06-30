@@ -277,3 +277,25 @@ func RenderHTMLTemplate(tmplFile string, baseFile string, args map[string]interf
 	body = strings.Replace(body, "&gt;", ">", -1)
 	return body, nil
 }
+
+func FindJavaHome(bin string) (string, error) {
+	if bin == "java" {
+		var stdout, stderr bytes.Buffer
+		cmd := exec.Command("which", "java")
+		cmd.Stdout, cmd.Stderr = &stdout, &stderr
+		if err := cmd.Run(); err != nil {
+			return "", err
+		}
+		bin = stdout.String()
+	}
+	if idx := strings.Index(bin, "bin/java"); idx > 0 {
+		return bin[:idx-1], nil
+	} else if idx == 0 {
+		return "/", nil
+	}
+	// Return the default JAVA_HOME
+	if home := os.Getenv("JAVA_HOME"); home != "" {
+		return home, nil
+	}
+	return "", fmt.Errorf("Failed to parse JAVA_HOME from %s, please ensure that set the correct JAVA_HOME", bin)
+}

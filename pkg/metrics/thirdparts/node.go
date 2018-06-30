@@ -1,7 +1,10 @@
 package thirdparts
 
 import (
+	"fmt"
 	"github.com/openinx/huker/pkg/utils"
+	"github.com/qiniu/log"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -109,5 +112,59 @@ func (f *NodeMetricFetcher) Pull() (interface{}, error) {
 		}
 	}
 
+	// node.jvm.gc
+	result = f.appendJavaMetrics(result, now, jsonMap)
+
 	return result, nil
+}
+
+func parseClusterJobTask(label string) (string, string, int, error) {
+	splits := strings.Split(label, "/")
+	if len(splits) != 3 {
+		return "", "", 0, fmt.Errorf("Splits should be 3, lable:%s", label)
+	}
+	var cluster, job string
+	var task int
+	if strings.HasPrefix(splits[0], "cluster=") {
+		cluster = strings.TrimPrefix(splits[0], "cluster=")
+	} else {
+		return "", "", 0, fmt.Errorf("cluster not found, label:%s", label)
+	}
+	if strings.HasPrefix(splits[1], "job=") {
+		job = strings.TrimPrefix(splits[1], "job=")
+	} else {
+		return "", "", 0, fmt.Errorf("job not found, label:%s", label)
+	}
+	if strings.HasPrefix(splits[2], "task_id=") {
+		task, _ = strconv.Atoi(strings.TrimPrefix(splits[2], "task_id="))
+	} else {
+		return "", "", 0, fmt.Errorf("task_id not found, label:%s", label)
+	}
+	return cluster, job, task, nil
+}
+
+func (f *NodeMetricFetcher) appendJavaMetrics(result []map[string]interface{}, now int64, jsonMap map[string]interface{}) []map[string]interface{} {
+	var javaMetrics map[string]interface{}
+	if val, ok := jsonMap["JavaMetrics"]; !ok {
+		return result
+	} else {
+		javaMetrics = val.(map[string]interface{})
+	}
+	for key, val := range javaMetrics {
+		cluster, job, task, err := parseClusterJobTask(key)
+		if err != nil {
+			log.Errorf("Failed to parse the java metrics key: %s, error: %v", key, err)
+			continue
+		}
+		metricsMap := val.(map[string]interface{})
+		for mKey, mVal := range metricsMap {
+			result = append(result, formatMetric("node.jvm.gc."+mKey, now, mVal.(float64), map[string]interface{}{
+				"cluster": cluster,
+				"job":     job,
+				"task":    task,
+				"host":    f.host,
+			}))
+		}
+	}
+	return result
 }
