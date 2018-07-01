@@ -10,29 +10,30 @@
             <th>Package Name</th>
             <th>Package Md5sum</th>
             <th>Dependencies</th>
-            <th>Nodes Monitor</th>
-            <th>Jobs Monitor</th>
+            <th>Metrics Dashboard</th>
         </tr>
         </thead>
 
-        {{ $localPkgServerAddress := .pkgServerAddress }}
+    {{ $localPkgServerAddress := .pkgServerAddress }}
 
-        {{ range .clusters }}
+    {{ range .clusters }}
         <tbody>
         <tr>
             <td><a href="/detail/{{ .Project }}/{{ .ClusterName }}">{{ .ClusterName }}</a></td>
             <td><a href="{{$localPkgServerAddress}}/{{.PackageName}}">{{ .PackageName }}</a></td>
             <td>{{ .PackageMd5sum }}</td>
             <td>
-                {{ range .Dependencies }}
+            {{ range .Dependencies }}
                 <a href="/detail/{{ .Project }}/{{ .ClusterName }}">{{ .ClusterName }}</a>&nbsp;
-                {{ end }}
+            {{ end }}
             </td>
-            <td><a href="{{ toNodesMonitor .ClusterName }}">view</a></td>
-            <td><a href="{{ toClusterMonitor .ClusterName }}">view</a></td>
+            <td>
+                <a href="{{ toNodesMonitor .ClusterName }}">Hosts</a> /
+                <a href="{{ toClusterMonitor .ClusterName }}">Jobs</a>
+            </td>
         </tr>
         </tbody>
-        {{ end }}
+    {{ end }}
     </table>
 </div>
 {{ end }}
