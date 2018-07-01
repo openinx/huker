@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"go/build"
 	"os"
+	"path"
 	"strconv"
 	"testing"
 )
@@ -10,6 +12,14 @@ func TestIsProcessOK(t *testing.T) {
 
 	if IsProcessOK(64236) {
 		t.Errorf("Process %d is stopped actually.", 64236)
+	}
+}
+
+func TestGetHukerSourceDir(t *testing.T) {
+	expected := path.Join(build.Default.GOPATH, "src/github.com/openinx/huker")
+	srcDir := GetHukerSourceDir()
+	if srcDir != expected {
+		t.Fatalf("Huker source direcotry mismatch. %s != %s", expected, srcDir)
 	}
 }
 

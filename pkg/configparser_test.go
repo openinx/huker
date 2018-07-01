@@ -16,7 +16,7 @@ const (
 )
 
 func TestHukerConfig(t *testing.T) {
-	confFile := path.Join(utils.GetHukerDir(), "conf", "huker.yaml")
+	confFile := path.Join(utils.GetHukerSourceDir(), "conf", "huker.yaml")
 	h, err := NewHukerConfig(confFile)
 	if err != nil {
 		t.Fatal(err)

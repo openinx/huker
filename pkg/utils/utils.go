@@ -227,8 +227,18 @@ func HttpGetJSON(url string) (map[string]interface{}, error) {
 	return jsonMap, nil
 }
 
-// The directory: $GOPATH/src/github.com/openinx/huker
+// if the binary is /home/huker/huker-1.0.0/bin/huker, then the method will return
+// /home/huker/huker-1.0.0, which means the root directory of the release package.
 func GetHukerDir() string {
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	return path.Dir(path.Dir(ex))
+}
+
+// The directory: $GOPATH/src/github.com/openinx/huker
+func GetHukerSourceDir() string {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		panic("No caller information")

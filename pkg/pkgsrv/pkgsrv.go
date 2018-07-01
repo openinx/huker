@@ -128,7 +128,7 @@ func (p *PackageServer) loadConfig() error {
 }
 
 func logHttpError(code int, err error, w http.ResponseWriter) {
-	log.Errorf("- http response: %s %s %s", code, http.StatusText(code), err.Error())
+	log.Errorf("- http response: %d %s %s", code, http.StatusText(code), err.Error())
 	w.WriteHeader(code)
 	w.Write([]byte(err.Error()))
 }

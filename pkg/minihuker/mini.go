@@ -84,13 +84,13 @@ func NewMiniHuker(cfgRootDir string, agentSize int, agentRootDir string, agentPo
 
 func NewTestingMiniHuker(supervisorSize int) *MiniHuker {
 	agentRootDir := fmt.Sprintf("/tmp/huker/%d", time.Now().UnixNano())
-	return NewMiniHuker(utils.GetHukerDir()+"/testdata/conf",
+	return NewMiniHuker(utils.GetHukerSourceDir()+"/testdata/conf",
 		supervisorSize,
 		agentRootDir,
 		testAgentPort,
 		testPkgSrvPort,
-		utils.GetHukerDir()+"/testdata/lib",
-		utils.GetHukerDir()+"/testdata/conf/pkg.yaml",
+		utils.GetHukerSourceDir()+"/testdata/lib",
+		utils.GetHukerSourceDir()+"/testdata/conf/pkg.yaml",
 		testDashboardPort,
 		localHttpAddress(3000))
 }

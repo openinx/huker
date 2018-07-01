@@ -15,7 +15,7 @@ func TestHukerJob(t *testing.T) {
 	miniHuker.Start()
 	defer miniHuker.Stop()
 
-	hukerJob, err := core.NewConfigFileHukerJob(utils.GetHukerDir()+"/testdata/conf", localHttpAddress(testPkgSrvPort))
+	hukerJob, err := core.NewConfigFileHukerJob(utils.GetHukerSourceDir()+"/testdata/conf", localHttpAddress(testPkgSrvPort))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestHukerJob(t *testing.T) {
 }
 
 func TestHukerJobList(t *testing.T) {
-	hukerJob, err := core.NewConfigFileHukerJob(utils.GetHukerDir()+"/testdata/conf", localHttpAddress(testPkgSrvPort))
+	hukerJob, err := core.NewConfigFileHukerJob(utils.GetHukerSourceDir()+"/testdata/conf", localHttpAddress(testPkgSrvPort))
 	if err != nil {
 		t.Fatal(err)
 	}

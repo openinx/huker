@@ -28,7 +28,7 @@ func TestParseClusterJobTask(t *testing.T) {
 			t.Errorf("Case#%d job mismatch, %s != %s", i, tc.job, job)
 		}
 		if tc.task != task {
-			t.Errorf("Case#%d task mismatch, %s != %s", i, tc.task, task)
+			t.Errorf("Case#%d task mismatch, %d != %d", i, tc.task, task)
 		}
 		if tc.err == nil || err == nil {
 			if tc.err != nil || err != nil {
