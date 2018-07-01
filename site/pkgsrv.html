@@ -40,6 +40,7 @@
                 <th>MD5 Checksum</th>
                 <th>Version</th>
                 <th>Date</th>
+                <th>Remote Mirrors</th>
             </tr>
             </thead>
 
@@ -51,6 +52,7 @@
                 <td>{{ .Md5sum }}</td>
                 <td>{{ .Version }}</td>
                 <td>{{ .Date }}</td>
+                <td><a href="{{ .Link }}">Download</a></td>
             </tr>
             {{ end }}
             </tbody>
