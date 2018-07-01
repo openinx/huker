@@ -177,6 +177,12 @@ func (c *Collector) createNodesDashboard() {
 		for _, job := range cluster.Jobs {
 			for _, host := range job.Hosts {
 				hostNames[host.ToHttpAddress()] = true
+				// Sync JVM dashboard to Grafana
+				err := c.grafanaSyncer.CreateJvmGcDashboard(cluster.ClusterName, job.JobName, host.TaskId)
+				if err != nil {
+					log.Errorf("Failed to sync JVM dashboard for cluster:%s, job:%s, task:%d", cluster.ClusterName, job.JobName, host.TaskId)
+					continue
+				}
 			}
 		}
 		var hostStrings []string

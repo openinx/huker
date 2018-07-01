@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -93,14 +94,6 @@ func generateNewTargetMap(targetMaps []interface{}, newTags map[string]string) m
 	panic("Found no target map")
 }
 
-func removeLastKey(metric string) string {
-	idx := strings.LastIndex(metric, ".")
-	if idx >= 0 {
-		return metric[:idx]
-	}
-	return metric
-}
-
 func (g *GrafanaSyncer) createHostsDashboard(title, uid string, hostNames []string) error {
 	hukerDir := utils.GetHukerDir()
 	data, err := ioutil.ReadFile(path.Join(hukerDir, "grafana/host.json"))
@@ -163,6 +156,46 @@ func (g *GrafanaSyncer) createHostsDashboard(title, uid string, hostNames []stri
 func (g *GrafanaSyncer) CreateNodesDashboard(cluster string, hostNames []string) error {
 	uid := "nodes-" + cluster
 	return g.createHostsDashboard(uid, uid, hostNames)
+}
+
+func (g *GrafanaSyncer) CreateJvmGcDashboard(cluster string, job string, task int) error {
+	hukerDir := utils.GetHukerDir()
+	data, err := ioutil.ReadFile(path.Join(hukerDir, "grafana/task_gc.json"))
+	if err != nil {
+		return err
+	}
+	jsonMap := make(map[string]interface{})
+	if err := json.Unmarshal(data, &jsonMap); err != nil {
+		return err
+	}
+	panelMaps := jsonMap["panels"].([]interface{})
+	for _, panelMap := range panelMaps {
+		p := panelMap.(map[string]interface{})
+		targetMaps := p["targets"].([]interface{})
+		p["datasource"] = g.dataSourceKey
+
+		for _, targetMap := range targetMaps {
+			t := targetMap.(map[string]interface{})
+			t["tags"] = map[string]string{
+				"cluster": cluster,
+				"job":     job,
+				"task":    strconv.Itoa(task),
+			}
+		}
+	}
+	jsonMap["title"] = fmt.Sprintf("jvm-%s-%s-%d", cluster, job, task)
+	jsonMap["uid"] = fmt.Sprintf("jvm-%s-%s-%d", cluster, job, task)
+	jsonMap["id"] = nil
+	dashMap := map[string]interface{}{
+		"overwrite": true,
+		"dashboard": jsonMap,
+	}
+	data, err = json.Marshal(dashMap)
+	if err != nil {
+		return err
+	}
+	_, respErr := g.request("POST", "/api/dashboards/db", data)
+	return respErr
 }
 
 func (g *GrafanaSyncer) CreateHDFSDashboard(c *core.Cluster) error {

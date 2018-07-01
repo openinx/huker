@@ -1,7 +1,8 @@
 {{ define "Content" }}
 
 {{ with .cluster }}
-<h5 class="page-header">/ <a href="/list/{{ .Project }}">{{ .Project }}</a> / <a href="/detail/{{ .Project }}/{{ .ClusterName }}">{{ .ClusterName }}</a></h5>
+<h5 class="page-header">/ <a href="/list/{{ .Project }}">{{ .Project }}</a> / <a
+        href="/detail/{{ .Project }}/{{ .ClusterName }}">{{ .ClusterName }}</a></h5>
 <input value="{{ .Project }}" id="hiddenProject" type="hidden">
 <input value="{{ .ClusterName }}" id="hiddenCluster" type="hidden">
 {{ end }}
@@ -26,9 +27,10 @@
 </div>
 <br/><br/>
 
+{{ $localGrafanaAddress := .grafanaAddress }}
 {{ with .cluster }}
-        {{ $localProject := .Project }}
-        {{ $localClusterName := .ClusterName }}
+    {{ $localProject := .Project }}
+    {{ $localClusterName := .ClusterName }}
         {{ range $key, $job := .Jobs }}
             {{ with $job }}
                 {{ if not (eq .JobName "job_common") }}
@@ -46,37 +48,40 @@
                             <th>Status</th>
                             <th>Config Files</th>
                             <th>Task Web Address</th>
-                            <th>Node Monitor</th>
+                            <th>Metric Dashboard</th>
                         </tr>
                         </thead>
                         <tbody>
                         {{ $localJobName := .JobName }}
                         {{ range .Hosts }}
-                            <tr>
-                                <td><input type="checkbox" name="{{ $localJobName }}Checkbox" value="{{ $localJobName }}"></td>
-                                <td>{{ .TaskId }}</td>
-                                <td><a href="http://{{ .Hostname }}:{{ .SupervisorPort }}">{{ .Hostname }}:{{ .SupervisorPort }}</a>
-                                </td>
-                                <td>{{ .BasePort }}</td>
-                                {{ with .Attributes}}
-                                    {{ if not .status }}
-                                        <td><span class="label label-warning">Unknown</span></td>
-                                    {{ else if eq .status "Running"}}
-                                        <td><span class="label label-success" >Running</span></td>
-                                    {{ else if eq .status "NotBootstrap" }}
-                                        <td><span class="label label-default">NotBootstrap</span></td>
-                                    {{ else if eq .status "Unknown" }}
-                                        <td><span class="label label-warning">Unknown</span></td>
-                                    {{ else if eq .status "Stopped" }}
-                                        <td><span class="label label-danger">Stopped</span></td>
-                                    {{ else }}
-                                        <td><span class="label label-warning">{{ .status }}</span></td>
-                                    {{ end }}
-                                {{ end }}
-                                <td><a href="/config/{{ $localProject }}/{{ $localClusterName }}/{{ $localJobName }}/{{ .TaskId }}">view</a></td>
-                                <td><a href="http://{{ .Hostname }}:{{ inc .BasePort }}">http://{{ .Hostname }}:{{ inc .BasePort }}</a></td>
-                                <td><a href="{{ toNodeMonitor .Hostname }}}">view</a></td>
-                            </tr>
+                        <tr>
+                            <td><input type="checkbox" name="{{ $localJobName }}Checkbox" value="{{ $localJobName }}"></td>
+                            <td>{{ .TaskId }}</td>
+                            <td><a href="http://{{ .Hostname }}:{{ .SupervisorPort }}">{{ .Hostname }}:{{ .SupervisorPort }}</a>
+                            </td>
+                            <td>{{ .BasePort }}</td>
+                        {{ with .Attributes}}
+                        {{ if not .status }}
+                            <td><span class="label label-warning">Unknown</span></td>
+                        {{ else if eq .status "Running"}}
+                            <td><span class="label label-success">Running</span></td>
+                        {{ else if eq .status "NotBootstrap" }}
+                            <td><span class="label label-default">NotBootstrap</span></td>
+                        {{ else if eq .status "Unknown" }}
+                            <td><span class="label label-warning">Unknown</span></td>
+                        {{ else if eq .status "Stopped" }}
+                            <td><span class="label label-danger">Stopped</span></td>
+                        {{ else }}
+                            <td><span class="label label-warning">{{ .status }}</span></td>
+                        {{ end }}
+                        {{ end }}
+                            <td><a href="/config/{{ $localProject }}/{{ $localClusterName }}/{{ $localJobName }}/{{ .TaskId }}">view</a>
+                            </td>
+                            <td><a href="http://{{ .Hostname }}:{{ inc .BasePort }}">http://{{ .Hostname }}:{{ inc .BasePort }}</a></td>
+                            <td><a href="{{ toNodeMonitor .Hostname }}">Host</a> /
+                                <a href="{{ $localGrafanaAddress }}/d/jvm-{{ $localClusterName }}-{{ $localJobName }}-{{ .TaskId }}/jvm-{{ $localClusterName }}-{{ $localJobName }}-{{ .TaskId }}">JVM</a>
+                            </td>
+                        </tr>
                         {{ end }}
                         </tbody>
                     </table>
@@ -84,6 +89,5 @@
                 {{ end }}
             {{ end }}
         {{ end }}
-{{ end }}
-
+    {{ end }}
 {{ end }}

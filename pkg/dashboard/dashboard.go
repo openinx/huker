@@ -117,6 +117,7 @@ func (d *Dashboard) hDetail(w http.ResponseWriter, r *http.Request) {
 		return utils.RenderHTMLTemplate("site/detail.html", "site/base.html", map[string]interface{}{
 			"cluster":          cluster,
 			"pkgServerAddress": d.pkgServerAddress,
+			"grafanaAddress":   d.grafanaAddress,
 		}, template.FuncMap{
 			"inc": func(i int) int {
 				return i + 1
