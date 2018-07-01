@@ -31,7 +31,7 @@ func TestHukerConfig(t *testing.T) {
 		{HukerDashboardHttpAddress, "http://127.0.0.1:8001", typeURL},
 		{HukerOpenTSDBHttpAddress, "http://127.0.0.1:51001", typeURL},
 		{HukerGrafanaHttpAddress, "http://127.0.0.1:3000", typeURL},
-		{HukerGrafanaAPIKey, "Bearer eyJrIjoiaWltYzd5YXJEcVB1cjRDNXFMUGJzSDh6bWpDUzVwMWQiLCJuIjoiaHVrZXIiLCJpZCI6MX0=", typeStr},
+		{HukerGrafanaAPIKey, "Bearer eyJrIjoiSW9JelRJd2xSN3c2ZGZEMVBuUXdhbFJJQ0txR2pqR2wiLCJuIjoiaHVrZXIiLCJpZCI6MX0=", typeStr},
 		{HukerGrafanaDataSource, "test-opentsdb", typeStr},
 		{HukerCollectorWorkerSize, 10, typeInt},
 		{HukerCollectorSyncDashboardSeconds, 86400, typeInt},

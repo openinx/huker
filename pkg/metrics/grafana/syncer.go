@@ -6,10 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/openinx/huker/pkg/core"
-	"github.com/openinx/huker/pkg/utils"
 	"io/ioutil"
 	"net/http"
-	"path"
 	"strconv"
 	"strings"
 )
@@ -64,6 +62,22 @@ func (g *GrafanaSyncer) request(method, resource string, body []byte) ([]byte, e
 	return ioutil.ReadAll(resp.Body)
 }
 
+func (g *GrafanaSyncer) postDashboard(uid, title string, jsonMap map[string]interface{}) error {
+	jsonMap["title"] = title
+	jsonMap["uid"] = uid
+	jsonMap["id"] = nil // unset the id intentionally
+	dashMap := map[string]interface{}{
+		"overwrite": true,
+		"dashboard": jsonMap,
+	}
+	data, err := json.Marshal(dashMap)
+	if err != nil {
+		return err
+	}
+	_, respErr := g.request("POST", "/api/dashboards/db", data)
+	return respErr
+}
+
 func (g *GrafanaSyncer) GetDashboard(uid string) ([]byte, error) {
 	return g.request("GET", "/api/dashboards/uid/"+uid, nil)
 }
@@ -95,16 +109,10 @@ func generateNewTargetMap(targetMaps []interface{}, newTags map[string]string) m
 }
 
 func (g *GrafanaSyncer) createHostsDashboard(title, uid string, hostNames []string) error {
-	hukerDir := utils.GetHukerDir()
-	data, err := ioutil.ReadFile(path.Join(hukerDir, "grafana/host.json"))
+	jsonMap, err := loadGrafanaJsonMap("host.json")
 	if err != nil {
 		return err
 	}
-	jsonMap := make(map[string]interface{})
-	if err := json.Unmarshal(data, &jsonMap); err != nil {
-		return err
-	}
-
 	// Generate the new panel maps.
 	panelMaps := jsonMap["panels"].([]interface{})
 	for _, panelMap := range panelMaps {
@@ -138,19 +146,7 @@ func (g *GrafanaSyncer) createHostsDashboard(title, uid string, hostNames []stri
 			p["targets"] = newTargets
 		}
 	}
-	jsonMap["title"] = title
-	jsonMap["uid"] = uid
-	jsonMap["id"] = nil
-	dashMap := map[string]interface{}{
-		"overwrite": true,
-		"dashboard": jsonMap,
-	}
-	data, err = json.Marshal(dashMap)
-	if err != nil {
-		return err
-	}
-	_, respErr := g.request("POST", "/api/dashboards/db", data)
-	return respErr
+	return g.postDashboard(uid, title, jsonMap)
 }
 
 func (g *GrafanaSyncer) CreateNodesDashboard(cluster string, hostNames []string) error {
@@ -159,13 +155,8 @@ func (g *GrafanaSyncer) CreateNodesDashboard(cluster string, hostNames []string)
 }
 
 func (g *GrafanaSyncer) CreateJvmGcDashboard(cluster string, job string, task int) error {
-	hukerDir := utils.GetHukerDir()
-	data, err := ioutil.ReadFile(path.Join(hukerDir, "grafana/task_gc.json"))
+	jsonMap, err := loadGrafanaJsonMap("task_gc.json")
 	if err != nil {
-		return err
-	}
-	jsonMap := make(map[string]interface{})
-	if err := json.Unmarshal(data, &jsonMap); err != nil {
 		return err
 	}
 	panelMaps := jsonMap["panels"].([]interface{})
@@ -183,29 +174,13 @@ func (g *GrafanaSyncer) CreateJvmGcDashboard(cluster string, job string, task in
 			}
 		}
 	}
-	jsonMap["title"] = fmt.Sprintf("jvm-%s-%s-%d", cluster, job, task)
-	jsonMap["uid"] = fmt.Sprintf("jvm-%s-%s-%d", cluster, job, task)
-	jsonMap["id"] = nil
-	dashMap := map[string]interface{}{
-		"overwrite": true,
-		"dashboard": jsonMap,
-	}
-	data, err = json.Marshal(dashMap)
-	if err != nil {
-		return err
-	}
-	_, respErr := g.request("POST", "/api/dashboards/db", data)
-	return respErr
+	label := fmt.Sprintf("jvm-%s-%s-%d", cluster, job, task)
+	return g.postDashboard(label, label, jsonMap)
 }
 
 func (g *GrafanaSyncer) CreateHDFSDashboard(c *core.Cluster) error {
-	hukerDir := utils.GetHukerDir()
-	data, err := ioutil.ReadFile(path.Join(hukerDir, "grafana/hdfs.json"))
+	jsonMap, err := loadGrafanaJsonMap("hdfs.json")
 	if err != nil {
-		return err
-	}
-	jsonMap := make(map[string]interface{})
-	if err := json.Unmarshal(data, &jsonMap); err != nil {
 		return err
 	}
 	panelMaps := jsonMap["panels"].([]interface{})
@@ -234,31 +209,16 @@ func (g *GrafanaSyncer) CreateHDFSDashboard(c *core.Cluster) error {
 		}
 		p["targets"] = targets
 	}
-	jsonMap["title"] = "cluster-hdfs-" + c.ClusterName
-	jsonMap["uid"] = "cluster-hdfs-" + c.ClusterName
-	jsonMap["id"] = nil
-	dashMap := map[string]interface{}{
-		"overwrite": true,
-		"dashboard": jsonMap,
-	}
-	data, err = json.MarshalIndent(dashMap, "", "  ")
-	if err != nil {
-		return err
-	}
-	_, respErr := g.request("POST", "/api/dashboards/db", data)
-	return respErr
+	label := fmt.Sprintf("cluster-hdfs-%s", c.ClusterName)
+	return g.postDashboard(label, label, jsonMap)
 }
 
 func (g *GrafanaSyncer) CreateZookeeperDashboard(c *core.Cluster) error {
-	hukerDir := utils.GetHukerDir()
-	data, err := ioutil.ReadFile(path.Join(hukerDir, "grafana/zookeeper.json"))
+	jsonMap, err := loadGrafanaJsonMap("zookeeper.json")
 	if err != nil {
 		return err
 	}
-	jsonMap := make(map[string]interface{})
-	if err := json.Unmarshal(data, &jsonMap); err != nil {
-		return err
-	}
+
 	panelMaps := jsonMap["panels"].([]interface{})
 	for _, panelMap := range panelMaps {
 		p := panelMap.(map[string]interface{})
@@ -276,29 +236,13 @@ func (g *GrafanaSyncer) CreateZookeeperDashboard(c *core.Cluster) error {
 		}
 		p["targets"] = targets
 	}
-	jsonMap["title"] = "cluster-zookeeper-" + c.ClusterName
-	jsonMap["uid"] = "cluster-zookeeper-" + c.ClusterName
-	jsonMap["id"] = nil
-	dashMap := map[string]interface{}{
-		"overwrite": true,
-		"dashboard": jsonMap,
-	}
-	data, err = json.Marshal(dashMap)
-	if err != nil {
-		return err
-	}
-	_, respErr := g.request("POST", "/api/dashboards/db", data)
-	return respErr
+	label := fmt.Sprintf("cluster-zookeeper-%s", c.ClusterName)
+	return g.postDashboard(label, label, jsonMap)
 }
 
 func (g *GrafanaSyncer) CreateHBaseDashboard(c *core.Cluster) error {
-	hukerDir := utils.GetHukerDir()
-	data, err := ioutil.ReadFile(path.Join(hukerDir, "grafana/hbase.json"))
+	jsonMap, err := loadGrafanaJsonMap("hbase.json")
 	if err != nil {
-		return err
-	}
-	jsonMap := make(map[string]interface{})
-	if err := json.Unmarshal(data, &jsonMap); err != nil {
 		return err
 	}
 	panelMaps := jsonMap["panels"].([]interface{})
@@ -318,17 +262,6 @@ func (g *GrafanaSyncer) CreateHBaseDashboard(c *core.Cluster) error {
 		}
 		p["targets"] = targets
 	}
-	jsonMap["title"] = "cluster-hbase-" + c.ClusterName
-	jsonMap["uid"] = "cluster-hbase-" + c.ClusterName
-	jsonMap["id"] = nil
-	dashMap := map[string]interface{}{
-		"overwrite": true,
-		"dashboard": jsonMap,
-	}
-	data, err = json.Marshal(dashMap)
-	if err != nil {
-		return err
-	}
-	_, respErr := g.request("POST", "/api/dashboards/db", data)
-	return respErr
+	label := fmt.Sprintf("cluster-hbase-%s", c.ClusterName)
+	return g.postDashboard(label, label, jsonMap)
 }
