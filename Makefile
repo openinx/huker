@@ -3,7 +3,7 @@ HUKER_VERSION := huker-1.0.0
 all: build
 
 build:
-	find . -type f -name '*.go' | xargs gofmt -s -w
+	find . -type f -name '*.go' | grep -v '/vendor/' | xargs gofmt -s -w
 	go build -o bin/huker cmd/huker.go
 	go build -o bin/huker-standalone cmd/huker-standalone.go
 	go build -o bin/metric cmd/huker-metrics.go
